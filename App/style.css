@@ -1,0 +1,146 @@
+/* リセットCSSと基本設定 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent; /* タップ時のハイライトを消す */
+}
+
+body {
+  font-family: sans-serif;
+  background-color: #ffffff;
+  color: #333333;
+  /* スマホの縦画面を想定 */
+  height: 100dvh;
+  width: 100vw;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+}
+
+#app {
+  width: 100%;
+  max-width: 500px; /* スマホサイズ以上の画面でも崩れないように制限 */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 上部：タイトル (10%) */
+.header {
+  height: 10%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #ff7eb3, #ff758c);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+  z-index: 10;
+}
+
+.header h1 {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+/* 中央：YOUTUBE動画表示エリア (30%) */
+.video-area {
+  height: 30%;
+  background-color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.video-container {
+  width: 100%;
+  height: 100%;
+}
+
+.video-container iframe {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 下部：タップエリア (40%) */
+.tap-area {
+  height: 40%;
+  background-color: #ffe4e1; /* 薄いピンク */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+/* 三角形にボタンを配置するためのコンテナ */
+.triangle-container {
+  position: relative;
+  width: 90vw;
+  max-width: 320px;
+  height: 280px;
+}
+
+/* 各ボタンの共通スタイル */
+.button {
+  position: absolute;
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.1s ease-out;
+  cursor: pointer;
+}
+
+/* 配置: 赤 (上中央) */
+.btn-red {
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #ff3366;
+  box-shadow: 0 0 10px #ff3366;
+}
+
+/* 配置: 緑 (左下) */
+.btn-green {
+  bottom: 0;
+  left: 0;
+  background-color: #33cc66;
+  box-shadow: 0 0 10px #33cc66;
+}
+
+/* 配置: 黄 (右下) */
+.btn-yellow {
+  bottom: 0;
+  right: 0;
+  background-color: #ffcc00;
+  box-shadow: 0 0 10px #ffcc00;
+}
+
+/* 光るエフェクト (JSで .active クラスを付与する) */
+.btn-red.active {
+  background-color: #ff6699;
+  box-shadow: 0 0 40px 15px #ff3366, inset 0 0 20px #fff;
+  transform: translateX(-50%) scale(0.95);
+  border-color: #fff;
+}
+
+.btn-green.active {
+  background-color: #66ff99;
+  box-shadow: 0 0 40px 15px #33cc66, inset 0 0 20px #fff;
+  transform: scale(0.95);
+  border-color: #fff;
+}
+
+.btn-yellow.active {
+  background-color: #ffff66;
+  box-shadow: 0 0 40px 15px #ffcc00, inset 0 0 20px #fff;
+  transform: scale(0.95);
+  border-color: #fff;
+}
+
+
+/* 空白エリア (20%) */
+.footer-area {
+  height: 20%;
+  background-color: #ffffff;
+}

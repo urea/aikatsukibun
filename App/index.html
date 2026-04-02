@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>アイカツ！気分</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <!-- 全体のコンテナ (スマホ縦画面前提) -->
+    <div id="app">
+      <!-- 上部：タイトル (10%) -->
+      <header class="header">
+        <h1>アイカツ！気分</h1>
+      </header>
+
+      <!-- 中央：YOUTUBE動画表示エリア (30%) -->
+      <section class="video-area">
+        <div class="video-container">
+          <iframe 
+            src="https://www.youtube.com/embed/fYibOFCMpnE" 
+            title="【アイカツ】硝子ドール(SPステージ) プレイ動画" 
+            frameborder="0" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+            allowfullscreen>
+          </iframe>
+        </div>
+      </section>
+
+      <!-- 下部：タップエリア (40%) -->
+      <section class="tap-area">
+        <div class="triangle-container">
+          <div class="button btn-red" id="btn-red"></div>
+          <div class="button btn-green" id="btn-green"></div>
+          <div class="button btn-yellow" id="btn-yellow"></div>
+        </div>
+      </section>
+
+      <!-- 空白エリア (20%) -->
+      <footer class="footer-area">
+        <!-- 特に表示するものなし、空白 -->
+      </footer>
+    </div>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>
