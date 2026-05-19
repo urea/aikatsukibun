@@ -100,12 +100,33 @@ document.addEventListener('DOMContentLoaded', () => {
     let ytPlayer = null; // YouTube Player API インスタンス
     let isApiReady = false;
 
+    // 🎬 開発者エディター専用の状態管理
+    let isEditorMode = false;
+    let isRecording = false;
+    let tempBeatmap = []; // 編集・レコーディング中のテンポラリ配列
+
     // --- 3.5 リズムゲーム用状態変数と同期・判定ロジック ---
     const scoreVal = document.getElementById('score-val');
     const comboVal = document.getElementById('combo-val');
     const gameContainer = document.getElementById('game-container');
     const laneNotesContainer = document.getElementById('lane-notes-container');
     const judgementDisplay = document.getElementById('judgement-display');
+    const noBeatmapGuide = document.getElementById('no-beatmap-guide');
+
+    // 🎬 エディター用DOM要素
+    const ctrlEditor = document.getElementById('ctrl-editor');
+    const editorPanel = document.getElementById('editor-panel');
+    const editRecBtn = document.getElementById('edit-rec-btn');
+    const editClearBtn = document.getElementById('edit-clear-btn');
+    const editPlayTestBtn = document.getElementById('edit-play-test-btn');
+    const recStatusVal = document.getElementById('rec-status-val');
+    const editorNotesCount = document.getElementById('editor-notes-count');
+    const editorJsonArea = document.getElementById('editor-json-area');
+    const editCopyBtn = document.getElementById('edit-copy-btn');
+    const editImportBtn = document.getElementById('edit-import-btn');
+    const offsetMinus = document.getElementById('offset-minus');
+    const offsetPlus = document.getElementById('offset-plus');
+    const offsetValEl = document.getElementById('offset-val');
 
     let hasBeatmap = false;
     let rawBeatmap = [];      // 全ノーツデータ
@@ -119,9 +140,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let lastTimeUpdate = performance.now();
     let lastPlayerTime = 0;
 
-    // 動画と譜面のタイミング同期用オフセット (秒単位)
-    // YouTubeプレイヤーの再生遅延を補正するためにデフォルトで -0.15秒 (150ms早く流す) を適用
-    const BEATMAP_OFFSET = -0.15;
+    // 動画と譜面のタイミング同期用オフセット (秒単位) - エディタで可変にするためletに変更
+    let BEATMAP_OFFSET = -0.15;
 
     const getSmoothCurrentTime = () => {
         if (!ytPlayer || typeof ytPlayer.getPlayerState !== 'function') return 0;
@@ -257,6 +277,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // 🎬 エディターUIとJSON表示の更新
+    const updateEditorUI = () => {
+        if (editorNotesCount) editorNotesCount.textContent = tempBeatmap.length;
+        if (editorJsonArea) {
+            const exportData = {
+                metadata: {
+                    source_video: `https://www.youtube.com/watch?v=${currentVideoId}`,
+                    total_notes: tempBeatmap.length,
+                    dynamic_target_tracking: true
+                },
+                beatmap: tempBeatmap
+            };
+            editorJsonArea.value = JSON.stringify(exportData, null, 2);
+        }
+    };
+
     const initRhythmGame = (videoId) => {
         score = 0;
         combo = 0;
@@ -267,16 +303,36 @@ document.addEventListener('DOMContentLoaded', () => {
             judgementDisplay.textContent = '';
         }
         if (laneNotesContainer) laneNotesContainer.innerHTML = '';
+        if (noBeatmapGuide) noBeatmapGuide.classList.add('hidden');
 
         if (animationFrameId) {
             cancelAnimationFrame(animationFrameId);
             animationFrameId = null;
         }
 
-        // 今回対応した曲のみゲームを有効化
-        if (videoId === 'fYibOFCMpnE') {
+        // 1. ローカルストレージにカスタム譜面があれば最優先ロード
+        const localData = localStorage.getItem('beatmap_' + videoId);
+        let loadedBeatmap = [];
+
+        if (localData) {
+            try {
+                const parsed = JSON.parse(localData);
+                loadedBeatmap = parsed.beatmap || parsed || [];
+                hasBeatmap = true;
+            } catch(e) {
+                console.error("Local beatmap parse error:", e);
+                hasBeatmap = false;
+            }
+        } else if (videoId === 'fYibOFCMpnE') {
+            // 2. なければ、デフォルト曲のみビルトイン譜面をロード
+            loadedBeatmap = beatmapData.beatmap || [];
             hasBeatmap = true;
-            rawBeatmap = beatmapData.beatmap || [];
+        } else {
+            hasBeatmap = false;
+        }
+
+        if (hasBeatmap) {
+            rawBeatmap = loadedBeatmap;
             activeNotes = rawBeatmap.map(note => ({
                 ...note,
                 element: null,
@@ -286,11 +342,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (gameContainer) gameContainer.classList.remove('hidden');
             startRhythmGameLoop();
         } else {
-            hasBeatmap = false;
             rawBeatmap = [];
             activeNotes = [];
-            if (gameContainer) gameContainer.classList.add('hidden');
+            // エディット可能にするためにレーンは表示し続ける
+            if (gameContainer) gameContainer.classList.remove('hidden');
+            if (noBeatmapGuide) noBeatmapGuide.classList.remove('hidden');
         }
+
+        // 編集中のテンポラリ配列を最新データに同期
+        tempBeatmap = JSON.parse(JSON.stringify(rawBeatmap));
+        updateEditorUI();
     };
 
     // LocalStorageから配列を読み込み
@@ -406,8 +467,47 @@ document.addEventListener('DOMContentLoaded', () => {
         playTapSound();
         createSparkleParticles(btn);
 
+        const colorMap = { 'btn-red': 'red', 'btn-green': 'green', 'btn-yellow': 'yellow' };
+        const noteColor = colorMap[btnId];
+
+        // 🎬 エディターモードかつレコーディング中のリアルタイム録音
+        if (isEditorMode && isRecording && noteColor) {
+            const time = parseFloat((getSmoothCurrentTime()).toFixed(3));
+            
+            // デフォルト位置 (赤:中央, 緑:左下, 黄:右下)
+            const defPosMap = {
+                'red': [320, 150],
+                'green': [160, 240],
+                'yellow': [480, 240]
+            };
+            const pos = defPosMap[noteColor] || [320, 180];
+
+            tempBeatmap.push({
+                beat_index: tempBeatmap.length + 1,
+                time: time,
+                type: noteColor,
+                intensity: 150,
+                detected_pos: pos
+            });
+
+            tempBeatmap.sort((a, b) => a.time - b.time);
+            tempBeatmap.forEach((n, idx) => n.beat_index = idx + 1);
+
+            rawBeatmap = tempBeatmap;
+            activeNotes = rawBeatmap.map(note => ({
+                ...note,
+                element: null,
+                state: 'active'
+            }));
+            hasBeatmap = true;
+            if (noBeatmapGuide) noBeatmapGuide.classList.add('hidden');
+
+            updateEditorUI();
+            return;
+        }
+
         // リズムゲーム判定
-        if (hasBeatmap) {
+        if (hasBeatmap && !isEditorMode) {
             checkHit(btnId);
         }
     };
@@ -981,9 +1081,65 @@ document.addEventListener('DOMContentLoaded', () => {
         const overlay = document.getElementById('player-overlay');
         if (!overlay) return;
 
-        overlay.addEventListener('click', () => {
+        overlay.addEventListener('click', (e) => {
             if (!ytPlayer || typeof ytPlayer.getPlayerState !== 'function') return;
 
+            // --- エディターモード中のクリック処理 (動画上プロット) ---
+            if (isEditorMode) {
+                // タップ座標を 640x360 解像度に変換
+                const rect = overlay.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                const clickY = e.clientY - rect.top;
+                const x = Math.round((clickX / rect.width) * 640);
+                const y = Math.round((clickY / rect.height) * 360);
+
+                // タップ時間 (秒)
+                const time = parseFloat((getSmoothCurrentTime()).toFixed(3));
+
+                // ラジオボタンから現在選択中のカラーを取得
+                const selectedColorRadio = document.querySelector('input[name="editor-color"]:checked');
+                const noteColor = selectedColorRadio ? selectedColorRadio.value : 'red';
+
+                // 1. プロットマーカー（波紋エフェクト）の生成
+                const marker = document.createElement('div');
+                marker.className = `editor-marker color-${noteColor}`;
+                marker.style.left = `${(clickX / rect.width) * 100}%`;
+                marker.style.top = `${(clickY / rect.height) * 100}%`;
+                overlay.appendChild(marker);
+                setTimeout(() => marker.remove(), 600);
+
+                // 2. タップ音の再生
+                playTapSound();
+
+                // 3. データ追加
+                tempBeatmap.push({
+                    beat_index: tempBeatmap.length + 1,
+                    time: time,
+                    type: noteColor,
+                    intensity: 150,
+                    detected_pos: [x, y]
+                });
+
+                // 時間順ソート & インデックス振り直し
+                tempBeatmap.sort((a, b) => a.time - b.time);
+                tempBeatmap.forEach((n, idx) => n.beat_index = idx + 1);
+
+                // ゲーム本体への即時反映（プレビュー）
+                rawBeatmap = tempBeatmap;
+                activeNotes = rawBeatmap.map(note => ({
+                    ...note,
+                    element: null,
+                    state: 'active'
+                }));
+                hasBeatmap = true;
+                if (noBeatmapGuide) noBeatmapGuide.classList.add('hidden');
+
+                // UIとJSONエリアの更新
+                updateEditorUI();
+                return;
+            }
+
+            // --- 通常プレイ時のクリック処理 (ポーズ / プレイ) ---
             const state = ytPlayer.getPlayerState();
             if (state === YT.PlayerState.PLAYING) {
                 ytPlayer.pauseVideo();
@@ -995,11 +1151,205 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+    // --- 🎬 開発者エディター用イベントハンドラーの一括登録 ---
+    const setupEditorEvents = () => {
+        const isPC = !('ontouchstart' in window) && window.innerWidth > 768;
+        
+        // PC環境でなければエディタ切り替えボタンは非表示
+        if (ctrlEditor) {
+            if (isPC) {
+                ctrlEditor.classList.remove('hidden');
+            } else {
+                ctrlEditor.style.display = 'none';
+            }
+        }
+
+        // 1. エディタモードのトグル切り替え
+        if (ctrlEditor) {
+            ctrlEditor.addEventListener('click', () => {
+                isEditorMode = !isEditorMode;
+                document.body.classList.toggle('editor-mode-active');
+                
+                if (isEditorMode) {
+                    ctrlEditor.classList.add('active');
+                    // 編集用テンポラリ配列を同期
+                    tempBeatmap = JSON.parse(JSON.stringify(rawBeatmap));
+                    updateEditorUI();
+                } else {
+                    ctrlEditor.classList.remove('active');
+                    stopRecording();
+                }
+            });
+        }
+
+        // 2. 録音(REC)開始/停止
+        const startRecording = () => {
+            isRecording = true;
+            if (editRecBtn) {
+                editRecBtn.textContent = '⏹️ 録音停止';
+                editRecBtn.classList.add('recording');
+            }
+            if (recStatusVal) {
+                recStatusVal.textContent = '🔴 録音中';
+                recStatusVal.style.color = '#ff3366';
+            }
+            const videoContainer = document.querySelector('.video-container');
+            if (videoContainer) videoContainer.classList.add('recording-active');
+
+            if (ytPlayer && typeof ytPlayer.playVideo === 'function') {
+                ytPlayer.playVideo();
+            }
+        };
+
+        const stopRecording = () => {
+            isRecording = false;
+            if (editRecBtn) {
+                editRecBtn.textContent = '🔴 REC開始';
+                editRecBtn.classList.remove('recording');
+            }
+            if (recStatusVal) {
+                recStatusVal.textContent = '待機中';
+                recStatusVal.style.color = '';
+            }
+            const videoContainer = document.querySelector('.video-container');
+            if (videoContainer) videoContainer.classList.remove('recording-active');
+        };
+
+        if (editRecBtn) {
+            editRecBtn.addEventListener('click', () => {
+                if (isRecording) {
+                    stopRecording();
+                } else {
+                    startRecording();
+                }
+            });
+        }
+
+        // 3. 全クリア
+        if (editClearBtn) {
+            editClearBtn.addEventListener('click', () => {
+                if (confirm('現在の譜面データをすべて消去しますか？（保存するまで元の譜面データは削除されません）')) {
+                    tempBeatmap = [];
+                    rawBeatmap = [];
+                    activeNotes = [];
+                    if (laneNotesContainer) laneNotesContainer.innerHTML = '';
+                    updateEditorUI();
+                    localStorage.removeItem('beatmap_' + currentVideoId);
+                }
+            });
+        }
+
+        // 4. テストプレイ (ローカルストレージへ即時保存して0秒再生)
+        if (editPlayTestBtn) {
+            editPlayTestBtn.addEventListener('click', () => {
+                stopRecording();
+
+                localStorage.setItem('beatmap_' + currentVideoId, JSON.stringify({
+                    metadata: {
+                        source_video: `https://www.youtube.com/watch?v=${currentVideoId}`,
+                        total_notes: tempBeatmap.length,
+                        dynamic_target_tracking: true
+                    },
+                    beatmap: tempBeatmap
+                }));
+
+                initRhythmGame(currentVideoId);
+
+                if (ytPlayer && typeof ytPlayer.seekTo === 'function') {
+                    ytPlayer.seekTo(0, true);
+                    ytPlayer.playVideo();
+                }
+            });
+        }
+
+        // 5. JSONコピー
+        if (editCopyBtn) {
+            editCopyBtn.addEventListener('click', () => {
+                if (editorJsonArea) {
+                    editorJsonArea.select();
+                    document.execCommand('copy');
+                    
+                    const originalText = editCopyBtn.textContent;
+                    editCopyBtn.textContent = '✅ コピー完了！';
+                    editCopyBtn.style.background = '#33cc66';
+                    editCopyBtn.style.color = '#000';
+                    setTimeout(() => {
+                        editCopyBtn.textContent = originalText;
+                        editCopyBtn.style.background = '';
+                        editCopyBtn.style.color = '';
+                    }, 1500);
+                }
+            });
+        }
+
+        // 6. JSONインポート
+        if (editImportBtn) {
+            editImportBtn.addEventListener('click', () => {
+                if (!editorJsonArea) return;
+                const jsonStr = editorJsonArea.value.trim();
+                if (!jsonStr) {
+                    alert('JSONデータが空です。');
+                    return;
+                }
+                try {
+                    const parsed = JSON.parse(jsonStr);
+                    const loadedNotes = parsed.beatmap || parsed || [];
+                    if (!Array.isArray(loadedNotes)) {
+                        throw new Error("JSON形式の譜面配列が正しくありません。");
+                    }
+
+                    tempBeatmap = loadedNotes;
+                    tempBeatmap.sort((a, b) => a.time - b.time);
+                    tempBeatmap.forEach((n, idx) => n.beat_index = idx + 1);
+
+                    localStorage.setItem('beatmap_' + currentVideoId, JSON.stringify({
+                        metadata: {
+                            source_video: `https://www.youtube.com/watch?v=${currentVideoId}`,
+                            total_notes: tempBeatmap.length,
+                            dynamic_target_tracking: true
+                        },
+                        beatmap: tempBeatmap
+                    }));
+
+                    initRhythmGame(currentVideoId);
+                    alert('JSON譜面のインポートに成功しました！');
+                } catch(e) {
+                    alert(`❌ インポート失敗: ${e.message}\n正しいJSON形式であることを確認してください。`);
+                }
+            });
+        }
+
+        // 7. オフセット調整
+        const updateOffsetDisplay = () => {
+            if (offsetValEl) {
+                offsetValEl.textContent = `${BEATMAP_OFFSET >= 0 ? '+' : ''}${BEATMAP_OFFSET.toFixed(2)}s`;
+            }
+        };
+
+        if (offsetMinus) {
+            offsetMinus.addEventListener('click', () => {
+                BEATMAP_OFFSET = parseFloat((BEATMAP_OFFSET - 0.05).toFixed(2));
+                updateOffsetDisplay();
+            });
+        }
+
+        if (offsetPlus) {
+            offsetPlus.addEventListener('click', () => {
+                BEATMAP_OFFSET = parseFloat((BEATMAP_OFFSET + 0.05).toFixed(2));
+                updateOffsetDisplay();
+            });
+        }
+
+        // 初期表示を反映
+        updateOffsetDisplay();
+    };
+
     // 初回ロード時の初期化
     applyTheme('theme-cool');
     setupPlayerOverlay();
     initYouTubeAPI(); // 動的読み込みと初期化の開始
     initRhythmGame(currentVideoId); // リズムゲームの初期起動
+    setupEditorEvents(); // 🎬 開発者エディターイベントの登録
     document.addEventListener('click', initAudioContext, { once: true });
     document.addEventListener('touchstart', initAudioContext, { once: true });
 });
