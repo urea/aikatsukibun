@@ -1,59 +1,190 @@
-/* リセットCSSと基本設定 */
+/* 
+  AikatsuKibun (アイカツ！気分) プレミアム・デザインシステム
+  Theme-based Glassmorphism & Jewel Button System
+*/
+
+/* --- リセットと共通設定 --- */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent; /* タップ時のハイライトを消す */
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+:root {
+  /* 共通のゴールドカラー */
+  --gold-primary: #ffd700;
+  --gold-secondary: #fff5cc;
+  --gold-glow: rgba(255, 215, 0, 0.4);
+  
+  /* デフォルトカラー（クールテーマ） */
+  --theme-bg-start: #160226;
+  --theme-bg-end: #3d0c5a;
+  --theme-panel-bg: rgba(61, 12, 90, 0.25);
+  --theme-panel-border: rgba(255, 215, 0, 0.3);
+  --theme-accent: #e0b0ff;
+  --audience-color-1: #da70d6;
+  --audience-color-2: #8a2be2;
 }
 
 body {
-  font-family: sans-serif;
-  background-color: #ffffff;
-  color: #333333;
-  /* スマホの縦画面を想定 */
+  font-family: 'M PLUS Rounded 1c', 'Outfit', sans-serif;
+  background-color: #0c0214;
+  color: #ffffff;
   height: 100dvh;
   width: 100vw;
   overflow: hidden;
   display: flex;
   justify-content: center;
+  align-items: center;
 }
 
 #app {
   width: 100%;
-  max-width: 500px; /* スマホサイズ以上の画面でも崩れないように制限 */
+  max-width: 500px;
   height: 100%;
   display: flex;
   flex-direction: column;
+  position: relative;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+  overflow: hidden;
+  background: linear-gradient(180deg, var(--theme-bg-start), var(--theme-bg-end));
+  transition: background 0.8s ease-in-out;
 }
 
-/* 上部：タイトル (10%) */
+/* --- テーマ別カラー定義 --- */
+
+/* 💜 クールテーマ（硝子ドール用） */
+#app.theme-cool {
+  --theme-bg-start: #0f021c;
+  --theme-bg-end: #2d0047;
+  --theme-panel-bg: rgba(45, 0, 71, 0.3);
+  --theme-panel-border: rgba(224, 176, 255, 0.3);
+  --theme-accent: #c39be3;
+  --audience-color-1: #6a0dad;
+  --audience-color-2: #2e0854;
+}
+
+/* 💗 キュートテーマ（アイドル活動！用） */
+#app.theme-cute {
+  --theme-bg-start: #ff758c;
+  --theme-bg-end: #ff7eb3;
+  --theme-panel-bg: rgba(255, 117, 140, 0.25);
+  --theme-panel-border: rgba(255, 255, 255, 0.4);
+  --theme-accent: #fff0f5;
+  --audience-color-1: #ff1493;
+  --audience-color-2: #ff69b4;
+}
+
+/* 💛 ポップテーマ（ダイヤモンドハッピー用） */
+#app.theme-pop {
+  --theme-bg-start: #ff9900;
+  --theme-bg-end: #33ccff;
+  --theme-panel-bg: rgba(255, 153, 0, 0.2);
+  --theme-panel-border: rgba(255, 255, 255, 0.4);
+  --theme-accent: #ffff00;
+  --audience-color-1: #00ffff;
+  --audience-color-2: #ffeb3b;
+}
+
+
+/* --- 上部：ヘッダー (10%) --- */
 .header {
   height: 10%;
   display: flex;
   align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #ff7eb3, #ff758c);
-  box-shadow: 0 2px 10px rgba(0,0,0,0.5);
-  z-index: 10;
+  justify-content: space-between;
+  padding: 0 16px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 2px solid var(--theme-panel-border);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  z-index: 20;
+  transition: border-color 0.8s ease-in-out;
 }
 
-.header h1 {
-  font-size: 1.5rem;
-  font-weight: bold;
+.brand-title {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5), 0 0 20px var(--theme-accent);
+  letter-spacing: 0.05em;
+  transition: text-shadow 0.8s ease-in-out;
 }
 
-/* 中央：YOUTUBE動画表示エリア (30%) */
+/* 楽曲選択プルダウン（グラスモルフィズム） */
+.song-select-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.song-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border: 1.5px solid var(--theme-panel-border);
+  border-radius: 20px;
+  padding: 6px 30px 6px 12px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+}
+
+.song-select:hover, .song-select:focus {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: var(--gold-primary);
+  box-shadow: 0 0 10px var(--gold-glow);
+}
+
+/* プルダウンの矢印カスタム */
+.song-select-wrapper::after {
+  content: "▼";
+  font-size: 0.6rem;
+  color: #ffffff;
+  position: absolute;
+  right: 12px;
+  pointer-events: none;
+}
+
+
+/* --- 中央：YOUTUBE動画表示エリア (30%) --- */
 .video-area {
   height: 30%;
-  background-color: #000;
+  background-color: #000000;
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  z-index: 10;
+  border-bottom: 3px solid var(--gold-primary);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+}
+
+/* 筐体風ゴールドモニターフレーム */
+.video-area::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border: 4px solid rgba(255, 215, 0, 0.75);
+  pointer-events: none;
+  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.9);
+  z-index: 12;
 }
 
 .video-container {
   width: 100%;
   height: 100%;
+  overflow: hidden;
 }
 
 .video-container iframe {
@@ -62,33 +193,87 @@ body {
   object-fit: cover;
 }
 
-/* 下部：タップエリア (40%) */
+
+/* --- 下部：タップエリア (40%) --- */
 .tap-area {
   height: 40%;
-  background-color: #ffe4e1; /* 薄いピンク */
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
+  overflow: hidden;
+  background: var(--theme-panel-bg);
+  transition: background 0.8s ease-in-out;
 }
 
-/* 三角形にボタンを配置するためのコンテナ */
+/* オーラ背景アニメーション（ゆらゆら揺れる） */
+.tap-area::before {
+  content: "";
+  position: absolute;
+  top: -50%; left: -50%; width: 200%; height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 60%);
+  animation: auraRotate 20s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes auraRotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 三角形ボタンコンテナ */
 .triangle-container {
   position: relative;
   width: 90vw;
   max-width: 320px;
-  height: 280px;
+  height: 250px;
+  z-index: 15;
 }
 
-/* 各ボタンの共通スタイル */
+
+/* --- 筐体風ジュエルボタンのデザイン --- */
 .button {
   position: absolute;
   width: 110px;
   height: 110px;
   border-radius: 50%;
-  border: 4px solid rgba(255, 255, 255, 0.3);
-  transition: all 0.1s ease-out;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  /* ゴールドの立体的なフレーム */
+  border: 4.5px solid #ffea85;
+  background: linear-gradient(135deg, #ffd700 0%, #b8860b 100%);
+  box-shadow: 
+    0 10px 20px rgba(0,0,0,0.4), 
+    inset 0 4px 6px rgba(255,255,255,0.6),
+    0 0 15px rgba(255, 215, 0, 0.3);
+    
+  transition: transform 0.08s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.1s ease;
+}
+
+/* 内側のジュエルカット調グラデーション */
+.btn-inner {
+  display: block;
+  width: calc(100% - 6px);
+  height: calc(100% - 6px);
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  box-shadow: inset 0 6px 12px rgba(255, 255, 255, 0.4), inset 0 -6px 12px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+
+/* ボタンの中心に星のきらめきマークを配置 */
+.btn-inner::before {
+  content: "★";
+  font-size: 1.8rem;
+  color: rgba(255, 255, 255, 0.85);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), 0 0 10px rgba(255, 255, 255, 0.6);
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  transition: transform 0.1s ease;
 }
 
 /* 配置: 赤 (上中央) */
@@ -96,51 +281,147 @@ body {
   top: 0;
   left: 50%;
   transform: translateX(-50%);
-  background-color: #ff3366;
-  box-shadow: 0 0 10px #ff3366;
+}
+.btn-red .btn-inner {
+  background: radial-gradient(circle at 35% 35%, #ff527b 0%, #d1003f 60%, #850024 100%);
 }
 
 /* 配置: 緑 (左下) */
 .btn-green {
   bottom: 0;
   left: 0;
-  background-color: #33cc66;
-  box-shadow: 0 0 10px #33cc66;
+}
+.btn-green .btn-inner {
+  background: radial-gradient(circle at 35% 35%, #5aff8c 0%, #00c341 60%, #006b20 100%);
 }
 
 /* 配置: 黄 (右下) */
 .btn-yellow {
   bottom: 0;
   right: 0;
-  background-color: #ffcc00;
-  box-shadow: 0 0 10px #ffcc00;
+}
+.btn-yellow .btn-inner {
+  background: radial-gradient(circle at 35% 35%, #fff176 0%, #ffc107 60%, #b38000 100%);
 }
 
-/* 光るエフェクト (JSで .active クラスを付与する) */
+
+/* --- 各ボタンが光り輝くアクティブエフェクト (.active) --- */
+
+/* 全体共通の押し込み */
+.button.active {
+  transform: scale(0.92);
+  box-shadow: 
+    0 4px 8px rgba(0,0,0,0.5), 
+    inset 0 2px 4px rgba(255,255,255,0.4);
+}
+.button.active .btn-inner::before {
+  transform: translate(-50%, -50%) scale(1.15) rotate(15deg);
+  color: #ffffff;
+}
+
+/* 赤アクティブ発光 */
 .btn-red.active {
-  background-color: #ff6699;
-  box-shadow: 0 0 40px 15px #ff3366, inset 0 0 20px #fff;
-  transform: translateX(-50%) scale(0.95);
-  border-color: #fff;
+  border-color: #ffb8c6;
+  box-shadow: 
+    0 0 45px 15px rgba(255, 51, 102, 0.75), 
+    0 0 20px 5px rgba(255, 255, 255, 0.5),
+    inset 0 0 15px rgba(255, 255, 255, 0.8);
+}
+.btn-red.active .btn-inner {
+  background: radial-gradient(circle at 35% 35%, #ffb3c6 0%, #ff3366 50%, #c40037 100%);
 }
 
+/* 緑アクティブ発光 */
 .btn-green.active {
-  background-color: #66ff99;
-  box-shadow: 0 0 40px 15px #33cc66, inset 0 0 20px #fff;
-  transform: scale(0.95);
-  border-color: #fff;
+  border-color: #c2ffd4;
+  box-shadow: 
+    0 0 45px 15px rgba(51, 204, 102, 0.75), 
+    0 0 20px 5px rgba(255, 255, 255, 0.5),
+    inset 0 0 15px rgba(255, 255, 255, 0.8);
+}
+.btn-green.active .btn-inner {
+  background: radial-gradient(circle at 35% 35%, #c2ffd4 0%, #33cc66 50%, #00993d 100%);
 }
 
+/* 黄アクティブ発光 */
 .btn-yellow.active {
-  background-color: #ffff66;
-  box-shadow: 0 0 40px 15px #ffcc00, inset 0 0 20px #fff;
-  transform: scale(0.95);
-  border-color: #fff;
+  border-color: #ffffc2;
+  box-shadow: 
+    0 0 45px 15px rgba(255, 204, 0, 0.85), 
+    0 0 20px 5px rgba(255, 255, 255, 0.6),
+    inset 0 0 15px rgba(255, 255, 255, 0.9);
+}
+.btn-yellow.active .btn-inner {
+  background: radial-gradient(circle at 35% 35%, #ffffd0 0%, #ffcc00 50%, #cc9900 100%);
+}
+
+/* W/A/Dキーでのキーボード操作用に赤の上中央配置補正を上書き */
+.btn-red.active {
+  transform: translateX(-50%) scale(0.92);
 }
 
 
-/* 空白エリア (20%) */
+/* --- 空白エリア：観客席サイリウム演出 (20%) --- */
 .footer-area {
   height: 20%;
-  background-color: #ffffff;
+  background: rgba(0, 0, 0, 0.2);
+  border-top: 1.5px solid var(--theme-panel-border);
+  position: relative;
+  overflow: hidden;
+  z-index: 10;
+  transition: border-color 0.8s ease-in-out;
+}
+
+.audience-glow {
+  position: absolute;
+  bottom: 0; left: 0; right: 0; top: 0;
+  background: linear-gradient(0deg, var(--audience-color-1) 0%, var(--audience-color-2) 40%, transparent 100%);
+  opacity: 0.55;
+  filter: blur(5px);
+  animation: glowWave 6s ease-in-out infinite alternate;
+  pointer-events: none;
+  transition: background 0.8s ease-in-out;
+}
+
+@keyframes glowWave {
+  0% {
+    transform: translateY(10px) scaleY(0.9);
+    opacity: 0.45;
+  }
+  100% {
+    transform: translateY(-5px) scaleY(1.1);
+    opacity: 0.65;
+  }
+}
+
+
+/* --- キラキラ・スターパーティクル（JS用） --- */
+.sparkle-container {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 18;
+}
+
+.sparkle {
+  position: absolute;
+  pointer-events: none;
+  font-size: 1.4rem;
+  color: #fff;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px var(--theme-accent);
+  animation: flyAndFade 0.6s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+}
+
+@keyframes flyAndFade {
+  0% {
+    transform: translate(0, 0) scale(0.4) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--tx), var(--ty)) scale(1.3) rotate(var(--rot));
+    opacity: 0;
+  }
 }
