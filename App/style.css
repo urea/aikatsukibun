@@ -196,12 +196,63 @@ body {
   width: 100%;
   height: 100%;
   overflow: hidden;
+  position: relative; /* オーバーレイの配置基準 */
 }
 
-.video-container iframe {
+.video-container iframe, .video-container #youtube-player {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border: none;
+}
+
+/* 没入感を高めるための透明操作オーバーレイ */
+.player-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 11; /* ゴールドフレームの内側かつ動画の上部 */
+  cursor: pointer;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+/* 一時停止アイコンのインジケーター */
+.pause-indicator {
+  font-size: 3rem;
+  color: white;
+  background: rgba(0, 0, 0, 0.6);
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  pointer-events: none;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+  border: 2px solid rgba(255, 255, 255, 0.8);
+}
+
+.pause-icon {
+  font-family: inherit;
+  font-weight: 800;
+  letter-spacing: -2px;
+  margin-right: -2px;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+/* 一時停止中のみ表示 */
+.player-overlay.paused .pause-indicator {
+  opacity: 1;
+  transform: scale(1);
 }
 
 

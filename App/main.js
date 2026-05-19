@@ -95,6 +95,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentVideoId = 'fYibOFCMpnE';
     let currentTheme = 'theme-cool';
     let currentSparkleEmoji = '✦';
+    let ytPlayer = null; // YouTube Player API インスタンス
+    let isApiReady = false;
 
     // LocalStorageから配列を読み込み
     let favoriteIds = JSON.parse(localStorage.getItem('fav_ids') || '[]');
@@ -400,9 +402,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const playVideo = (videoId, skipHistory = false) => {
         currentVideoId = videoId;
         
-        // プレイヤーの書き換え（選曲時はユーザー操作直後のため、常にミュートなしで自動再生）
-        const embedUrl = `https://www.youtube.com/embed/${videoId}?enablejsapi=1&autoplay=1&mute=0`;
-        youtubePlayer.src = embedUrl;
+        // YouTube APIによる高速動画切り替え（API準備完了時）
+        if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
+            // 選曲時は自動再生、音声あり(mute=0)
+            ytPlayer.loadVideoById({
+                videoId: videoId,
+                startSeconds: 0
+            });
+            const overlay = document.getElementById('player-overlay');
+            if (overlay) overlay.classList.remove('paused');
+        } else {
+            // API準備前のフォールバック（iframeを直接更新）
+            const iframe = document.getElementById('youtube-player');
+            if (iframe) {
+                iframe.src = `https://www.youtube.com/embed/${videoId}?enablejsapi=1&autoplay=1&mute=0&controls=0`;
+            }
+        }
 
         // 履歴への追加
         if (!skipHistory) {
@@ -706,8 +721,61 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 
+    // --- 14. YouTube API コールバック & 透明オーバーレイ制御 ---
+    window.onYouTubeIframeAPIReady = () => {
+        ytPlayer = new YT.Player('youtube-player', {
+            videoId: currentVideoId,
+            playerVars: {
+                autoplay: 0,       // 初回ロード時は自動再生しない
+                controls: 0,       // 下部コントロールバーを非表示にする
+                disablekb: 1,      // キーボード操作無効
+                fs: 0,             // 全画面表示非表示
+                modestbranding: 1, // YouTubeロゴ最小化
+                rel: 0,            // 関連動画非表示
+                showinfo: 0,       // タイトル等非表示
+                iv_load_policy: 3  // アノテーション非表示
+            },
+            events: {
+                onReady: (event) => {
+                    isApiReady = true;
+                },
+                onStateChange: (event) => {
+                    const overlay = document.getElementById('player-overlay');
+                    if (!overlay) return;
+                    
+                    if (event.data === YT.PlayerState.PLAYING) {
+                        overlay.classList.remove('paused');
+                    } else if (event.data === YT.PlayerState.PAUSED) {
+                        overlay.classList.add('paused');
+                    } else if (event.data === YT.PlayerState.ENDED) {
+                        overlay.classList.add('paused');
+                    }
+                }
+            }
+        });
+    };
+
+    const setupPlayerOverlay = () => {
+        const overlay = document.getElementById('player-overlay');
+        if (!overlay) return;
+
+        overlay.addEventListener('click', () => {
+            if (!ytPlayer || typeof ytPlayer.getPlayerState !== 'function') return;
+
+            const state = ytPlayer.getPlayerState();
+            if (state === YT.PlayerState.PLAYING) {
+                ytPlayer.pauseVideo();
+                overlay.classList.add('paused');
+            } else {
+                ytPlayer.playVideo();
+                overlay.classList.remove('paused');
+            }
+        });
+    };
+
     // 初回ロード時の初期化
     applyTheme('theme-cool');
+    setupPlayerOverlay();
     document.addEventListener('click', initAudioContext, { once: true });
     document.addEventListener('touchstart', initAudioContext, { once: true });
 });

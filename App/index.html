@@ -9,6 +9,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="./style.css" />
+    <!-- YouTube Iframe Player API の読み込み -->
+    <script src="https://www.youtube.com/iframe_api"></script>
   </head>
   <body>
     <!-- 全体のコンテナ (スマホ縦画面前提 - 初期テーマはクール) -->
@@ -31,14 +33,13 @@
       <!-- 中央：YOUTUBE動画表示エリア (30%) -->
       <section class="video-area">
         <div class="video-container">
-          <iframe 
-            id="youtube-player"
-            src="https://www.youtube.com/embed/fYibOFCMpnE?enablejsapi=1" 
-            title="プレイ動画" 
-            frameborder="0" 
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-            allowfullscreen>
-          </iframe>
+          <div id="youtube-player"></div>
+          <!-- 没入感確保のための透明な操作オーバーレイ（タップで停止/再開） -->
+          <div id="player-overlay" class="player-overlay">
+            <div class="pause-indicator">
+              <span class="pause-icon">||</span>
+            </div>
+          </div>
         </div>
       </section>
 
