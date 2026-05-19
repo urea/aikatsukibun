@@ -119,6 +119,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let lastTimeUpdate = performance.now();
     let lastPlayerTime = 0;
 
+    // 動画と譜面のタイミング同期用オフセット (秒単位)
+    // YouTubeプレイヤーの再生遅延を補正するためにデフォルトで -0.15秒 (150ms早く流す) を適用
+    const BEATMAP_OFFSET = -0.15;
+
     const getSmoothCurrentTime = () => {
         if (!ytPlayer || typeof ytPlayer.getPlayerState !== 'function') return 0;
         if (ytPlayer.getPlayerState() !== YT.PlayerState.PLAYING) {
@@ -149,7 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
             activeNotes.forEach(note => {
                 if (note.state !== 'active') return;
 
-                const timeDiff = note.time - currentTime;
+                const timeDiff = (note.time + BEATMAP_OFFSET) - currentTime;
 
                 // 3秒未来から0.5秒過去までの範囲でノーツDOMを作成・破棄
                 if (!note.element && timeDiff <= 3.0 && timeDiff >= -0.5) {
@@ -228,7 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 最も時間的に近いノーツを探索
         activeNotes.forEach(note => {
             if (note.state !== 'active' || note.type !== expectedColor) return;
-            const diff = Math.abs(note.time - currentTime);
+            const diff = Math.abs((note.time + BEATMAP_OFFSET) - currentTime);
             if (diff < minDiff) {
                 minDiff = diff;
                 closestNote = note;

@@ -41,6 +41,28 @@
         </div>
       </section>
 
+      <!-- リズムゲーム用UIコンテナ (動画エリアとタップエリアの間に配置) -->
+      <div id="game-container" class="game-container hidden">
+        <div class="game-info">
+          <div class="info-item">
+            <span class="info-label">SCORE</span>
+            <span id="score-val" class="info-value">000000</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">COMBO</span>
+            <span id="combo-val" class="info-value">0</span>
+          </div>
+        </div>
+        <div class="lane-outer">
+          <!-- 判定ポイントを示す白円 -->
+          <div class="lane-judgeline"></div>
+          <!-- ノーツが流れるコンテナ -->
+          <div id="lane-notes-container" class="lane-notes-container"></div>
+        </div>
+        <!-- PERFECT / GREAT / GOOD / MISS の判定ポップアップ表示位置 -->
+        <div id="judgement-display" class="judgement-display"></div>
+      </div>
+
       <!-- 下部：タップエリア (40%) -->
       <section class="tap-area">
         <!-- 背景のパーティクルエフェクト描画用コンテナ -->
@@ -62,28 +84,6 @@
       <!-- 空白エリア (20%) -->
       <footer class="footer-area">
         <div class="audience-glow"></div>
-        
-        <!-- リズムゲーム用UIコンテナ (譜面対応曲でのみ表示) -->
-        <div id="game-container" class="game-container hidden">
-          <div class="game-info">
-            <div class="info-item">
-              <span class="info-label">SCORE</span>
-              <span id="score-val" class="info-value">000000</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">COMBO</span>
-              <span id="combo-val" class="info-value">0</span>
-            </div>
-          </div>
-          <div class="lane-outer">
-            <!-- 判定ポイントを示す白円 -->
-            <div class="lane-judgeline"></div>
-            <!-- ノーツが流れるコンテナ -->
-            <div id="lane-notes-container" class="lane-notes-container"></div>
-          </div>
-          <!-- PERFECT / GREAT / GOOD / MISS の判定ポップアップ表示位置 -->
-          <div id="judgement-display" class="judgement-display"></div>
-        </div>
       </footer>
 
       <!-- ==================== モーダルウィンドウ群 ==================== -->
