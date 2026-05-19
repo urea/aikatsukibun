@@ -1,1941 +1,4160 @@
 {
   "metadata": {
-    "source_video": "Dev\\Tools\\demo.mp4",
-    "total_notes": 322,
-    "threshold_used": 25.0
+    "source_video": "Dev/Tools/demo.mp4",
+    "total_notes": 415,
+    "threshold_used": 22.0,
+    "tracking": true
   },
   "beatmap": [
     {
       "beat_index": 1,
-      "time": 2.333,
+      "time": 1.8,
       "type": "green",
-      "intensity": 193.29
+      "intensity": 41.62,
+      "detected_pos": [
+        368,
+        206
+      ]
     },
     {
       "beat_index": 2,
-      "time": 2.967,
-      "type": "yellow",
-      "intensity": 29.08
+      "time": 2.333,
+      "type": "green",
+      "intensity": 25.25,
+      "detected_pos": [
+        384,
+        202
+      ]
     },
     {
       "beat_index": 3,
-      "time": 4.433,
-      "type": "green",
-      "intensity": 36.07
+      "time": 3.067,
+      "type": "red",
+      "intensity": 30.54,
+      "detected_pos": [
+        144,
+        271
+      ]
     },
     {
       "beat_index": 4,
-      "time": 4.533,
+      "time": 3.367,
       "type": "red",
-      "intensity": 30.37
+      "intensity": 35.33,
+      "detected_pos": [
+        112,
+        250
+      ]
     },
     {
       "beat_index": 5,
-      "time": 5.033,
-      "type": "yellow",
-      "intensity": 49.11
+      "time": 3.667,
+      "type": "red",
+      "intensity": 37.08,
+      "detected_pos": [
+        94,
+        254
+      ]
     },
     {
       "beat_index": 6,
-      "time": 5.167,
-      "type": "green",
-      "intensity": 64.22
+      "time": 3.967,
+      "type": "red",
+      "intensity": 41.92,
+      "detected_pos": [
+        72,
+        210
+      ]
     },
     {
       "beat_index": 7,
-      "time": 5.233,
-      "type": "yellow",
-      "intensity": 54.7
+      "time": 4.1,
+      "type": "green",
+      "intensity": 44.0,
+      "detected_pos": [
+        312,
+        325
+      ]
     },
     {
       "beat_index": 8,
-      "time": 5.3,
-      "type": "red",
-      "intensity": 72.49
+      "time": 4.233,
+      "type": "yellow",
+      "intensity": 28.54,
+      "detected_pos": [
+        152,
+        299
+      ]
     },
     {
       "beat_index": 9,
-      "time": 5.433,
-      "type": "yellow",
-      "intensity": 70.79
+      "time": 4.333,
+      "type": "green",
+      "intensity": 44.33,
+      "detected_pos": [
+        284,
+        285
+      ]
     },
     {
       "beat_index": 10,
-      "time": 5.7,
-      "type": "yellow",
-      "intensity": 52.4
+      "time": 4.8,
+      "type": "red",
+      "intensity": 52.55,
+      "detected_pos": [
+        62,
+        186
+      ]
     },
     {
       "beat_index": 11,
-      "time": 5.733,
-      "type": "red",
-      "intensity": 83.28
+      "time": 4.867,
+      "type": "green",
+      "intensity": 28.73,
+      "detected_pos": [
+        350,
+        319
+      ]
     },
     {
       "beat_index": 12,
-      "time": 6.0,
+      "time": 5.1,
       "type": "green",
-      "intensity": 32.93
+      "intensity": 32.03,
+      "detected_pos": [
+        348,
+        309
+      ]
     },
     {
       "beat_index": 13,
-      "time": 6.267,
+      "time": 5.367,
       "type": "yellow",
-      "intensity": 71.99
+      "intensity": 31.05,
+      "detected_pos": [
+        123,
+        300
+      ]
     },
     {
       "beat_index": 14,
-      "time": 6.3,
-      "type": "red",
-      "intensity": 35.3
+      "time": 5.5,
+      "type": "green",
+      "intensity": 28.98,
+      "detected_pos": [
+        385,
+        295
+      ]
     },
     {
       "beat_index": 15,
-      "time": 6.5,
-      "type": "yellow",
-      "intensity": 93.67
+      "time": 5.567,
+      "type": "red",
+      "intensity": 35.41,
+      "detected_pos": [
+        263,
+        287
+      ]
     },
     {
       "beat_index": 16,
-      "time": 6.7,
+      "time": 5.8,
       "type": "yellow",
-      "intensity": 48.61
+      "intensity": 34.21,
+      "detected_pos": [
+        64,
+        285
+      ]
     },
     {
       "beat_index": 17,
-      "time": 8.2,
-      "type": "yellow",
-      "intensity": 29.63
+      "time": 5.9,
+      "type": "red",
+      "intensity": 94.73,
+      "detected_pos": [
+        262,
+        306
+      ]
     },
     {
       "beat_index": 18,
-      "time": 8.5,
-      "type": "yellow",
-      "intensity": 25.93
+      "time": 5.9,
+      "type": "green",
+      "intensity": 229.22,
+      "detected_pos": [
+        373,
+        281
+      ]
     },
     {
       "beat_index": 19,
-      "time": 9.0,
-      "type": "green",
-      "intensity": 26.3
+      "time": 6.0,
+      "type": "yellow",
+      "intensity": 22.19,
+      "detected_pos": [
+        98,
+        322
+      ]
     },
     {
       "beat_index": 20,
-      "time": 9.333,
+      "time": 6.133,
       "type": "red",
-      "intensity": 30.34
+      "intensity": 24.56,
+      "detected_pos": [
+        148,
+        302
+      ]
     },
     {
       "beat_index": 21,
-      "time": 9.667,
-      "type": "yellow",
-      "intensity": 38.05
+      "time": 6.233,
+      "type": "green",
+      "intensity": 31.0,
+      "detected_pos": [
+        360,
+        269
+      ]
     },
     {
       "beat_index": 22,
-      "time": 10.5,
-      "type": "green",
-      "intensity": 33.01
+      "time": 6.367,
+      "type": "red",
+      "intensity": 223.56,
+      "detected_pos": [
+        240,
+        286
+      ]
     },
     {
       "beat_index": 23,
-      "time": 10.833,
-      "type": "red",
-      "intensity": 26.49
+      "time": 6.433,
+      "type": "green",
+      "intensity": 253.52,
+      "detected_pos": [
+        301,
+        334
+      ]
     },
     {
       "beat_index": 24,
-      "time": 11.167,
+      "time": 6.5,
       "type": "yellow",
-      "intensity": 29.56
+      "intensity": 32.31,
+      "detected_pos": [
+        95,
+        324
+      ]
     },
     {
       "beat_index": 25,
-      "time": 12.067,
-      "type": "green",
-      "intensity": 29.92
+      "time": 6.6,
+      "type": "red",
+      "intensity": 214.59,
+      "detected_pos": [
+        284,
+        318
+      ]
     },
     {
       "beat_index": 26,
-      "time": 12.4,
-      "type": "red",
-      "intensity": 25.94
+      "time": 6.7,
+      "type": "green",
+      "intensity": 30.0,
+      "detected_pos": [
+        296,
+        322
+      ]
     },
     {
       "beat_index": 27,
-      "time": 12.733,
+      "time": 6.733,
       "type": "yellow",
-      "intensity": 36.78
+      "intensity": 40.37,
+      "detected_pos": [
+        137,
+        320
+      ]
     },
     {
       "beat_index": 28,
-      "time": 12.8,
-      "type": "green",
-      "intensity": 27.33
+      "time": 7.1,
+      "type": "yellow",
+      "intensity": 27.31,
+      "detected_pos": [
+        299,
+        303
+      ]
     },
     {
       "beat_index": 29,
-      "time": 13.1,
-      "type": "red",
-      "intensity": 25.04
+      "time": 7.1,
+      "type": "green",
+      "intensity": 75.31,
+      "detected_pos": [
+        378,
+        265
+      ]
     },
     {
       "beat_index": 30,
-      "time": 13.467,
-      "type": "yellow",
-      "intensity": 33.54
+      "time": 7.6,
+      "type": "green",
+      "intensity": 75.84,
+      "detected_pos": [
+        456,
+        290
+      ]
     },
     {
       "beat_index": 31,
-      "time": 13.567,
-      "type": "green",
-      "intensity": 29.73
+      "time": 8.1,
+      "type": "red",
+      "intensity": 23.06,
+      "detected_pos": [
+        402,
+        260
+      ]
     },
     {
       "beat_index": 32,
-      "time": 13.767,
-      "type": "red",
-      "intensity": 32.78
+      "time": 8.133,
+      "type": "yellow",
+      "intensity": 45.01,
+      "detected_pos": [
+        260,
+        284
+      ]
     },
     {
       "beat_index": 33,
-      "time": 14.067,
-      "type": "yellow",
-      "intensity": 43.62
+      "time": 8.167,
+      "type": "green",
+      "intensity": 148.12,
+      "detected_pos": [
+        419,
+        334
+      ]
     },
     {
       "beat_index": 34,
-      "time": 14.3,
+      "time": 8.4,
       "type": "green",
-      "intensity": 26.43
+      "intensity": 254.64,
+      "detected_pos": [
+        465,
+        306
+      ]
     },
     {
       "beat_index": 35,
-      "time": 15.033,
-      "type": "green",
-      "intensity": 31.39
+      "time": 8.5,
+      "type": "yellow",
+      "intensity": 25.08,
+      "detected_pos": [
+        259,
+        258
+      ]
     },
     {
       "beat_index": 36,
-      "time": 15.2,
-      "type": "yellow",
-      "intensity": 26.73
+      "time": 8.633,
+      "type": "green",
+      "intensity": 37.85,
+      "detected_pos": [
+        513,
+        334
+      ]
     },
     {
       "beat_index": 37,
-      "time": 15.333,
+      "time": 9.167,
       "type": "red",
-      "intensity": 29.33
+      "intensity": 185.2,
+      "detected_pos": [
+        396,
+        274
+      ]
     },
     {
       "beat_index": 38,
-      "time": 15.433,
+      "time": 9.333,
       "type": "green",
-      "intensity": 29.02
+      "intensity": 187.5,
+      "detected_pos": [
+        468,
+        334
+      ]
     },
     {
       "beat_index": 39,
-      "time": 15.767,
+      "time": 9.7,
       "type": "red",
-      "intensity": 37.84
+      "intensity": 32.36,
+      "detected_pos": [
+        318,
+        242
+      ]
     },
     {
       "beat_index": 40,
-      "time": 15.8,
-      "type": "green",
-      "intensity": 27.06
+      "time": 10.867,
+      "type": "yellow",
+      "intensity": 23.47,
+      "detected_pos": [
+        278,
+        336
+      ]
     },
     {
       "beat_index": 41,
-      "time": 16.167,
+      "time": 11.167,
       "type": "green",
-      "intensity": 27.88
+      "intensity": 212.8,
+      "detected_pos": [
+        512,
+        334
+      ]
     },
     {
       "beat_index": 42,
-      "time": 16.333,
-      "type": "yellow",
-      "intensity": 34.63
+      "time": 11.4,
+      "type": "red",
+      "intensity": 29.72,
+      "detected_pos": [
+        273,
+        277
+      ]
     },
     {
       "beat_index": 43,
-      "time": 16.367,
-      "type": "red",
-      "intensity": 36.17
+      "time": 11.6,
+      "type": "yellow",
+      "intensity": 29.08,
+      "detected_pos": [
+        251,
+        252
+      ]
     },
     {
       "beat_index": 44,
-      "time": 16.7,
-      "type": "yellow",
-      "intensity": 30.3
+      "time": 12.533,
+      "type": "red",
+      "intensity": 31.01,
+      "detected_pos": [
+        335,
+        239
+      ]
     },
     {
       "beat_index": 45,
-      "time": 17.1,
-      "type": "red",
-      "intensity": 34.56
+      "time": 12.9,
+      "type": "yellow",
+      "intensity": 22.79,
+      "detected_pos": [
+        265,
+        344
+      ]
     },
     {
       "beat_index": 46,
-      "time": 17.133,
-      "type": "yellow",
-      "intensity": 40.55
+      "time": 13.167,
+      "type": "red",
+      "intensity": 30.65,
+      "detected_pos": [
+        323,
+        238
+      ]
     },
     {
       "beat_index": 47,
-      "time": 17.8,
-      "type": "yellow",
-      "intensity": 44.98
+      "time": 13.333,
+      "type": "green",
+      "intensity": 211.11,
+      "detected_pos": [
+        502,
+        334
+      ]
     },
     {
       "beat_index": 48,
-      "time": 17.867,
-      "type": "red",
-      "intensity": 26.12
+      "time": 13.4,
+      "type": "yellow",
+      "intensity": 60.12,
+      "detected_pos": [
+        255,
+        247
+      ]
     },
     {
       "beat_index": 49,
-      "time": 19.5,
-      "type": "red",
-      "intensity": 30.51
+      "time": 14.167,
+      "type": "yellow",
+      "intensity": 36.67,
+      "detected_pos": [
+        261,
+        241
+      ]
     },
     {
       "beat_index": 50,
-      "time": 19.867,
-      "type": "red",
-      "intensity": 25.25
+      "time": 14.567,
+      "type": "yellow",
+      "intensity": 28.09,
+      "detected_pos": [
+        204,
+        330
+      ]
     },
     {
       "beat_index": 51,
-      "time": 21.933,
-      "type": "red",
-      "intensity": 30.98
+      "time": 14.767,
+      "type": "yellow",
+      "intensity": 46.82,
+      "detected_pos": [
+        99,
+        321
+      ]
     },
     {
       "beat_index": 52,
-      "time": 21.933,
-      "type": "green",
-      "intensity": 28.18
+      "time": 15.633,
+      "type": "red",
+      "intensity": 31.02,
+      "detected_pos": [
+        282,
+        240
+      ]
     },
     {
       "beat_index": 53,
-      "time": 22.433,
-      "type": "green",
-      "intensity": 82.95
+      "time": 15.833,
+      "type": "red",
+      "intensity": 29.46,
+      "detected_pos": [
+        282,
+        241
+      ]
     },
     {
       "beat_index": 54,
-      "time": 22.5,
+      "time": 16.2,
       "type": "yellow",
-      "intensity": 97.79
+      "intensity": 131.76,
+      "detected_pos": [
+        138,
+        296
+      ]
     },
     {
       "beat_index": 55,
-      "time": 22.567,
-      "type": "red",
-      "intensity": 38.89
+      "time": 16.2,
+      "type": "green",
+      "intensity": 225.87,
+      "detected_pos": [
+        405,
+        308
+      ]
     },
     {
       "beat_index": 56,
-      "time": 26.133,
-      "type": "red",
-      "intensity": 31.68
+      "time": 16.667,
+      "type": "yellow",
+      "intensity": 43.46,
+      "detected_pos": [
+        240,
+        257
+      ]
     },
     {
       "beat_index": 57,
-      "time": 27.167,
-      "type": "green",
-      "intensity": 27.43
+      "time": 16.867,
+      "type": "red",
+      "intensity": 141.83,
+      "detected_pos": [
+        237,
+        264
+      ]
     },
     {
       "beat_index": 58,
-      "time": 27.5,
+      "time": 16.967,
       "type": "green",
-      "intensity": 28.61
+      "intensity": 253.93,
+      "detected_pos": [
+        427,
+        334
+      ]
     },
     {
       "beat_index": 59,
-      "time": 29.8,
+      "time": 17.267,
       "type": "green",
-      "intensity": 33.69
+      "intensity": 255.0,
+      "detected_pos": [
+        428,
+        334
+      ]
     },
     {
       "beat_index": 60,
-      "time": 30.167,
+      "time": 17.6,
       "type": "green",
-      "intensity": 25.98
+      "intensity": 227.76,
+      "detected_pos": [
+        397,
+        335
+      ]
     },
     {
       "beat_index": 61,
-      "time": 30.467,
-      "type": "yellow",
-      "intensity": 34.91
+      "time": 17.833,
+      "type": "green",
+      "intensity": 234.94,
+      "detected_pos": [
+        378,
+        334
+      ]
     },
     {
       "beat_index": 62,
-      "time": 30.533,
-      "type": "green",
-      "intensity": 92.46
+      "time": 17.967,
+      "type": "red",
+      "intensity": 159.76,
+      "detected_pos": [
+        288,
+        240
+      ]
     },
     {
       "beat_index": 63,
-      "time": 30.833,
-      "type": "red",
-      "intensity": 30.36
+      "time": 18.067,
+      "type": "green",
+      "intensity": 117.78,
+      "detected_pos": [
+        381,
+        334
+      ]
     },
     {
       "beat_index": 64,
-      "time": 30.967,
-      "type": "yellow",
-      "intensity": 28.23
+      "time": 18.233,
+      "type": "red",
+      "intensity": 24.38,
+      "detected_pos": [
+        295,
+        239
+      ]
     },
     {
       "beat_index": 65,
-      "time": 30.967,
-      "type": "green",
-      "intensity": 118.04
+      "time": 19.2,
+      "type": "yellow",
+      "intensity": 26.91,
+      "detected_pos": [
+        319,
+        254
+      ]
     },
     {
       "beat_index": 66,
-      "time": 31.1,
+      "time": 19.5,
       "type": "red",
-      "intensity": 42.56
+      "intensity": 168.62,
+      "detected_pos": [
+        322,
+        238
+      ]
     },
     {
       "beat_index": 67,
-      "time": 31.267,
+      "time": 19.767,
       "type": "yellow",
-      "intensity": 104.36
+      "intensity": 105.48,
+      "detected_pos": [
+        329,
+        225
+      ]
     },
     {
       "beat_index": 68,
-      "time": 31.6,
+      "time": 19.8,
       "type": "red",
-      "intensity": 34.18
+      "intensity": 87.5,
+      "detected_pos": [
+        347,
+        239
+      ]
     },
     {
       "beat_index": 69,
-      "time": 31.667,
-      "type": "green",
-      "intensity": 83.78
+      "time": 20.167,
+      "type": "red",
+      "intensity": 121.05,
+      "detected_pos": [
+        323,
+        238
+      ]
     },
     {
       "beat_index": 70,
-      "time": 32.4,
-      "type": "red",
-      "intensity": 50.05
+      "time": 20.2,
+      "type": "yellow",
+      "intensity": 124.23,
+      "detected_pos": [
+        288,
+        234
+      ]
     },
     {
       "beat_index": 71,
-      "time": 32.433,
-      "type": "green",
-      "intensity": 26.55
+      "time": 20.767,
+      "type": "yellow",
+      "intensity": 255.0,
+      "detected_pos": [
+        244,
+        271
+      ]
     },
     {
       "beat_index": 72,
-      "time": 33.167,
-      "type": "yellow",
-      "intensity": 41.25
+      "time": 21.133,
+      "type": "red",
+      "intensity": 246.81,
+      "detected_pos": [
+        351,
+        267
+      ]
     },
     {
       "beat_index": 73,
-      "time": 33.2,
-      "type": "red",
-      "intensity": 26.67
+      "time": 21.133,
+      "type": "green",
+      "intensity": 252.54,
+      "detected_pos": [
+        200,
+        272
+      ]
     },
     {
       "beat_index": 74,
-      "time": 34.3,
-      "type": "yellow",
-      "intensity": 28.07
+      "time": 21.567,
+      "type": "green",
+      "intensity": 252.86,
+      "detected_pos": [
+        165,
+        291
+      ]
     },
     {
       "beat_index": 75,
-      "time": 35.067,
-      "type": "yellow",
-      "intensity": 43.67
+      "time": 21.767,
+      "type": "green",
+      "intensity": 251.3,
+      "detected_pos": [
+        151,
+        304
+      ]
     },
     {
       "beat_index": 76,
-      "time": 35.067,
+      "time": 22.233,
       "type": "red",
-      "intensity": 72.42
+      "intensity": 190.99,
+      "detected_pos": [
+        361,
+        326
+      ]
     },
     {
       "beat_index": 77,
-      "time": 35.067,
+      "time": 22.3,
       "type": "green",
-      "intensity": 73.43
+      "intensity": 247.64,
+      "detected_pos": [
+        189,
+        334
+      ]
     },
     {
       "beat_index": 78,
-      "time": 35.333,
-      "type": "yellow",
-      "intensity": 34.91
+      "time": 22.633,
+      "type": "red",
+      "intensity": 252.27,
+      "detected_pos": [
+        353,
+        309
+      ]
     },
     {
       "beat_index": 79,
-      "time": 35.4,
-      "type": "green",
-      "intensity": 25.98
+      "time": 22.767,
+      "type": "yellow",
+      "intensity": 154.59,
+      "detected_pos": [
+        221,
+        241
+      ]
     },
     {
       "beat_index": 80,
-      "time": 36.167,
-      "type": "yellow",
-      "intensity": 66.82
+      "time": 22.933,
+      "type": "green",
+      "intensity": 86.89,
+      "detected_pos": [
+        250,
+        279
+      ]
     },
     {
       "beat_index": 81,
-      "time": 36.2,
-      "type": "red",
-      "intensity": 37.66
+      "time": 22.967,
+      "type": "yellow",
+      "intensity": 32.31,
+      "detected_pos": [
+        240,
+        203
+      ]
     },
     {
       "beat_index": 82,
-      "time": 36.433,
+      "time": 24.5,
       "type": "red",
-      "intensity": 75.47
+      "intensity": 251.75,
+      "detected_pos": [
+        402,
+        328
+      ]
     },
     {
       "beat_index": 83,
-      "time": 36.433,
-      "type": "green",
-      "intensity": 148.9
+      "time": 25.133,
+      "type": "red",
+      "intensity": 86.4,
+      "detected_pos": [
+        366,
+        290
+      ]
     },
     {
       "beat_index": 84,
-      "time": 37.8,
-      "type": "yellow",
-      "intensity": 82.8
+      "time": 25.533,
+      "type": "red",
+      "intensity": 106.78,
+      "detected_pos": [
+        271,
+        320
+      ]
     },
     {
       "beat_index": 85,
-      "time": 37.8,
-      "type": "red",
-      "intensity": 64.03
+      "time": 26.0,
+      "type": "yellow",
+      "intensity": 130.41,
+      "detected_pos": [
+        169,
+        127
+      ]
     },
     {
       "beat_index": 86,
-      "time": 37.8,
-      "type": "green",
-      "intensity": 98.4
+      "time": 26.2,
+      "type": "yellow",
+      "intensity": 33.1,
+      "detected_pos": [
+        256,
+        157
+      ]
     },
     {
       "beat_index": 87,
-      "time": 38.167,
-      "type": "yellow",
-      "intensity": 90.43
+      "time": 26.4,
+      "type": "red",
+      "intensity": 52.04,
+      "detected_pos": [
+        324,
+        238
+      ]
     },
     {
       "beat_index": 88,
-      "time": 38.167,
-      "type": "red",
-      "intensity": 47.25
+      "time": 26.5,
+      "type": "yellow",
+      "intensity": 51.46,
+      "detected_pos": [
+        276,
+        103
+      ]
     },
     {
       "beat_index": 89,
-      "time": 38.633,
-      "type": "green",
-      "intensity": 28.02
+      "time": 26.667,
+      "type": "red",
+      "intensity": 50.07,
+      "detected_pos": [
+        331,
+        255
+      ]
     },
     {
       "beat_index": 90,
-      "time": 38.7,
+      "time": 26.7,
       "type": "yellow",
-      "intensity": 29.28
+      "intensity": 41.76,
+      "detected_pos": [
+        388,
+        112
+      ]
     },
     {
       "beat_index": 91,
-      "time": 38.7,
-      "type": "red",
-      "intensity": 35.51
+      "time": 26.7,
+      "type": "green",
+      "intensity": 75.99,
+      "detected_pos": [
+        213,
+        334
+      ]
     },
     {
       "beat_index": 92,
-      "time": 39.433,
+      "time": 27.067,
       "type": "red",
-      "intensity": 35.82
+      "intensity": 31.86,
+      "detected_pos": [
+        278,
+        240
+      ]
     },
     {
       "beat_index": 93,
-      "time": 39.567,
+      "time": 27.367,
       "type": "yellow",
-      "intensity": 30.72
+      "intensity": 64.09,
+      "detected_pos": [
+        275,
+        128
+      ]
     },
     {
       "beat_index": 94,
-      "time": 39.767,
-      "type": "yellow",
-      "intensity": 109.91
+      "time": 27.567,
+      "type": "green",
+      "intensity": 99.99,
+      "detected_pos": [
+        177,
+        334
+      ]
     },
     {
       "beat_index": 95,
-      "time": 39.8,
+      "time": 27.7,
       "type": "red",
-      "intensity": 76.04
+      "intensity": 97.41,
+      "detected_pos": [
+        218,
+        254
+      ]
     },
     {
       "beat_index": 96,
-      "time": 39.8,
-      "type": "green",
-      "intensity": 70.76
+      "time": 27.967,
+      "type": "red",
+      "intensity": 104.98,
+      "detected_pos": [
+        254,
+        244
+      ]
     },
     {
       "beat_index": 97,
-      "time": 40.933,
-      "type": "red",
-      "intensity": 37.61
+      "time": 28.2,
+      "type": "yellow",
+      "intensity": 70.24,
+      "detected_pos": [
+        276,
+        123
+      ]
     },
     {
       "beat_index": 98,
-      "time": 40.967,
-      "type": "yellow",
-      "intensity": 70.8
+      "time": 28.333,
+      "type": "red",
+      "intensity": 121.93,
+      "detected_pos": [
+        201,
+        259
+      ]
     },
     {
       "beat_index": 99,
-      "time": 41.167,
-      "type": "red",
-      "intensity": 32.89
+      "time": 28.467,
+      "type": "yellow",
+      "intensity": 46.1,
+      "detected_pos": [
+        230,
+        120
+      ]
     },
     {
       "beat_index": 100,
-      "time": 41.433,
-      "type": "green",
-      "intensity": 64.62
+      "time": 28.667,
+      "type": "red",
+      "intensity": 109.57,
+      "detected_pos": [
+        247,
+        245
+      ]
     },
     {
       "beat_index": 101,
-      "time": 41.7,
+      "time": 28.9,
       "type": "yellow",
-      "intensity": 37.12
+      "intensity": 79.87,
+      "detected_pos": [
+        296,
+        127
+      ]
     },
     {
       "beat_index": 102,
-      "time": 41.967,
-      "type": "yellow",
-      "intensity": 31.02
+      "time": 29.033,
+      "type": "green",
+      "intensity": 27.82,
+      "detected_pos": [
+        205,
+        334
+      ]
     },
     {
       "beat_index": 103,
-      "time": 42.4,
-      "type": "yellow",
-      "intensity": 34.14
+      "time": 29.067,
+      "type": "red",
+      "intensity": 100.58,
+      "detected_pos": [
+        244,
+        245
+      ]
     },
     {
       "beat_index": 104,
-      "time": 42.867,
-      "type": "yellow",
-      "intensity": 39.8
+      "time": 29.267,
+      "type": "green",
+      "intensity": 43.46,
+      "detected_pos": [
+        202,
+        334
+      ]
     },
     {
       "beat_index": 105,
-      "time": 42.9,
-      "type": "green",
-      "intensity": 30.05
+      "time": 29.333,
+      "type": "red",
+      "intensity": 108.36,
+      "detected_pos": [
+        253,
+        275
+      ]
     },
     {
       "beat_index": 106,
-      "time": 43.067,
-      "type": "red",
-      "intensity": 36.42
+      "time": 29.7,
+      "type": "yellow",
+      "intensity": 108.04,
+      "detected_pos": [
+        316,
+        117
+      ]
     },
     {
       "beat_index": 107,
-      "time": 43.133,
-      "type": "green",
-      "intensity": 32.05
+      "time": 29.767,
+      "type": "red",
+      "intensity": 109.07,
+      "detected_pos": [
+        247,
+        266
+      ]
     },
     {
       "beat_index": 108,
-      "time": 43.3,
-      "type": "yellow",
-      "intensity": 25.24
+      "time": 30.033,
+      "type": "red",
+      "intensity": 108.6,
+      "detected_pos": [
+        235,
+        273
+      ]
     },
     {
       "beat_index": 109,
-      "time": 43.333,
+      "time": 30.233,
       "type": "red",
-      "intensity": 35.18
+      "intensity": 113.58,
+      "detected_pos": [
+        280,
+        287
+      ]
     },
     {
       "beat_index": 110,
-      "time": 43.333,
-      "type": "green",
-      "intensity": 61.88
+      "time": 30.433,
+      "type": "yellow",
+      "intensity": 24.66,
+      "detected_pos": [
+        362,
+        60
+      ]
     },
     {
       "beat_index": 111,
-      "time": 43.533,
-      "type": "red",
-      "intensity": 42.15
+      "time": 30.433,
+      "type": "green",
+      "intensity": 26.57,
+      "detected_pos": [
+        154,
+        334
+      ]
     },
     {
       "beat_index": 112,
-      "time": 43.633,
-      "type": "green",
-      "intensity": 33.48
+      "time": 30.567,
+      "type": "red",
+      "intensity": 76.7,
+      "detected_pos": [
+        184,
+        238
+      ]
     },
     {
       "beat_index": 113,
-      "time": 43.733,
-      "type": "yellow",
-      "intensity": 29.05
+      "time": 30.933,
+      "type": "red",
+      "intensity": 31.89,
+      "detected_pos": [
+        250,
+        246
+      ]
     },
     {
       "beat_index": 114,
-      "time": 43.833,
-      "type": "red",
-      "intensity": 32.07
+      "time": 30.967,
+      "type": "green",
+      "intensity": 250.49,
+      "detected_pos": [
+        138,
+        334
+      ]
     },
     {
       "beat_index": 115,
-      "time": 43.967,
-      "type": "yellow",
-      "intensity": 28.76
+      "time": 31.267,
+      "type": "red",
+      "intensity": 179.03,
+      "detected_pos": [
+        315,
+        329
+      ]
     },
     {
       "beat_index": 116,
-      "time": 44.067,
-      "type": "red",
-      "intensity": 27.97
+      "time": 31.3,
+      "type": "green",
+      "intensity": 229.11,
+      "detected_pos": [
+        113,
+        282
+      ]
     },
     {
       "beat_index": 117,
-      "time": 44.3,
+      "time": 31.567,
       "type": "green",
-      "intensity": 112.55
+      "intensity": 254.99,
+      "detected_pos": [
+        118,
+        272
+      ]
     },
     {
       "beat_index": 118,
-      "time": 44.467,
+      "time": 31.633,
       "type": "red",
-      "intensity": 108.08
+      "intensity": 112.14,
+      "detected_pos": [
+        250,
+        312
+      ]
     },
     {
       "beat_index": 119,
-      "time": 44.5,
-      "type": "green",
-      "intensity": 39.88
+      "time": 31.7,
+      "type": "yellow",
+      "intensity": 211.99,
+      "detected_pos": [
+        380,
+        32
+      ]
     },
     {
       "beat_index": 120,
-      "time": 44.667,
-      "type": "red",
-      "intensity": 35.56
+      "time": 31.933,
+      "type": "yellow",
+      "intensity": 206.54,
+      "detected_pos": [
+        380,
+        40
+      ]
     },
     {
       "beat_index": 121,
-      "time": 44.733,
+      "time": 31.967,
       "type": "green",
-      "intensity": 104.35
+      "intensity": 26.09,
+      "detected_pos": [
+        62,
+        292
+      ]
     },
     {
       "beat_index": 122,
-      "time": 44.967,
-      "type": "green",
-      "intensity": 49.82
+      "time": 32.033,
+      "type": "red",
+      "intensity": 62.6,
+      "detected_pos": [
+        284,
+        344
+      ]
     },
     {
       "beat_index": 123,
-      "time": 45.467,
-      "type": "green",
-      "intensity": 55.81
+      "time": 32.167,
+      "type": "yellow",
+      "intensity": 229.63,
+      "detected_pos": [
+        391,
+        60
+      ]
     },
     {
       "beat_index": 124,
-      "time": 45.533,
-      "type": "yellow",
-      "intensity": 25.15
+      "time": 32.267,
+      "type": "red",
+      "intensity": 181.31,
+      "detected_pos": [
+        250,
+        312
+      ]
     },
     {
       "beat_index": 125,
-      "time": 45.667,
+      "time": 32.467,
       "type": "red",
-      "intensity": 36.08
+      "intensity": 121.52,
+      "detected_pos": [
+        256,
+        311
+      ]
     },
     {
       "beat_index": 126,
-      "time": 45.8,
-      "type": "yellow",
-      "intensity": 58.16
+      "time": 32.567,
+      "type": "green",
+      "intensity": 38.22,
+      "detected_pos": [
+        42,
+        297
+      ]
     },
     {
       "beat_index": 127,
-      "time": 45.8,
-      "type": "green",
-      "intensity": 93.49
+      "time": 32.633,
+      "type": "yellow",
+      "intensity": 85.19,
+      "detected_pos": [
+        438,
+        173
+      ]
     },
     {
       "beat_index": 128,
-      "time": 48.4,
+      "time": 32.8,
       "type": "red",
-      "intensity": 25.59
+      "intensity": 27.92,
+      "detected_pos": [
+        242,
+        313
+      ]
     },
     {
       "beat_index": 129,
-      "time": 49.267,
-      "type": "green",
-      "intensity": 26.7
+      "time": 33.0,
+      "type": "red",
+      "intensity": 27.11,
+      "detected_pos": [
+        240,
+        313
+      ]
     },
     {
       "beat_index": 130,
-      "time": 49.333,
+      "time": 33.2,
       "type": "yellow",
-      "intensity": 29.17
+      "intensity": 254.68,
+      "detected_pos": [
+        487,
+        203
+      ]
     },
     {
       "beat_index": 131,
-      "time": 49.367,
-      "type": "red",
-      "intensity": 51.11
+      "time": 33.233,
+      "type": "green",
+      "intensity": 24.66,
+      "detected_pos": [
+        38,
+        298
+      ]
     },
     {
       "beat_index": 132,
-      "time": 49.767,
-      "type": "green",
-      "intensity": 60.59
+      "time": 33.4,
+      "type": "red",
+      "intensity": 194.96,
+      "detected_pos": [
+        256,
+        309
+      ]
     },
     {
       "beat_index": 133,
-      "time": 49.967,
+      "time": 33.467,
       "type": "yellow",
-      "intensity": 38.79
+      "intensity": 39.77,
+      "detected_pos": [
+        415,
+        307
+      ]
     },
     {
       "beat_index": 134,
-      "time": 50.033,
+      "time": 33.567,
       "type": "green",
-      "intensity": 33.78
+      "intensity": 55.59,
+      "detected_pos": [
+        76,
+        224
+      ]
     },
     {
       "beat_index": 135,
-      "time": 50.167,
+      "time": 33.633,
       "type": "red",
-      "intensity": 27.47
+      "intensity": 185.59,
+      "detected_pos": [
+        234,
+        328
+      ]
     },
     {
       "beat_index": 136,
-      "time": 50.233,
-      "type": "yellow",
-      "intensity": 54.98
+      "time": 34.367,
+      "type": "red",
+      "intensity": 128.86,
+      "detected_pos": [
+        378,
+        240
+      ]
     },
     {
       "beat_index": 137,
-      "time": 50.233,
+      "time": 34.633,
       "type": "green",
-      "intensity": 26.16
+      "intensity": 244.24,
+      "detected_pos": [
+        131,
+        182
+      ]
     },
     {
       "beat_index": 138,
-      "time": 50.433,
+      "time": 35.1,
       "type": "yellow",
-      "intensity": 31.09
+      "intensity": 32.21,
+      "detected_pos": [
+        358,
+        175
+      ]
     },
     {
       "beat_index": 139,
-      "time": 50.433,
-      "type": "red",
-      "intensity": 32.11
+      "time": 35.1,
+      "type": "green",
+      "intensity": 26.6,
+      "detected_pos": [
+        46,
+        178
+      ]
     },
     {
       "beat_index": 140,
-      "time": 50.433,
-      "type": "green",
-      "intensity": 37.93
+      "time": 35.133,
+      "type": "red",
+      "intensity": 161.96,
+      "detected_pos": [
+        334,
+        217
+      ]
     },
     {
       "beat_index": 141,
-      "time": 50.667,
-      "type": "red",
-      "intensity": 83.46
+      "time": 35.367,
+      "type": "yellow",
+      "intensity": 38.82,
+      "detected_pos": [
+        308,
+        185
+      ]
     },
     {
       "beat_index": 142,
-      "time": 51.367,
-      "type": "yellow",
-      "intensity": 47.04
+      "time": 36.033,
+      "type": "green",
+      "intensity": 228.46,
+      "detected_pos": [
+        97,
+        194
+      ]
     },
     {
       "beat_index": 143,
-      "time": 51.467,
-      "type": "red",
-      "intensity": 146.34
+      "time": 36.267,
+      "type": "green",
+      "intensity": 243.43,
+      "detected_pos": [
+        65,
+        193
+      ]
     },
     {
       "beat_index": 144,
-      "time": 51.467,
-      "type": "green",
-      "intensity": 130.51
+      "time": 36.333,
+      "type": "yellow",
+      "intensity": 41.28,
+      "detected_pos": [
+        301,
+        137
+      ]
     },
     {
       "beat_index": 145,
-      "time": 51.633,
-      "type": "yellow",
-      "intensity": 80.56
+      "time": 36.7,
+      "type": "red",
+      "intensity": 135.76,
+      "detected_pos": [
+        397,
+        187
+      ]
     },
     {
       "beat_index": 146,
-      "time": 51.667,
-      "type": "green",
-      "intensity": 57.84
+      "time": 37.767,
+      "type": "yellow",
+      "intensity": 28.99,
+      "detected_pos": [
+        250,
+        174
+      ]
     },
     {
       "beat_index": 147,
-      "time": 52.233,
-      "type": "red",
-      "intensity": 41.41
+      "time": 37.933,
+      "type": "green",
+      "intensity": 253.27,
+      "detected_pos": [
+        73,
+        249
+      ]
     },
     {
       "beat_index": 148,
-      "time": 52.667,
+      "time": 37.967,
       "type": "yellow",
-      "intensity": 29.85
+      "intensity": 23.31,
+      "detected_pos": [
+        251,
+        208
+      ]
     },
     {
       "beat_index": 149,
-      "time": 52.8,
+      "time": 37.967,
       "type": "red",
-      "intensity": 43.83
+      "intensity": 26.04,
+      "detected_pos": [
+        322,
+        211
+      ]
     },
     {
       "beat_index": 150,
-      "time": 53.6,
-      "type": "red",
-      "intensity": 25.83
+      "time": 38.167,
+      "type": "green",
+      "intensity": 250.59,
+      "detected_pos": [
+        100,
+        297
+      ]
     },
     {
       "beat_index": 151,
-      "time": 54.0,
+      "time": 38.267,
       "type": "red",
-      "intensity": 25.7
+      "intensity": 255.0,
+      "detected_pos": [
+        272,
+        270
+      ]
     },
     {
       "beat_index": 152,
-      "time": 54.3,
-      "type": "yellow",
-      "intensity": 28.67
+      "time": 38.533,
+      "type": "green",
+      "intensity": 252.94,
+      "detected_pos": [
+        81,
+        300
+      ]
     },
     {
       "beat_index": 153,
-      "time": 54.367,
+      "time": 38.633,
       "type": "red",
-      "intensity": 27.09
+      "intensity": 131.64,
+      "detected_pos": [
+        316,
+        292
+      ]
     },
     {
       "beat_index": 154,
-      "time": 54.7,
+      "time": 39.367,
       "type": "yellow",
-      "intensity": 33.02
+      "intensity": 242.51,
+      "detected_pos": [
+        117,
+        292
+      ]
     },
     {
       "beat_index": 155,
-      "time": 55.133,
-      "type": "green",
-      "intensity": 27.24
+      "time": 39.367,
+      "type": "red",
+      "intensity": 139.27,
+      "detected_pos": [
+        285,
+        267
+      ]
     },
     {
       "beat_index": 156,
-      "time": 55.633,
-      "type": "green",
-      "intensity": 25.02
+      "time": 39.733,
+      "type": "yellow",
+      "intensity": 224.49,
+      "detected_pos": [
+        88,
+        295
+      ]
     },
     {
       "beat_index": 157,
-      "time": 56.5,
-      "type": "red",
-      "intensity": 25.22
+      "time": 39.867,
+      "type": "green",
+      "intensity": 30.45,
+      "detected_pos": [
+        38,
+        334
+      ]
     },
     {
       "beat_index": 158,
-      "time": 56.8,
+      "time": 39.967,
       "type": "yellow",
-      "intensity": 35.4
+      "intensity": 221.48,
+      "detected_pos": [
+        128,
+        293
+      ]
     },
     {
       "beat_index": 159,
-      "time": 57.0,
-      "type": "red",
-      "intensity": 26.22
+      "time": 40.2,
+      "type": "yellow",
+      "intensity": 22.57,
+      "detected_pos": [
+        89,
+        296
+      ]
     },
     {
       "beat_index": 160,
-      "time": 57.333,
-      "type": "red",
-      "intensity": 26.53
+      "time": 40.533,
+      "type": "yellow",
+      "intensity": 53.2,
+      "detected_pos": [
+        77,
+        252
+      ]
     },
     {
       "beat_index": 161,
-      "time": 57.7,
+      "time": 40.767,
       "type": "yellow",
-      "intensity": 30.18
+      "intensity": 37.58,
+      "detected_pos": [
+        77,
+        253
+      ]
     },
     {
       "beat_index": 162,
-      "time": 58.533,
+      "time": 40.8,
       "type": "red",
-      "intensity": 28.07
+      "intensity": 210.98,
+      "detected_pos": [
+        271,
+        244
+      ]
     },
     {
       "beat_index": 163,
-      "time": 58.833,
+      "time": 40.867,
       "type": "green",
-      "intensity": 40.62
+      "intensity": 254.69,
+      "detected_pos": [
+        38,
+        334
+      ]
     },
     {
       "beat_index": 164,
-      "time": 59.167,
-      "type": "green",
-      "intensity": 30.18
+      "time": 41.067,
+      "type": "red",
+      "intensity": 152.71,
+      "detected_pos": [
+        280,
+        237
+      ]
     },
     {
       "beat_index": 165,
-      "time": 59.233,
-      "type": "red",
-      "intensity": 51.36
+      "time": 41.3,
+      "type": "yellow",
+      "intensity": 197.36,
+      "detected_pos": [
+        85,
+        189
+      ]
     },
     {
       "beat_index": 166,
-      "time": 59.367,
-      "type": "green",
-      "intensity": 69.24
+      "time": 41.533,
+      "type": "red",
+      "intensity": 161.86,
+      "detected_pos": [
+        271,
+        282
+      ]
     },
     {
       "beat_index": 167,
-      "time": 59.6,
-      "type": "yellow",
-      "intensity": 32.46
+      "time": 41.767,
+      "type": "red",
+      "intensity": 151.5,
+      "detected_pos": [
+        226,
+        280
+      ]
     },
     {
       "beat_index": 168,
-      "time": 59.8,
-      "type": "yellow",
-      "intensity": 68.92
+      "time": 41.767,
+      "type": "green",
+      "intensity": 176.15,
+      "detected_pos": [
+        69,
+        292
+      ]
     },
     {
       "beat_index": 169,
-      "time": 60.033,
+      "time": 42.333,
       "type": "yellow",
-      "intensity": 114.91
+      "intensity": 174.96,
+      "detected_pos": [
+        80,
+        168
+      ]
     },
     {
       "beat_index": 170,
-      "time": 60.367,
-      "type": "red",
-      "intensity": 50.91
+      "time": 42.4,
+      "type": "green",
+      "intensity": 225.82,
+      "detected_pos": [
+        63,
+        266
+      ]
     },
     {
       "beat_index": 171,
-      "time": 60.467,
+      "time": 42.6,
       "type": "green",
-      "intensity": 109.86
+      "intensity": 158.4,
+      "detected_pos": [
+        39,
+        225
+      ]
     },
     {
       "beat_index": 172,
-      "time": 60.533,
+      "time": 42.633,
       "type": "yellow",
-      "intensity": 39.89
+      "intensity": 153.88,
+      "detected_pos": [
+        56,
+        211
+      ]
     },
     {
       "beat_index": 173,
-      "time": 60.6,
-      "type": "red",
-      "intensity": 119.2
+      "time": 42.833,
+      "type": "yellow",
+      "intensity": 77.33,
+      "detected_pos": [
+        85,
+        212
+      ]
     },
     {
       "beat_index": 174,
-      "time": 60.9,
+      "time": 42.833,
       "type": "green",
-      "intensity": 70.17
+      "intensity": 199.31,
+      "detected_pos": [
+        77,
+        198
+      ]
     },
     {
       "beat_index": 175,
-      "time": 61.1,
+      "time": 43.033,
       "type": "red",
-      "intensity": 26.75
+      "intensity": 126.64,
+      "detected_pos": [
+        245,
+        342
+      ]
     },
     {
       "beat_index": 176,
-      "time": 61.167,
+      "time": 43.033,
       "type": "green",
-      "intensity": 26.56
+      "intensity": 180.22,
+      "detected_pos": [
+        38,
+        212
+      ]
     },
     {
       "beat_index": 177,
-      "time": 61.233,
+      "time": 43.3,
       "type": "yellow",
-      "intensity": 146.97
+      "intensity": 145.52,
+      "detected_pos": [
+        80,
+        120
+      ]
     },
     {
       "beat_index": 178,
-      "time": 61.633,
+      "time": 43.333,
       "type": "green",
-      "intensity": 59.5
+      "intensity": 28.64,
+      "detected_pos": [
+        48,
+        203
+      ]
     },
     {
       "beat_index": 179,
-      "time": 61.667,
-      "type": "yellow",
-      "intensity": 41.78
+      "time": 43.433,
+      "type": "red",
+      "intensity": 139.15,
+      "detected_pos": [
+        272,
+        310
+      ]
     },
     {
       "beat_index": 180,
-      "time": 61.667,
-      "type": "red",
-      "intensity": 123.2
+      "time": 43.5,
+      "type": "yellow",
+      "intensity": 54.57,
+      "detected_pos": [
+        81,
+        32
+      ]
     },
     {
       "beat_index": 181,
-      "time": 62.4,
-      "type": "red",
-      "intensity": 56.4
+      "time": 43.567,
+      "type": "green",
+      "intensity": 246.58,
+      "detected_pos": [
+        38,
+        203
+      ]
     },
     {
       "beat_index": 182,
-      "time": 62.733,
-      "type": "green",
-      "intensity": 28.58
+      "time": 43.667,
+      "type": "red",
+      "intensity": 173.51,
+      "detected_pos": [
+        211,
+        279
+      ]
     },
     {
       "beat_index": 183,
-      "time": 62.767,
-      "type": "yellow",
-      "intensity": 27.78
+      "time": 43.833,
+      "type": "green",
+      "intensity": 46.7,
+      "detected_pos": [
+        63,
+        194
+      ]
     },
     {
       "beat_index": 184,
-      "time": 63.067,
-      "type": "green",
-      "intensity": 25.86
+      "time": 43.9,
+      "type": "yellow",
+      "intensity": 122.38,
+      "detected_pos": [
+        41,
+        67
+      ]
     },
     {
       "beat_index": 185,
-      "time": 63.167,
-      "type": "yellow",
-      "intensity": 50.21
+      "time": 44.2,
+      "type": "green",
+      "intensity": 36.72,
+      "detected_pos": [
+        38,
+        160
+      ]
     },
     {
       "beat_index": 186,
-      "time": 63.4,
-      "type": "red",
-      "intensity": 27.47
+      "time": 44.267,
+      "type": "yellow",
+      "intensity": 77.83,
+      "detected_pos": [
+        41,
+        67
+      ]
     },
     {
       "beat_index": 187,
-      "time": 63.467,
+      "time": 44.467,
       "type": "green",
-      "intensity": 27.93
+      "intensity": 216.01,
+      "detected_pos": [
+        39,
+        199
+      ]
     },
     {
       "beat_index": 188,
-      "time": 65.067,
-      "type": "yellow",
-      "intensity": 88.06
+      "time": 44.7,
+      "type": "green",
+      "intensity": 40.92,
+      "detected_pos": [
+        104,
+        182
+      ]
     },
     {
       "beat_index": 189,
-      "time": 65.067,
-      "type": "red",
-      "intensity": 93.15
+      "time": 45.133,
+      "type": "yellow",
+      "intensity": 71.05,
+      "detected_pos": [
+        40,
+        67
+      ]
     },
     {
       "beat_index": 190,
-      "time": 65.067,
+      "time": 45.3,
       "type": "green",
-      "intensity": 105.4
+      "intensity": 177.16,
+      "detected_pos": [
+        74,
+        223
+      ]
     },
     {
       "beat_index": 191,
-      "time": 65.333,
+      "time": 45.5,
       "type": "green",
-      "intensity": 53.29
+      "intensity": 194.75,
+      "detected_pos": [
+        60,
+        210
+      ]
     },
     {
       "beat_index": 192,
-      "time": 65.733,
-      "type": "yellow",
-      "intensity": 39.78
+      "time": 46.567,
+      "type": "green",
+      "intensity": 253.14,
+      "detected_pos": [
+        58,
+        202
+      ]
     },
     {
       "beat_index": 193,
-      "time": 66.1,
+      "time": 46.7,
       "type": "yellow",
-      "intensity": 98.13
+      "intensity": 101.89,
+      "detected_pos": [
+        82,
+        91
+      ]
     },
     {
       "beat_index": 194,
-      "time": 66.133,
-      "type": "red",
-      "intensity": 34.6
+      "time": 47.067,
+      "type": "yellow",
+      "intensity": 116.68,
+      "detected_pos": [
+        125,
+        62
+      ]
     },
     {
       "beat_index": 195,
-      "time": 66.367,
-      "type": "green",
-      "intensity": 28.72
+      "time": 47.3,
+      "type": "yellow",
+      "intensity": 152.37,
+      "detected_pos": [
+        82,
+        93
+      ]
     },
     {
       "beat_index": 196,
-      "time": 66.4,
+      "time": 47.5,
       "type": "red",
-      "intensity": 38.94
+      "intensity": 219.91,
+      "detected_pos": [
+        195,
+        307
+      ]
     },
     {
       "beat_index": 197,
-      "time": 67.8,
-      "type": "yellow",
-      "intensity": 64.61
+      "time": 47.7,
+      "type": "green",
+      "intensity": 255.0,
+      "detected_pos": [
+        82,
+        238
+      ]
     },
     {
       "beat_index": 198,
-      "time": 67.8,
-      "type": "red",
-      "intensity": 64.0
+      "time": 47.867,
+      "type": "yellow",
+      "intensity": 134.21,
+      "detected_pos": [
+        44,
+        50
+      ]
     },
     {
       "beat_index": 199,
-      "time": 67.8,
-      "type": "green",
-      "intensity": 97.12
+      "time": 48.067,
+      "type": "yellow",
+      "intensity": 32.37,
+      "detected_pos": [
+        83,
+        101
+      ]
     },
     {
       "beat_index": 200,
-      "time": 68.167,
+      "time": 48.4,
       "type": "yellow",
-      "intensity": 76.91
+      "intensity": 96.12,
+      "detected_pos": [
+        83,
+        100
+      ]
     },
     {
       "beat_index": 201,
-      "time": 68.167,
+      "time": 48.6,
       "type": "red",
-      "intensity": 55.57
+      "intensity": 251.59,
+      "detected_pos": [
+        184,
+        310
+      ]
     },
     {
       "beat_index": 202,
-      "time": 68.633,
+      "time": 48.767,
       "type": "yellow",
-      "intensity": 27.18
+      "intensity": 167.18,
+      "detected_pos": [
+        82,
+        86
+      ]
     },
     {
       "beat_index": 203,
-      "time": 68.633,
-      "type": "green",
-      "intensity": 30.33
+      "time": 49.167,
+      "type": "red",
+      "intensity": 129.79,
+      "detected_pos": [
+        174,
+        290
+      ]
     },
     {
       "beat_index": 204,
-      "time": 68.7,
-      "type": "red",
-      "intensity": 35.64
+      "time": 49.2,
+      "type": "yellow",
+      "intensity": 179.06,
+      "detected_pos": [
+        41,
+        64
+      ]
     },
     {
       "beat_index": 205,
-      "time": 69.433,
-      "type": "red",
-      "intensity": 25.43
+      "time": 49.233,
+      "type": "green",
+      "intensity": 38.18,
+      "detected_pos": [
+        44,
+        214
+      ]
     },
     {
       "beat_index": 206,
-      "time": 69.6,
-      "type": "yellow",
-      "intensity": 33.0
+      "time": 49.433,
+      "type": "green",
+      "intensity": 249.95,
+      "detected_pos": [
+        39,
+        208
+      ]
     },
     {
       "beat_index": 207,
-      "time": 69.8,
+      "time": 49.633,
       "type": "yellow",
-      "intensity": 82.8
+      "intensity": 111.21,
+      "detected_pos": [
+        41,
+        65
+      ]
     },
     {
       "beat_index": 208,
-      "time": 69.833,
+      "time": 49.833,
       "type": "red",
-      "intensity": 68.39
+      "intensity": 252.31,
+      "detected_pos": [
+        181,
+        301
+      ]
     },
     {
       "beat_index": 209,
-      "time": 69.833,
-      "type": "green",
-      "intensity": 39.56
+      "time": 49.867,
+      "type": "yellow",
+      "intensity": 163.3,
+      "detected_pos": [
+        41,
+        67
+      ]
     },
     {
       "beat_index": 210,
-      "time": 70.967,
+      "time": 50.1,
       "type": "yellow",
-      "intensity": 118.26
+      "intensity": 79.56,
+      "detected_pos": [
+        82,
+        87
+      ]
     },
     {
       "beat_index": 211,
-      "time": 70.967,
-      "type": "red",
-      "intensity": 94.59
+      "time": 50.167,
+      "type": "green",
+      "intensity": 168.64,
+      "detected_pos": [
+        38,
+        114
+      ]
     },
     {
       "beat_index": 212,
-      "time": 71.367,
-      "type": "yellow",
-      "intensity": 36.72
+      "time": 50.2,
+      "type": "red",
+      "intensity": 252.81,
+      "detected_pos": [
+        142,
+        318
+      ]
     },
     {
       "beat_index": 213,
-      "time": 71.533,
-      "type": "red",
-      "intensity": 63.14
+      "time": 50.333,
+      "type": "yellow",
+      "intensity": 244.63,
+      "detected_pos": [
+        114,
+        117
+      ]
     },
     {
       "beat_index": 214,
-      "time": 71.567,
-      "type": "yellow",
-      "intensity": 28.56
+      "time": 50.5,
+      "type": "red",
+      "intensity": 255.0,
+      "detected_pos": [
+        63,
+        319
+      ]
     },
     {
       "beat_index": 215,
-      "time": 71.767,
-      "type": "red",
-      "intensity": 63.37
+      "time": 50.533,
+      "type": "green",
+      "intensity": 32.01,
+      "detected_pos": [
+        65,
+        50
+      ]
     },
     {
       "beat_index": 216,
-      "time": 71.833,
+      "time": 50.667,
       "type": "yellow",
-      "intensity": 101.79
+      "intensity": 112.27,
+      "detected_pos": [
+        174,
+        177
+      ]
     },
     {
       "beat_index": 217,
-      "time": 72.633,
-      "type": "green",
-      "intensity": 36.59
+      "time": 50.867,
+      "type": "yellow",
+      "intensity": 28.4,
+      "detected_pos": [
+        176,
+        129
+      ]
     },
     {
       "beat_index": 218,
-      "time": 73.167,
-      "type": "yellow",
-      "intensity": 30.34
+      "time": 51.5,
+      "type": "green",
+      "intensity": 198.36,
+      "detected_pos": [
+        38,
+        60
+      ]
     },
     {
       "beat_index": 219,
-      "time": 73.667,
-      "type": "red",
-      "intensity": 39.55
+      "time": 51.567,
+      "type": "yellow",
+      "intensity": 104.27,
+      "detected_pos": [
+        218,
+        224
+      ]
     },
     {
       "beat_index": 220,
-      "time": 73.733,
+      "time": 51.7,
       "type": "green",
-      "intensity": 40.46
+      "intensity": 84.12,
+      "detected_pos": [
+        95,
+        85
+      ]
     },
     {
       "beat_index": 221,
-      "time": 73.767,
-      "type": "yellow",
-      "intensity": 101.49
+      "time": 51.9,
+      "type": "green",
+      "intensity": 31.92,
+      "detected_pos": [
+        67,
+        50
+      ]
     },
     {
       "beat_index": 222,
-      "time": 74.0,
-      "type": "green",
-      "intensity": 53.39
+      "time": 52.233,
+      "type": "yellow",
+      "intensity": 121.7,
+      "detected_pos": [
+        222,
+        143
+      ]
     },
     {
       "beat_index": 223,
-      "time": 74.067,
-      "type": "yellow",
-      "intensity": 40.88
+      "time": 52.267,
+      "type": "green",
+      "intensity": 37.28,
+      "detected_pos": [
+        125,
+        51
+      ]
     },
     {
       "beat_index": 224,
-      "time": 74.2,
+      "time": 52.4,
       "type": "red",
-      "intensity": 37.05
+      "intensity": 255.0,
+      "detected_pos": [
+        50,
+        318
+      ]
     },
     {
       "beat_index": 225,
-      "time": 74.4,
-      "type": "green",
-      "intensity": 33.56
+      "time": 52.667,
+      "type": "red",
+      "intensity": 255.0,
+      "detected_pos": [
+        64,
+        326
+      ]
     },
     {
       "beat_index": 226,
-      "time": 74.433,
-      "type": "red",
-      "intensity": 61.6
+      "time": 52.9,
+      "type": "yellow",
+      "intensity": 227.08,
+      "detected_pos": [
+        229,
+        208
+      ]
     },
     {
       "beat_index": 227,
-      "time": 74.9,
+      "time": 53.933,
       "type": "yellow",
-      "intensity": 130.95
+      "intensity": 123.69,
+      "detected_pos": [
+        297,
+        232
+      ]
     },
     {
       "beat_index": 228,
-      "time": 74.9,
+      "time": 54.167,
       "type": "red",
-      "intensity": 95.39
+      "intensity": 214.04,
+      "detected_pos": [
+        216,
+        291
+      ]
     },
     {
       "beat_index": 229,
-      "time": 75.2,
-      "type": "red",
-      "intensity": 34.39
+      "time": 54.333,
+      "type": "yellow",
+      "intensity": 51.2,
+      "detected_pos": [
+        242,
+        333
+      ]
     },
     {
       "beat_index": 230,
-      "time": 75.2,
-      "type": "green",
-      "intensity": 37.4
+      "time": 54.367,
+      "type": "red",
+      "intensity": 155.74,
+      "detected_pos": [
+        259,
+        318
+      ]
     },
     {
       "beat_index": 231,
-      "time": 75.233,
-      "type": "yellow",
-      "intensity": 55.05
+      "time": 54.4,
+      "type": "green",
+      "intensity": 229.37,
+      "detected_pos": [
+        341,
+        53
+      ]
     },
     {
       "beat_index": 232,
-      "time": 75.4,
-      "type": "red",
-      "intensity": 124.52
+      "time": 54.667,
+      "type": "yellow",
+      "intensity": 87.34,
+      "detected_pos": [
+        194,
+        303
+      ]
     },
     {
       "beat_index": 233,
-      "time": 75.567,
-      "type": "yellow",
-      "intensity": 26.56
+      "time": 55.133,
+      "type": "green",
+      "intensity": 241.54,
+      "detected_pos": [
+        317,
+        51
+      ]
     },
     {
       "beat_index": 234,
-      "time": 76.0,
-      "type": "red",
-      "intensity": 28.12
+      "time": 55.267,
+      "type": "yellow",
+      "intensity": 123.43,
+      "detected_pos": [
+        291,
+        344
+      ]
     },
     {
       "beat_index": 235,
-      "time": 76.0,
-      "type": "green",
-      "intensity": 28.24
+      "time": 55.633,
+      "type": "red",
+      "intensity": 142.86,
+      "detected_pos": [
+        284,
+        249
+      ]
     },
     {
       "beat_index": 236,
-      "time": 76.2,
+      "time": 55.7,
       "type": "yellow",
-      "intensity": 36.36
+      "intensity": 93.19,
+      "detected_pos": [
+        272,
+        300
+      ]
     },
     {
       "beat_index": 237,
-      "time": 76.4,
-      "type": "red",
-      "intensity": 27.18
+      "time": 56.133,
+      "type": "yellow",
+      "intensity": 49.62,
+      "detected_pos": [
+        263,
+        254
+      ]
     },
     {
       "beat_index": 238,
-      "time": 76.433,
-      "type": "yellow",
-      "intensity": 66.12
+      "time": 56.167,
+      "type": "green",
+      "intensity": 246.09,
+      "detected_pos": [
+        315,
+        131
+      ]
     },
     {
       "beat_index": 239,
-      "time": 76.567,
-      "type": "green",
-      "intensity": 80.73
+      "time": 56.3,
+      "type": "red",
+      "intensity": 30.24,
+      "detected_pos": [
+        312,
+        238
+      ]
     },
     {
       "beat_index": 240,
-      "time": 76.667,
-      "type": "red",
-      "intensity": 96.36
+      "time": 56.433,
+      "type": "green",
+      "intensity": 216.6,
+      "detected_pos": [
+        300,
+        144
+      ]
     },
     {
       "beat_index": 241,
-      "time": 76.733,
+      "time": 56.567,
       "type": "yellow",
-      "intensity": 59.75
+      "intensity": 30.34,
+      "detected_pos": [
+        298,
+        281
+      ]
     },
     {
       "beat_index": 242,
-      "time": 76.8,
+      "time": 56.9,
       "type": "green",
-      "intensity": 72.7
+      "intensity": 190.58,
+      "detected_pos": [
+        277,
+        154
+      ]
     },
     {
       "beat_index": 243,
-      "time": 76.9,
+      "time": 56.933,
       "type": "red",
-      "intensity": 29.64
+      "intensity": 37.89,
+      "detected_pos": [
+        310,
+        239
+      ]
     },
     {
       "beat_index": 244,
-      "time": 77.0,
+      "time": 57.167,
       "type": "green",
-      "intensity": 73.89
+      "intensity": 247.21,
+      "detected_pos": [
+        290,
+        178
+      ]
     },
     {
       "beat_index": 245,
-      "time": 77.733,
-      "type": "red",
-      "intensity": 33.0
+      "time": 57.267,
+      "type": "yellow",
+      "intensity": 28.38,
+      "detected_pos": [
+        420,
+        315
+      ]
     },
     {
       "beat_index": 246,
-      "time": 79.067,
-      "type": "green",
-      "intensity": 25.91
+      "time": 57.267,
+      "type": "red",
+      "intensity": 169.06,
+      "detected_pos": [
+        365,
+        247
+      ]
     },
     {
       "beat_index": 247,
-      "time": 79.533,
+      "time": 57.533,
       "type": "yellow",
-      "intensity": 27.05
+      "intensity": 255.0,
+      "detected_pos": [
+        486,
+        329
+      ]
     },
     {
       "beat_index": 248,
-      "time": 80.467,
-      "type": "yellow",
-      "intensity": 26.41
+      "time": 57.8,
+      "type": "red",
+      "intensity": 23.97,
+      "detected_pos": [
+        346,
+        243
+      ]
     },
     {
       "beat_index": 249,
-      "time": 80.9,
-      "type": "red",
-      "intensity": 29.27
+      "time": 58.033,
+      "type": "yellow",
+      "intensity": 255.0,
+      "detected_pos": [
+        450,
+        285
+      ]
     },
     {
       "beat_index": 250,
-      "time": 81.067,
-      "type": "yellow",
-      "intensity": 26.54
+      "time": 58.1,
+      "type": "red",
+      "intensity": 104.73,
+      "detected_pos": [
+        328,
+        242
+      ]
     },
     {
       "beat_index": 251,
-      "time": 81.267,
-      "type": "yellow",
-      "intensity": 29.02
+      "time": 58.133,
+      "type": "green",
+      "intensity": 25.4,
+      "detected_pos": [
+        391,
+        79
+      ]
     },
     {
       "beat_index": 252,
-      "time": 81.567,
-      "type": "yellow",
-      "intensity": 69.34
+      "time": 58.333,
+      "type": "green",
+      "intensity": 23.31,
+      "detected_pos": [
+        411,
+        156
+      ]
     },
     {
       "beat_index": 253,
-      "time": 81.733,
-      "type": "red",
-      "intensity": 30.93
+      "time": 58.467,
+      "type": "yellow",
+      "intensity": 65.27,
+      "detected_pos": [
+        393,
+        288
+      ]
     },
     {
       "beat_index": 254,
-      "time": 82.033,
-      "type": "yellow",
-      "intensity": 66.74
+      "time": 58.5,
+      "type": "red",
+      "intensity": 97.03,
+      "detected_pos": [
+        346,
+        310
+      ]
     },
     {
       "beat_index": 255,
-      "time": 82.067,
-      "type": "red",
-      "intensity": 27.75
+      "time": 58.533,
+      "type": "green",
+      "intensity": 46.75,
+      "detected_pos": [
+        337,
+        156
+      ]
     },
     {
       "beat_index": 256,
-      "time": 82.433,
-      "type": "yellow",
-      "intensity": 58.28
+      "time": 58.8,
+      "type": "red",
+      "intensity": 35.64,
+      "detected_pos": [
+        449,
+        230
+      ]
     },
     {
       "beat_index": 257,
-      "time": 82.433,
+      "time": 59.133,
       "type": "red",
-      "intensity": 40.21
+      "intensity": 105.63,
+      "detected_pos": [
+        379,
+        205
+      ]
     },
     {
       "beat_index": 258,
-      "time": 82.433,
-      "type": "green",
-      "intensity": 44.04
+      "time": 59.733,
+      "type": "red",
+      "intensity": 143.51,
+      "detected_pos": [
+        225,
+        263
+      ]
     },
     {
       "beat_index": 259,
-      "time": 83.6,
-      "type": "red",
-      "intensity": 49.28
+      "time": 59.767,
+      "type": "yellow",
+      "intensity": 47.98,
+      "detected_pos": [
+        365,
+        60
+      ]
     },
     {
       "beat_index": 260,
-      "time": 84.3,
-      "type": "yellow",
-      "intensity": 28.51
+      "time": 60.033,
+      "type": "green",
+      "intensity": 197.4,
+      "detected_pos": [
+        318,
+        64
+      ]
     },
     {
       "beat_index": 261,
-      "time": 84.3,
+      "time": 60.067,
       "type": "red",
-      "intensity": 30.01
+      "intensity": 198.18,
+      "detected_pos": [
+        302,
+        293
+      ]
     },
     {
       "beat_index": 262,
-      "time": 84.733,
-      "type": "yellow",
-      "intensity": 57.23
+      "time": 60.367,
+      "type": "red",
+      "intensity": 172.51,
+      "detected_pos": [
+        293,
+        316
+      ]
     },
     {
       "beat_index": 263,
-      "time": 85.0,
-      "type": "green",
-      "intensity": 34.51
+      "time": 61.233,
+      "type": "yellow",
+      "intensity": 96.05,
+      "detected_pos": [
+        512,
+        50
+      ]
     },
     {
       "beat_index": 264,
-      "time": 85.733,
-      "type": "green",
-      "intensity": 28.11
+      "time": 61.233,
+      "type": "red",
+      "intensity": 160.82,
+      "detected_pos": [
+        310,
+        330
+      ]
     },
     {
       "beat_index": 265,
-      "time": 86.7,
-      "type": "yellow",
-      "intensity": 33.49
+      "time": 61.233,
+      "type": "green",
+      "intensity": 209.56,
+      "detected_pos": [
+        386,
+        127
+      ]
     },
     {
       "beat_index": 266,
-      "time": 86.833,
-      "type": "red",
-      "intensity": 39.2
+      "time": 61.433,
+      "type": "green",
+      "intensity": 232.31,
+      "detected_pos": [
+        371,
+        94
+      ]
     },
     {
       "beat_index": 267,
-      "time": 87.2,
-      "type": "yellow",
-      "intensity": 41.08
+      "time": 61.6,
+      "type": "red",
+      "intensity": 124.49,
+      "detected_pos": [
+        250,
+        313
+      ]
     },
     {
       "beat_index": 268,
-      "time": 89.3,
+      "time": 61.667,
       "type": "yellow",
-      "intensity": 25.53
+      "intensity": 223.12,
+      "detected_pos": [
+        528,
+        61
+      ]
     },
     {
       "beat_index": 269,
-      "time": 89.7,
+      "time": 62.033,
       "type": "red",
-      "intensity": 26.56
+      "intensity": 65.56,
+      "detected_pos": [
+        284,
+        344
+      ]
     },
     {
       "beat_index": 270,
-      "time": 92.467,
-      "type": "yellow",
-      "intensity": 31.67
+      "time": 62.233,
+      "type": "red",
+      "intensity": 165.31,
+      "detected_pos": [
+        249,
+        312
+      ]
     },
     {
       "beat_index": 271,
-      "time": 94.367,
-      "type": "yellow",
-      "intensity": 59.39
+      "time": 62.533,
+      "type": "red",
+      "intensity": 44.04,
+      "detected_pos": [
+        250,
+        312
+      ]
     },
     {
       "beat_index": 272,
-      "time": 95.667,
-      "type": "yellow",
-      "intensity": 39.54
+      "time": 62.8,
+      "type": "red",
+      "intensity": 28.61,
+      "detected_pos": [
+        242,
+        312
+      ]
     },
     {
       "beat_index": 273,
-      "time": 95.867,
-      "type": "yellow",
-      "intensity": 34.85
+      "time": 62.933,
+      "type": "green",
+      "intensity": 255.0,
+      "detected_pos": [
+        568,
+        122
+      ]
     },
     {
       "beat_index": 274,
-      "time": 96.2,
+      "time": 63.133,
       "type": "red",
-      "intensity": 27.86
+      "intensity": 173.66,
+      "detected_pos": [
+        218,
+        312
+      ]
     },
     {
       "beat_index": 275,
-      "time": 98.9,
-      "type": "green",
-      "intensity": 34.43
+      "time": 63.267,
+      "type": "yellow",
+      "intensity": 255.0,
+      "detected_pos": [
+        490,
+        135
+      ]
     },
     {
       "beat_index": 276,
-      "time": 99.367,
-      "type": "yellow",
-      "intensity": 35.59
+      "time": 63.333,
+      "type": "red",
+      "intensity": 30.52,
+      "detected_pos": [
+        239,
+        265
+      ]
     },
     {
       "beat_index": 277,
-      "time": 99.833,
-      "type": "red",
-      "intensity": 47.12
+      "time": 63.533,
+      "type": "yellow",
+      "intensity": 24.31,
+      "detected_pos": [
+        421,
+        245
+      ]
     },
     {
       "beat_index": 278,
-      "time": 99.9,
-      "type": "yellow",
-      "intensity": 33.14
+      "time": 63.567,
+      "type": "red",
+      "intensity": 160.07,
+      "detected_pos": [
+        181,
+        270
+      ]
     },
     {
       "beat_index": 279,
-      "time": 100.1,
-      "type": "red",
-      "intensity": 67.38
+      "time": 63.8,
+      "type": "yellow",
+      "intensity": 44.17,
+      "detected_pos": [
+        411,
+        249
+      ]
     },
     {
       "beat_index": 280,
-      "time": 100.2,
-      "type": "green",
-      "intensity": 31.63
+      "time": 63.867,
+      "type": "red",
+      "intensity": 130.42,
+      "detected_pos": [
+        110,
+        300
+      ]
     },
     {
       "beat_index": 281,
-      "time": 100.233,
-      "type": "yellow",
-      "intensity": 95.47
+      "time": 64.633,
+      "type": "green",
+      "intensity": 247.72,
+      "detected_pos": [
+        513,
+        167
+      ]
     },
     {
       "beat_index": 282,
-      "time": 100.567,
-      "type": "red",
-      "intensity": 36.01
+      "time": 65.1,
+      "type": "yellow",
+      "intensity": 36.46,
+      "detected_pos": [
+        358,
+        176
+      ]
     },
     {
       "beat_index": 283,
-      "time": 100.633,
-      "type": "green",
-      "intensity": 56.22
+      "time": 65.133,
+      "type": "red",
+      "intensity": 81.36,
+      "detected_pos": [
+        250,
+        71
+      ]
     },
     {
       "beat_index": 284,
-      "time": 101.4,
-      "type": "red",
-      "intensity": 50.66
+      "time": 66.233,
+      "type": "yellow",
+      "intensity": 49.86,
+      "detected_pos": [
+        358,
+        183
+      ]
     },
     {
       "beat_index": 285,
-      "time": 101.467,
-      "type": "green",
-      "intensity": 25.35
+      "time": 67.233,
+      "type": "red",
+      "intensity": 124.8,
+      "detected_pos": [
+        219,
+        59
+      ]
     },
     {
       "beat_index": 286,
-      "time": 101.7,
-      "type": "yellow",
-      "intensity": 26.1
+      "time": 67.567,
+      "type": "red",
+      "intensity": 42.38,
+      "detected_pos": [
+        263,
+        116
+      ]
     },
     {
       "beat_index": 287,
-      "time": 102.133,
+      "time": 67.967,
       "type": "yellow",
-      "intensity": 38.75
+      "intensity": 28.29,
+      "detected_pos": [
+        252,
+        207
+      ]
     },
     {
       "beat_index": 288,
-      "time": 102.4,
-      "type": "green",
-      "intensity": 26.64
+      "time": 67.967,
+      "type": "red",
+      "intensity": 29.62,
+      "detected_pos": [
+        322,
+        211
+      ]
     },
     {
       "beat_index": 289,
-      "time": 102.633,
-      "type": "green",
-      "intensity": 36.49
+      "time": 68.433,
+      "type": "yellow",
+      "intensity": 236.58,
+      "detected_pos": [
+        214,
+        298
+      ]
     },
     {
       "beat_index": 290,
-      "time": 104.067,
+      "time": 68.633,
       "type": "yellow",
-      "intensity": 114.82
+      "intensity": 229.17,
+      "detected_pos": [
+        257,
+        285
+      ]
     },
     {
       "beat_index": 291,
-      "time": 104.067,
+      "time": 69.133,
       "type": "red",
-      "intensity": 115.28
+      "intensity": 255.0,
+      "detected_pos": [
+        336,
+        206
+      ]
     },
     {
       "beat_index": 292,
-      "time": 104.067,
-      "type": "green",
-      "intensity": 74.8
+      "time": 69.4,
+      "type": "yellow",
+      "intensity": 250.86,
+      "detected_pos": [
+        201,
+        258
+      ]
     },
     {
       "beat_index": 293,
-      "time": 104.333,
-      "type": "yellow",
-      "intensity": 31.25
+      "time": 69.7,
+      "type": "red",
+      "intensity": 76.22,
+      "detected_pos": [
+        378,
+        162
+      ]
     },
     {
       "beat_index": 294,
-      "time": 105.133,
+      "time": 69.733,
       "type": "yellow",
-      "intensity": 67.42
+      "intensity": 226.75,
+      "detected_pos": [
+        208,
+        299
+      ]
     },
     {
       "beat_index": 295,
-      "time": 105.167,
-      "type": "red",
-      "intensity": 37.07
+      "time": 70.033,
+      "type": "yellow",
+      "intensity": 226.57,
+      "detected_pos": [
+        169,
+        300
+      ]
     },
     {
       "beat_index": 296,
-      "time": 105.4,
-      "type": "red",
-      "intensity": 69.16
+      "time": 70.333,
+      "type": "yellow",
+      "intensity": 196.85,
+      "detected_pos": [
+        154,
+        291
+      ]
     },
     {
       "beat_index": 297,
-      "time": 105.4,
-      "type": "green",
-      "intensity": 147.66
+      "time": 70.5,
+      "type": "red",
+      "intensity": 244.44,
+      "detected_pos": [
+        395,
+        157
+      ]
     },
     {
       "beat_index": 298,
-      "time": 106.767,
+      "time": 70.7,
       "type": "yellow",
-      "intensity": 71.59
+      "intensity": 193.54,
+      "detected_pos": [
+        102,
+        287
+      ]
     },
     {
       "beat_index": 299,
-      "time": 106.767,
-      "type": "red",
-      "intensity": 55.85
+      "time": 70.9,
+      "type": "green",
+      "intensity": 59.85,
+      "detected_pos": [
+        575,
+        334
+      ]
     },
     {
       "beat_index": 300,
-      "time": 106.767,
-      "type": "green",
-      "intensity": 94.82
+      "time": 70.933,
+      "type": "red",
+      "intensity": 164.25,
+      "detected_pos": [
+        428,
+        168
+      ]
     },
     {
       "beat_index": 301,
-      "time": 107.067,
-      "type": "red",
-      "intensity": 33.45
+      "time": 70.967,
+      "type": "yellow",
+      "intensity": 158.6,
+      "detected_pos": [
+        75,
+        304
+      ]
     },
     {
       "beat_index": 302,
-      "time": 107.133,
-      "type": "yellow",
-      "intensity": 65.66
+      "time": 71.167,
+      "type": "red",
+      "intensity": 114.1,
+      "detected_pos": [
+        463,
+        139
+      ]
     },
     {
       "beat_index": 303,
-      "time": 107.633,
+      "time": 71.2,
       "type": "yellow",
-      "intensity": 25.89
+      "intensity": 103.64,
+      "detected_pos": [
+        91,
+        344
+      ]
     },
     {
       "beat_index": 304,
-      "time": 107.633,
-      "type": "green",
-      "intensity": 26.01
+      "time": 71.933,
+      "type": "yellow",
+      "intensity": 248.74,
+      "detected_pos": [
+        80,
+        326
+      ]
     },
     {
       "beat_index": 305,
-      "time": 107.7,
-      "type": "red",
-      "intensity": 25.8
+      "time": 72.167,
+      "type": "yellow",
+      "intensity": 132.69,
+      "detected_pos": [
+        115,
+        344
+      ]
     },
     {
       "beat_index": 306,
-      "time": 108.433,
+      "time": 72.3,
       "type": "red",
-      "intensity": 32.2
+      "intensity": 128.45,
+      "detected_pos": [
+        450,
+        145
+      ]
     },
     {
       "beat_index": 307,
-      "time": 108.567,
+      "time": 72.4,
       "type": "yellow",
-      "intensity": 27.4
+      "intensity": 124.41,
+      "detected_pos": [
+        159,
+        344
+      ]
     },
     {
       "beat_index": 308,
-      "time": 108.8,
-      "type": "yellow",
-      "intensity": 104.39
+      "time": 72.5,
+      "type": "red",
+      "intensity": 26.12,
+      "detected_pos": [
+        456,
+        122
+      ]
     },
     {
       "beat_index": 309,
-      "time": 108.833,
-      "type": "red",
-      "intensity": 32.64
+      "time": 72.633,
+      "type": "yellow",
+      "intensity": 244.3,
+      "detected_pos": [
+        168,
+        329
+      ]
     },
     {
       "beat_index": 310,
-      "time": 110.133,
-      "type": "green",
-      "intensity": 43.33
+      "time": 72.733,
+      "type": "red",
+      "intensity": 56.19,
+      "detected_pos": [
+        452,
+        126
+      ]
     },
     {
       "beat_index": 311,
-      "time": 110.3,
+      "time": 72.833,
       "type": "yellow",
-      "intensity": 29.32
+      "intensity": 130.85,
+      "detected_pos": [
+        151,
+        344
+      ]
     },
     {
       "beat_index": 312,
-      "time": 110.7,
+      "time": 73.8,
       "type": "yellow",
-      "intensity": 57.44
+      "intensity": 62.64,
+      "detected_pos": [
+        121,
+        284
+      ]
     },
     {
       "beat_index": 313,
-      "time": 110.9,
-      "type": "green",
-      "intensity": 92.25
+      "time": 74.233,
+      "type": "red",
+      "intensity": 207.82,
+      "detected_pos": [
+        446,
+        185
+      ]
     },
     {
       "beat_index": 314,
-      "time": 110.933,
-      "type": "yellow",
-      "intensity": 29.78
+      "time": 74.533,
+      "type": "red",
+      "intensity": 202.96,
+      "detected_pos": [
+        429,
+        156
+      ]
     },
     {
       "beat_index": 315,
-      "time": 111.3,
+      "time": 74.7,
       "type": "yellow",
-      "intensity": 30.44
+      "intensity": 162.41,
+      "detected_pos": [
+        137,
+        281
+      ]
     },
     {
       "beat_index": 316,
-      "time": 112.167,
+      "time": 74.9,
       "type": "yellow",
-      "intensity": 53.09
+      "intensity": 27.12,
+      "detected_pos": [
+        114,
+        251
+      ]
     },
     {
       "beat_index": 317,
-      "time": 112.267,
-      "type": "green",
-      "intensity": 34.6
+      "time": 75.133,
+      "type": "yellow",
+      "intensity": 36.47,
+      "detected_pos": [
+        169,
+        282
+      ]
     },
     {
       "beat_index": 318,
-      "time": 112.367,
-      "type": "yellow",
-      "intensity": 96.98
+      "time": 75.267,
+      "type": "red",
+      "intensity": 163.88,
+      "detected_pos": [
+        424,
+        204
+      ]
     },
     {
       "beat_index": 319,
-      "time": 112.4,
+      "time": 75.733,
       "type": "red",
-      "intensity": 34.18
+      "intensity": 124.76,
+      "detected_pos": [
+        381,
+        133
+      ]
     },
     {
       "beat_index": 320,
-      "time": 112.833,
+      "time": 76.1,
       "type": "red",
-      "intensity": 26.9
+      "intensity": 107.57,
+      "detected_pos": [
+        364,
+        142
+      ]
     },
     {
       "beat_index": 321,
-      "time": 114.233,
+      "time": 76.4,
       "type": "yellow",
-      "intensity": 31.73
+      "intensity": 97.53,
+      "detected_pos": [
+        224,
+        320
+      ]
     },
     {
       "beat_index": 322,
-      "time": 114.467,
+      "time": 76.867,
+      "type": "yellow",
+      "intensity": 40.4,
+      "detected_pos": [
+        218,
+        340
+      ]
+    },
+    {
+      "beat_index": 323,
+      "time": 77.9,
+      "type": "yellow",
+      "intensity": 245.86,
+      "detected_pos": [
+        85,
+        309
+      ]
+    },
+    {
+      "beat_index": 324,
+      "time": 80.533,
+      "type": "yellow",
+      "intensity": 255.0,
+      "detected_pos": [
+        85,
+        302
+      ]
+    },
+    {
+      "beat_index": 325,
+      "time": 81.4,
       "type": "red",
-      "intensity": 38.58
+      "intensity": 153.67,
+      "detected_pos": [
+        328,
+        174
+      ]
+    },
+    {
+      "beat_index": 326,
+      "time": 81.6,
+      "type": "yellow",
+      "intensity": 58.37,
+      "detected_pos": [
+        218,
+        300
+      ]
+    },
+    {
+      "beat_index": 327,
+      "time": 81.9,
+      "type": "red",
+      "intensity": 154.73,
+      "detected_pos": [
+        313,
+        182
+      ]
+    },
+    {
+      "beat_index": 328,
+      "time": 82.1,
+      "type": "yellow",
+      "intensity": 212.28,
+      "detected_pos": [
+        283,
+        215
+      ]
+    },
+    {
+      "beat_index": 329,
+      "time": 82.367,
+      "type": "yellow",
+      "intensity": 72.45,
+      "detected_pos": [
+        317,
+        190
+      ]
+    },
+    {
+      "beat_index": 330,
+      "time": 82.4,
+      "type": "red",
+      "intensity": 68.52,
+      "detected_pos": [
+        216,
+        146
+      ]
+    },
+    {
+      "beat_index": 331,
+      "time": 82.567,
+      "type": "yellow",
+      "intensity": 246.47,
+      "detected_pos": [
+        307,
+        231
+      ]
+    },
+    {
+      "beat_index": 332,
+      "time": 83.033,
+      "type": "green",
+      "intensity": 44.89,
+      "detected_pos": [
+        605,
+        334
+      ]
+    },
+    {
+      "beat_index": 333,
+      "time": 83.2,
+      "type": "yellow",
+      "intensity": 180.05,
+      "detected_pos": [
+        269,
+        240
+      ]
+    },
+    {
+      "beat_index": 334,
+      "time": 83.4,
+      "type": "red",
+      "intensity": 59.41,
+      "detected_pos": [
+        213,
+        166
+      ]
+    },
+    {
+      "beat_index": 335,
+      "time": 83.5,
+      "type": "yellow",
+      "intensity": 25.39,
+      "detected_pos": [
+        122,
+        307
+      ]
+    },
+    {
+      "beat_index": 336,
+      "time": 83.733,
+      "type": "red",
+      "intensity": 134.28,
+      "detected_pos": [
+        169,
+        127
+      ]
+    },
+    {
+      "beat_index": 337,
+      "time": 84.067,
+      "type": "red",
+      "intensity": 140.27,
+      "detected_pos": [
+        157,
+        110
+      ]
+    },
+    {
+      "beat_index": 338,
+      "time": 85.4,
+      "type": "red",
+      "intensity": 149.4,
+      "detected_pos": [
+        138,
+        147
+      ]
+    },
+    {
+      "beat_index": 339,
+      "time": 86.467,
+      "type": "yellow",
+      "intensity": 86.53,
+      "detected_pos": [
+        272,
+        236
+      ]
+    },
+    {
+      "beat_index": 340,
+      "time": 86.6,
+      "type": "red",
+      "intensity": 156.61,
+      "detected_pos": [
+        128,
+        129
+      ]
+    },
+    {
+      "beat_index": 341,
+      "time": 87.167,
+      "type": "green",
+      "intensity": 92.29,
+      "detected_pos": [
+        606,
+        334
+      ]
+    },
+    {
+      "beat_index": 342,
+      "time": 87.2,
+      "type": "red",
+      "intensity": 147.01,
+      "detected_pos": [
+        101,
+        137
+      ]
+    },
+    {
+      "beat_index": 343,
+      "time": 87.267,
+      "type": "yellow",
+      "intensity": 181.95,
+      "detected_pos": [
+        289,
+        287
+      ]
+    },
+    {
+      "beat_index": 344,
+      "time": 88.067,
+      "type": "yellow",
+      "intensity": 158.52,
+      "detected_pos": [
+        276,
+        240
+      ]
+    },
+    {
+      "beat_index": 345,
+      "time": 89.067,
+      "type": "yellow",
+      "intensity": 24.87,
+      "detected_pos": [
+        251,
+        258
+      ]
+    },
+    {
+      "beat_index": 346,
+      "time": 89.267,
+      "type": "yellow",
+      "intensity": 26.41,
+      "detected_pos": [
+        244,
+        273
+      ]
+    },
+    {
+      "beat_index": 347,
+      "time": 89.733,
+      "type": "yellow",
+      "intensity": 37.43,
+      "detected_pos": [
+        202,
+        261
+      ]
+    },
+    {
+      "beat_index": 348,
+      "time": 90.0,
+      "type": "yellow",
+      "intensity": 23.17,
+      "detected_pos": [
+        214,
+        256
+      ]
+    },
+    {
+      "beat_index": 349,
+      "time": 90.133,
+      "type": "red",
+      "intensity": 106.36,
+      "detected_pos": [
+        120,
+        130
+      ]
+    },
+    {
+      "beat_index": 350,
+      "time": 90.267,
+      "type": "yellow",
+      "intensity": 223.4,
+      "detected_pos": [
+        170,
+        244
+      ]
+    },
+    {
+      "beat_index": 351,
+      "time": 90.567,
+      "type": "red",
+      "intensity": 77.8,
+      "detected_pos": [
+        179,
+        111
+      ]
+    },
+    {
+      "beat_index": 352,
+      "time": 91.233,
+      "type": "yellow",
+      "intensity": 187.11,
+      "detected_pos": [
+        290,
+        300
+      ]
+    },
+    {
+      "beat_index": 353,
+      "time": 92.167,
+      "type": "yellow",
+      "intensity": 78.18,
+      "detected_pos": [
+        382,
+        321
+      ]
+    },
+    {
+      "beat_index": 354,
+      "time": 92.2,
+      "type": "red",
+      "intensity": 151.59,
+      "detected_pos": [
+        192,
+        103
+      ]
+    },
+    {
+      "beat_index": 355,
+      "time": 92.567,
+      "type": "yellow",
+      "intensity": 58.36,
+      "detected_pos": [
+        490,
+        300
+      ]
+    },
+    {
+      "beat_index": 356,
+      "time": 92.867,
+      "type": "yellow",
+      "intensity": 24.08,
+      "detected_pos": [
+        440,
+        271
+      ]
+    },
+    {
+      "beat_index": 357,
+      "time": 92.967,
+      "type": "red",
+      "intensity": 109.69,
+      "detected_pos": [
+        371,
+        105
+      ]
+    },
+    {
+      "beat_index": 358,
+      "time": 93.067,
+      "type": "yellow",
+      "intensity": 210.51,
+      "detected_pos": [
+        400,
+        285
+      ]
+    },
+    {
+      "beat_index": 359,
+      "time": 93.467,
+      "type": "yellow",
+      "intensity": 126.18,
+      "detected_pos": [
+        303,
+        320
+      ]
+    },
+    {
+      "beat_index": 360,
+      "time": 93.633,
+      "type": "red",
+      "intensity": 132.06,
+      "detected_pos": [
+        356,
+        96
+      ]
+    },
+    {
+      "beat_index": 361,
+      "time": 93.967,
+      "type": "red",
+      "intensity": 95.34,
+      "detected_pos": [
+        405,
+        140
+      ]
+    },
+    {
+      "beat_index": 362,
+      "time": 94.033,
+      "type": "yellow",
+      "intensity": 81.04,
+      "detected_pos": [
+        326,
+        306
+      ]
+    },
+    {
+      "beat_index": 363,
+      "time": 94.233,
+      "type": "yellow",
+      "intensity": 74.9,
+      "detected_pos": [
+        338,
+        305
+      ]
+    },
+    {
+      "beat_index": 364,
+      "time": 96.033,
+      "type": "yellow",
+      "intensity": 69.18,
+      "detected_pos": [
+        228,
+        330
+      ]
+    },
+    {
+      "beat_index": 365,
+      "time": 96.167,
+      "type": "red",
+      "intensity": 190.53,
+      "detected_pos": [
+        378,
+        101
+      ]
+    },
+    {
+      "beat_index": 366,
+      "time": 96.867,
+      "type": "yellow",
+      "intensity": 25.27,
+      "detected_pos": [
+        185,
+        329
+      ]
+    },
+    {
+      "beat_index": 367,
+      "time": 97.233,
+      "type": "yellow",
+      "intensity": 66.33,
+      "detected_pos": [
+        213,
+        320
+      ]
+    },
+    {
+      "beat_index": 368,
+      "time": 97.6,
+      "type": "yellow",
+      "intensity": 25.51,
+      "detected_pos": [
+        176,
+        308
+      ]
+    },
+    {
+      "beat_index": 369,
+      "time": 98.0,
+      "type": "red",
+      "intensity": 142.86,
+      "detected_pos": [
+        334,
+        144
+      ]
+    },
+    {
+      "beat_index": 370,
+      "time": 98.7,
+      "type": "yellow",
+      "intensity": 28.38,
+      "detected_pos": [
+        176,
+        300
+      ]
+    },
+    {
+      "beat_index": 371,
+      "time": 99.033,
+      "type": "red",
+      "intensity": 55.28,
+      "detected_pos": [
+        290,
+        135
+      ]
+    },
+    {
+      "beat_index": 372,
+      "time": 99.333,
+      "type": "red",
+      "intensity": 23.62,
+      "detected_pos": [
+        303,
+        138
+      ]
+    },
+    {
+      "beat_index": 373,
+      "time": 99.467,
+      "type": "yellow",
+      "intensity": 23.53,
+      "detected_pos": [
+        233,
+        320
+      ]
+    },
+    {
+      "beat_index": 374,
+      "time": 99.7,
+      "type": "red",
+      "intensity": 26.62,
+      "detected_pos": [
+        261,
+        210
+      ]
+    },
+    {
+      "beat_index": 375,
+      "time": 99.8,
+      "type": "yellow",
+      "intensity": 31.75,
+      "detected_pos": [
+        233,
+        328
+      ]
+    },
+    {
+      "beat_index": 376,
+      "time": 100.2,
+      "type": "red",
+      "intensity": 154.52,
+      "detected_pos": [
+        308,
+        219
+      ]
+    },
+    {
+      "beat_index": 377,
+      "time": 100.267,
+      "type": "yellow",
+      "intensity": 28.85,
+      "detected_pos": [
+        200,
+        278
+      ]
+    },
+    {
+      "beat_index": 378,
+      "time": 100.3,
+      "type": "green",
+      "intensity": 26.27,
+      "detected_pos": [
+        606,
+        334
+      ]
+    },
+    {
+      "beat_index": 379,
+      "time": 100.667,
+      "type": "yellow",
+      "intensity": 216.24,
+      "detected_pos": [
+        250,
+        185
+      ]
+    },
+    {
+      "beat_index": 380,
+      "time": 101.0,
+      "type": "green",
+      "intensity": 47.97,
+      "detected_pos": [
+        606,
+        334
+      ]
+    },
+    {
+      "beat_index": 381,
+      "time": 101.267,
+      "type": "yellow",
+      "intensity": 30.22,
+      "detected_pos": [
+        370,
+        176
+      ]
+    },
+    {
+      "beat_index": 382,
+      "time": 102.2,
+      "type": "yellow",
+      "intensity": 247.17,
+      "detected_pos": [
+        414,
+        256
+      ]
+    },
+    {
+      "beat_index": 383,
+      "time": 102.2,
+      "type": "green",
+      "intensity": 59.54,
+      "detected_pos": [
+        605,
+        311
+      ]
+    },
+    {
+      "beat_index": 384,
+      "time": 102.233,
+      "type": "red",
+      "intensity": 137.59,
+      "detected_pos": [
+        324,
+        221
+      ]
+    },
+    {
+      "beat_index": 385,
+      "time": 102.433,
+      "type": "yellow",
+      "intensity": 23.72,
+      "detected_pos": [
+        446,
+        135
+      ]
+    },
+    {
+      "beat_index": 386,
+      "time": 102.6,
+      "type": "green",
+      "intensity": 59.56,
+      "detected_pos": [
+        606,
+        334
+      ]
+    },
+    {
+      "beat_index": 387,
+      "time": 103.0,
+      "type": "yellow",
+      "intensity": 50.42,
+      "detected_pos": [
+        571,
+        171
+      ]
+    },
+    {
+      "beat_index": 388,
+      "time": 103.267,
+      "type": "red",
+      "intensity": 130.93,
+      "detected_pos": [
+        326,
+        197
+      ]
+    },
+    {
+      "beat_index": 389,
+      "time": 103.567,
+      "type": "yellow",
+      "intensity": 154.75,
+      "detected_pos": [
+        528,
+        176
+      ]
+    },
+    {
+      "beat_index": 390,
+      "time": 103.967,
+      "type": "yellow",
+      "intensity": 28.55,
+      "detected_pos": [
+        573,
+        80
+      ]
+    },
+    {
+      "beat_index": 391,
+      "time": 104.067,
+      "type": "green",
+      "intensity": 41.5,
+      "detected_pos": [
+        606,
+        334
+      ]
+    },
+    {
+      "beat_index": 392,
+      "time": 104.133,
+      "type": "red",
+      "intensity": 155.72,
+      "detected_pos": [
+        336,
+        218
+      ]
+    },
+    {
+      "beat_index": 393,
+      "time": 104.267,
+      "type": "yellow",
+      "intensity": 228.31,
+      "detected_pos": [
+        516,
+        196
+      ]
+    },
+    {
+      "beat_index": 394,
+      "time": 104.433,
+      "type": "green",
+      "intensity": 237.72,
+      "detected_pos": [
+        568,
+        327
+      ]
+    },
+    {
+      "beat_index": 395,
+      "time": 105.7,
+      "type": "red",
+      "intensity": 135.38,
+      "detected_pos": [
+        396,
+        187
+      ]
+    },
+    {
+      "beat_index": 396,
+      "time": 106.033,
+      "type": "yellow",
+      "intensity": 109.56,
+      "detected_pos": [
+        483,
+        183
+      ]
+    },
+    {
+      "beat_index": 397,
+      "time": 106.767,
+      "type": "yellow",
+      "intensity": 58.3,
+      "detected_pos": [
+        434,
+        193
+      ]
+    },
+    {
+      "beat_index": 398,
+      "time": 106.767,
+      "type": "red",
+      "intensity": 36.25,
+      "detected_pos": [
+        336,
+        214
+      ]
+    },
+    {
+      "beat_index": 399,
+      "time": 106.967,
+      "type": "green",
+      "intensity": 22.62,
+      "detected_pos": [
+        606,
+        334
+      ]
+    },
+    {
+      "beat_index": 400,
+      "time": 107.0,
+      "type": "yellow",
+      "intensity": 33.95,
+      "detected_pos": [
+        438,
+        200
+      ]
+    },
+    {
+      "beat_index": 401,
+      "time": 108.633,
+      "type": "red",
+      "intensity": 75.75,
+      "detected_pos": [
+        283,
+        172
+      ]
+    },
+    {
+      "beat_index": 402,
+      "time": 109.033,
+      "type": "yellow",
+      "intensity": 227.16,
+      "detected_pos": [
+        511,
+        221
+      ]
+    },
+    {
+      "beat_index": 403,
+      "time": 109.9,
+      "type": "red",
+      "intensity": 104.7,
+      "detected_pos": [
+        287,
+        181
+      ]
+    },
+    {
+      "beat_index": 404,
+      "time": 109.9,
+      "type": "green",
+      "intensity": 47.54,
+      "detected_pos": [
+        606,
+        334
+      ]
+    },
+    {
+      "beat_index": 405,
+      "time": 110.1,
+      "type": "red",
+      "intensity": 99.38,
+      "detected_pos": [
+        287,
+        214
+      ]
+    },
+    {
+      "beat_index": 406,
+      "time": 110.467,
+      "type": "red",
+      "intensity": 133.63,
+      "detected_pos": [
+        326,
+        234
+      ]
+    },
+    {
+      "beat_index": 407,
+      "time": 110.733,
+      "type": "red",
+      "intensity": 49.88,
+      "detected_pos": [
+        351,
+        254
+      ]
+    },
+    {
+      "beat_index": 408,
+      "time": 110.867,
+      "type": "green",
+      "intensity": 23.08,
+      "detected_pos": [
+        599,
+        334
+      ]
+    },
+    {
+      "beat_index": 409,
+      "time": 110.9,
+      "type": "yellow",
+      "intensity": 108.71,
+      "detected_pos": [
+        540,
+        341
+      ]
+    },
+    {
+      "beat_index": 410,
+      "time": 112.2,
+      "type": "yellow",
+      "intensity": 60.77,
+      "detected_pos": [
+        614,
+        344
+      ]
+    },
+    {
+      "beat_index": 411,
+      "time": 112.2,
+      "type": "green",
+      "intensity": 44.73,
+      "detected_pos": [
+        605,
+        303
+      ]
+    },
+    {
+      "beat_index": 412,
+      "time": 112.5,
+      "type": "red",
+      "intensity": 22.35,
+      "detected_pos": [
+        365,
+        241
+      ]
+    },
+    {
+      "beat_index": 413,
+      "time": 113.667,
+      "type": "red",
+      "intensity": 184.48,
+      "detected_pos": [
+        339,
+        239
+      ]
+    },
+    {
+      "beat_index": 414,
+      "time": 114.667,
+      "type": "red",
+      "intensity": 163.75,
+      "detected_pos": [
+        324,
+        281
+      ]
+    },
+    {
+      "beat_index": 415,
+      "time": 115.867,
+      "type": "red",
+      "intensity": 168.14,
+      "detected_pos": [
+        334,
+        278
+      ]
     }
   ]
 }
