@@ -55,18 +55,29 @@ body {
 
 /* --- テーマ別カラー定義 --- */
 
-/* 💜 クールテーマ（硝子ドール用） */
+/* 💙 クールテーマ（ブルー系） */
 #app.theme-cool {
+  --theme-bg-start: #040d21;
+  --theme-bg-end: #0c2040;
+  --theme-panel-bg: rgba(12, 32, 64, 0.3);
+  --theme-panel-border: rgba(100, 180, 255, 0.3);
+  --theme-accent: #80c0ff;
+  --audience-color-1: #0077ff;
+  --audience-color-2: #0033aa;
+}
+
+/* 💜 セクシーテーマ（パープル・マゼンタ系） */
+#app.theme-sexy {
   --theme-bg-start: #0f021c;
   --theme-bg-end: #2d0047;
   --theme-panel-bg: rgba(45, 0, 71, 0.3);
   --theme-panel-border: rgba(224, 176, 255, 0.3);
   --theme-accent: #c39be3;
-  --audience-color-1: #6a0dad;
-  --audience-color-2: #2e0854;
+  --audience-color-1: #c71585;
+  --audience-color-2: #4b0082;
 }
 
-/* 💗 キュートテーマ（アイドル活動！用） */
+/* 💗 キュートテーマ（ピンク系） */
 #app.theme-cute {
   --theme-bg-start: #ff758c;
   --theme-bg-end: #ff7eb3;
@@ -77,7 +88,7 @@ body {
   --audience-color-2: #ff69b4;
 }
 
-/* 💛 ポップテーマ（ダイヤモンドハッピー用） */
+/* 💛 ポップテーマ（イエロー・オレンジ系） */
 #app.theme-pop {
   --theme-bg-start: #ff9900;
   --theme-bg-end: #33ccff;

@@ -262,7 +262,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 7. YouTubeプレイヤー連携＆テーマ変更処理 ---
     const applyTheme = (themeName) => {
-        const themes = ['theme-cool', 'theme-cute', 'theme-pop'];
+        const themes = ['theme-cool', 'theme-sexy', 'theme-cute', 'theme-pop'];
         themes.forEach(t => appContainer.classList.remove(t));
         appContainer.classList.add(themeName);
         currentTheme = themeName;
@@ -270,33 +270,35 @@ document.addEventListener('DOMContentLoaded', () => {
         // テーマごとのエフェクト絵文字設定
         if (themeName === 'theme-cute') currentSparkleEmoji = '♥';
         else if (themeName === 'theme-pop') currentSparkleEmoji = '★';
+        else if (themeName === 'theme-sexy') currentSparkleEmoji = '♦';
         else currentSparkleEmoji = '✦';
     };
 
     // 主要動画IDとテーマの直接マッピングテーブル（主要なプレイ動画のIDを正確に関連付け）
     const videoIdThemeMap = {
-        // クールテーマ (theme-cool)
-        'fYibOFCMpnE': 'theme-cool', // 硝子ドール (ユリカ)
-        'RjGv7Sa4YQo': 'theme-cool', // Signalize! (いちご/美月)
+        // クールテーマ (theme-cool - ブルー系)
+        'fYibOFCMpnE': 'theme-cool', // 硝子ドール (ユリカ - ※ユリカはクール)
+        'RjGv7Sa4YQo': 'theme-cool', // Signalize! (いちご/美月 - ※クール寄り)
         'Wy_pD0JgHR4': 'theme-cool', // G線上のShining Sky
         '2BN2jH1zlUA': 'theme-cool', // Growing for a dream
-        'bBYYGWyi_Ig': 'theme-cool', // Take Me Higher (美月/蘭/ユリカ)
         '7fJuYvx3ou0': 'theme-cool', // Dancing Baby
         '2t0vIcfvEeY': 'theme-cool', // チュチュ・バレリーナ
         'ltcZaHcarug': 'theme-cool', // タルト・タタン (スミレ)
-        'HvtKsOu48JU': 'theme-cool', // Moonlight destiny (美月)
-        'lsFTKcP9EyA': 'theme-cool', // Chica×Chica (珠璃/凛/まどか - ※情熱のCool/Sexy)
         'bz6ejOvk2_U': 'theme-cool', // 永遠の灯 (ユリカ)
-        'vHnENRwluK0': 'theme-cool', // 薄紅デイトリッパー (みやび)
-        'AyNw00TNrCA': 'theme-cool', // MY SHOWTIME! (凛)
-        'cvArV6EOysI': 'theme-cool', // 魅惑の九尾
-        'I8rX7mfQd90': 'theme-cool', // Trap of Love (蘭)
         'gtXHDzYyCA': 'theme-cool',  // prism spiral (あおい)
         'KsORl3_jgMQ': 'theme-cool', // 硝子ドール
-        'bz6ejOvk2_U': 'theme-cool', // 永遠の灯
         '3lFpoJyNmSs': 'theme-cool', // タルト・タタン
         
-        // キュートテーマ (theme-cute)
+        // セクシーテーマ (theme-sexy - パープル系)
+        'bBYYGWyi_Ig': 'theme-sexy', // Take Me Higher (美月/蘭/ユリカ - ※美月/蘭はセクシー)
+        'HvtKsOu48JU': 'theme-sexy', // Moonlight destiny (美月)
+        'lsFTKcP9EyA': 'theme-sexy', // Chica×Chica (珠璃/凛/まどか - ※情熱のセクシー)
+        'vHnENRwluK0': 'theme-sexy', // 薄紅デイトリッパー (みやび - ※セクシー/和風)
+        'AyNw00TNrCA': 'theme-sexy', // MY SHOWTIME! (凛 - ※クール/セクシー)
+        'cvArV6EOysI': 'theme-sexy', // 魅惑の九尾
+        'I8rX7mfQd90': 'theme-sexy', // Trap of Love (蘭)
+        
+        // キュートテーマ (theme-cute - ピンク系)
         'BDu-c8m3Elo': 'theme-cute', // アイドル活動！ (Rock)
         'tsKd6HdXvso': 'theme-cute', // アイドル活動！ (いちご)
         '3qqJ1WpF1Cg': 'theme-cute', // カレンダーガール (いちご/あおい/蘭)
@@ -317,7 +319,7 @@ document.addEventListener('DOMContentLoaded', () => {
         '3gVFHFm9Gxw': 'theme-cute', // カレンダーガール
         'xiXCHkBaOCg': 'theme-cute', // カレンダーガール
         
-        // ポップテーマ (theme-pop)
+        // ポップテーマ (theme-pop - イエロー系)
         'e9LkFKbRoq4': 'theme-pop',  // ダイヤモンドハッピー
         '4z31xQuGTp4': 'theme-pop',  // ダイヤモンドハッピー (いちご/あおい/蘭)
         'q5d60AsaN98': 'theme-pop',  // Angel Snow (おとめ)
@@ -343,7 +345,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const titleLower = title.toLowerCase();
 
-        // 2. タイトルのキーワード（キャラクター、ブランド、楽曲名）から詳細に自動判定
+        // 2. タイトルのキーワードから詳細に自動判定
         
         // --- キュート属性判定キーワード ---
         const cuteRegex = new RegExp([
@@ -357,18 +359,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // --- クール属性判定キーワード ---
         const coolRegex = new RegExp([
-            'クール', 'cool', 'パープル', 'purple', 'セクシー', 'sexy', 
-            '硝子', 'カレイドスコープ', '美月', 'ユリカ', '蘭', 'セイラ', 'スミレ', '凛', 'みやび', 
-            'エルザ', 'レイ', 'アリシア', 'スパイシーアゲハ', 'spicy', 'ロリゴシック', 'loli', 'goth', 
-            'サングリアロサ', 'sangria', 'シャイニング', 'shining', 'prism', 'spiral', 'trap', 'love', 
-            'precious', 'タルト', 'タタン', 'デイトリッパー', 'flicker', 'destiny', 'higher', 'chica', 
-            'チュチュ', 'シグナライズ', 'signalize', '永遠の灯', '薄紅', 'ダンシングディーヴァ'
+            'クール', 'cool', 'ブルー', 'blue', '青',
+            'あおい', 'ユリカ', 'スミレ', 'セイラ', 'ロリゴシック', 'loli', 'goth',
+            'フューチャリング', 'futuring', 'シャイニング', 'shining', 'prism', 'spiral',
+            'シグナライズ', 'signalize', '永遠の灯'
+        ].join('|'), 'i');
+
+        // --- セクシー属性判定キーワード ---
+        const sexyRegex = new RegExp([
+            'セクシー', 'sexy', 'パープル', 'purple', 'マゼンタ', 'バイオレット', '紫',
+            '美月', '蘭', '珠璃', 'みやび', '凛', 'エルザ', 'レイ', 'アリシア',
+            'スパイシーアゲハ', 'spicy', 'サングリアロサ', 'sangria', 'ラブクイーン', 'love queen',
+            'ラブムーンライズ', 'love moonrise', 'ロイヤルソード', 'royal sword',
+            'trap of love', 'precious', 'デイトリッパー', 'flicker', 'destiny', 'higher', 'chica',
+            'チュチュ', '薄紅', 'ダンシングディーヴァ'
         ].join('|'), 'i');
 
         // --- ポップ属性判定キーワード ---
         const popRegex = new RegExp([
             'ポップ', 'pop', 'イエロー', 'yellow', 'オレンジ', 'orange', 
-            'おとめ', 'きい', 'ひなき', '珠璃', 'みくる', 'ゆず', 'ニーナ',
+            'おとめ', 'きい', 'ひなき', 'みくる', 'ゆず', 'ニーナ',
             'ハッピーレインボー', 'rainbow', 'マジカルトイ', 'toy', 'ヴィヴィッドキス', 'vivid', 'kiss', 
             'ダイヤモンド', 'ダイヤ', 'クレヨン', 'サマー', 'ミエル', 'オトナモード', 'ポニーテール',
             'マジカルタイム', 'kira☆power', 'ハッピークレヨン', 'bubbles'
@@ -376,6 +386,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (cuteRegex.test(titleLower)) return 'theme-cute';
         if (coolRegex.test(titleLower)) return 'theme-cool';
+        if (sexyRegex.test(titleLower)) return 'theme-sexy';
         if (popRegex.test(titleLower)) return 'theme-pop';
 
         // 3. 全てに引っかからない場合は、一貫性を保つため動画IDのハッシュ値から決定（毎回同じ曲は必ず同じテーマになる）
@@ -383,8 +394,8 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let i = 0; i < videoId.length; i++) {
             hash += videoId.charCodeAt(i);
         }
-        const defaultThemes = ['theme-cute', 'theme-cool', 'theme-pop'];
-        return defaultThemes[hash % 3];
+        const defaultThemes = ['theme-cute', 'theme-cool', 'theme-sexy', 'theme-pop'];
+        return defaultThemes[hash % 4];
     };
 
     const playVideo = (videoId, skipHistory = false) => {
