@@ -1,6 +1,8 @@
 // AikatsuKibun (アイカツ！気分) インタラクティブ・ロジック (V3 超強化版)
 // YouTube動画連携、150曲選曲、お気に入り、再生履歴、おまかせ選曲、タイプ自動判別、シンセサイザーSE
 
+import beatmapData from './beatmap_fYibOFCMpnE.json';
+
 document.addEventListener('DOMContentLoaded', () => {
     // --- 1. 150曲以上の動画IDデータベース ---
     const initialVideoIds = [
@@ -97,6 +99,195 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentSparkleEmoji = '✦';
     let ytPlayer = null; // YouTube Player API インスタンス
     let isApiReady = false;
+
+    // --- 3.5 リズムゲーム用状態変数と同期・判定ロジック ---
+    const scoreVal = document.getElementById('score-val');
+    const comboVal = document.getElementById('combo-val');
+    const gameContainer = document.getElementById('game-container');
+    const laneNotesContainer = document.getElementById('lane-notes-container');
+    const judgementDisplay = document.getElementById('judgement-display');
+
+    let hasBeatmap = false;
+    let rawBeatmap = [];      // 全ノーツデータ
+    let activeNotes = [];     // 判定待ちノーツ
+    let score = 0;
+    let combo = 0;
+    let maxCombo = 0;
+    let animationFrameId = null;
+
+    // 高精度スクロール用タイムスタンプ補正
+    let lastTimeUpdate = performance.now();
+    let lastPlayerTime = 0;
+
+    const getSmoothCurrentTime = () => {
+        if (!ytPlayer || typeof ytPlayer.getPlayerState !== 'function') return 0;
+        if (ytPlayer.getPlayerState() !== YT.PlayerState.PLAYING) {
+            return ytPlayer.getCurrentTime();
+        }
+        const playerTime = ytPlayer.getCurrentTime();
+        const now = performance.now();
+        if (playerTime !== lastPlayerTime) {
+            lastPlayerTime = playerTime;
+            lastTimeUpdate = now;
+        }
+        const elapsed = (now - lastTimeUpdate) / 1000;
+        return playerTime + elapsed;
+    };
+
+    const startRhythmGameLoop = () => {
+        const NOTE_SPEED = 180; // スクロール速度 (px/sec)
+        const JUDGE_LINE_X = 60; // 判定ライン X座標
+
+        const updateLoop = () => {
+            if (!hasBeatmap || !ytPlayer || typeof ytPlayer.getPlayerState !== 'function') {
+                animationFrameId = requestAnimationFrame(updateLoop);
+                return;
+            }
+
+            const currentTime = getSmoothCurrentTime();
+
+            activeNotes.forEach(note => {
+                if (note.state !== 'active') return;
+
+                const timeDiff = note.time - currentTime;
+
+                // 3秒未来から0.5秒過去までの範囲でノーツDOMを作成・破棄
+                if (!note.element && timeDiff <= 3.0 && timeDiff >= -0.5) {
+                    const noteEl = document.createElement('div');
+                    noteEl.className = `lane-note ${note.type}`;
+                    laneNotesContainer.appendChild(noteEl);
+                    note.element = noteEl;
+                }
+
+                if (note.element) {
+                    if (timeDiff < -0.3) {
+                        // 通過して300ms経過で自動MISS判定
+                        note.state = 'miss';
+                        note.element.remove();
+                        note.element = null;
+                        triggerJudgement('MISS');
+                    } else {
+                        // 右から左へスクロール
+                        const x = JUDGE_LINE_X + timeDiff * NOTE_SPEED;
+                        note.element.style.left = `${x}px`;
+                    }
+                }
+            });
+
+            // 判定済みのノーツを配列から除外
+            activeNotes = activeNotes.filter(note => note.state === 'active');
+
+            animationFrameId = requestAnimationFrame(updateLoop);
+        };
+        animationFrameId = requestAnimationFrame(updateLoop);
+    };
+
+    const triggerJudgement = (status) => {
+        if (!judgementDisplay) return;
+
+        judgementDisplay.textContent = status;
+        judgementDisplay.className = `judgement-display pop judge-${status.toLowerCase()}`;
+
+        // CSSアニメーションのリセットと再発火
+        judgementDisplay.style.animation = 'none';
+        judgementDisplay.offsetHeight; // リフロー発生
+        judgementDisplay.style.animation = '';
+
+        if (status === 'MISS') {
+            combo = 0;
+        } else {
+            combo++;
+            if (combo > maxCombo) maxCombo = combo;
+
+            let points = 0;
+            if (status === 'PERFECT') points = 1000;
+            else if (status === 'GREAT') points = 500;
+            else if (status === 'GOOD') points = 200;
+
+            score += points;
+        }
+
+        if (comboVal) comboVal.textContent = combo;
+        if (scoreVal) scoreVal.textContent = String(score).padStart(6, '0');
+    };
+
+    const checkHit = (btnId) => {
+        const colorMap = {
+            'btn-red': 'red',
+            'btn-green': 'green',
+            'btn-yellow': 'yellow'
+        };
+        const expectedColor = colorMap[btnId];
+        if (!expectedColor) return;
+
+        const currentTime = getSmoothCurrentTime();
+
+        let closestNote = null;
+        let minDiff = Infinity;
+
+        // 最も時間的に近いノーツを探索
+        activeNotes.forEach(note => {
+            if (note.state !== 'active' || note.type !== expectedColor) return;
+            const diff = Math.abs(note.time - currentTime);
+            if (diff < minDiff) {
+                minDiff = diff;
+                closestNote = note;
+            }
+        });
+
+        // 300ms 以内なら判定適用
+        if (closestNote && minDiff <= 0.3) {
+            closestNote.state = 'hit';
+            if (closestNote.element) {
+                closestNote.element.remove();
+                closestNote.element = null;
+            }
+
+            if (minDiff <= 0.10) {
+                triggerJudgement('PERFECT');
+            } else if (minDiff <= 0.20) {
+                triggerJudgement('GREAT');
+            } else {
+                triggerJudgement('GOOD');
+            }
+        }
+    };
+
+    const initRhythmGame = (videoId) => {
+        score = 0;
+        combo = 0;
+        if (scoreVal) scoreVal.textContent = '000000';
+        if (comboVal) comboVal.textContent = '0';
+        if (judgementDisplay) {
+            judgementDisplay.className = 'judgement-display';
+            judgementDisplay.textContent = '';
+        }
+        if (laneNotesContainer) laneNotesContainer.innerHTML = '';
+
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = null;
+        }
+
+        // 今回対応した曲のみゲームを有効化
+        if (videoId === 'fYibOFCMpnE') {
+            hasBeatmap = true;
+            rawBeatmap = beatmapData.beatmap || [];
+            activeNotes = rawBeatmap.map(note => ({
+                ...note,
+                element: null,
+                state: 'active'
+            }));
+
+            if (gameContainer) gameContainer.classList.remove('hidden');
+            startRhythmGameLoop();
+        } else {
+            hasBeatmap = false;
+            rawBeatmap = [];
+            activeNotes = [];
+            if (gameContainer) gameContainer.classList.add('hidden');
+        }
+    };
 
     // LocalStorageから配列を読み込み
     let favoriteIds = JSON.parse(localStorage.getItem('fav_ids') || '[]');
@@ -210,6 +401,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (navigator.vibrate) navigator.vibrate(15);
         playTapSound();
         createSparkleParticles(btn);
+
+        // リズムゲーム判定
+        if (hasBeatmap) {
+            checkHit(btnId);
+        }
     };
 
     // --- 6. イベントリスナー登録 (ボタン操作系) ---
@@ -430,6 +626,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const theme = detectTheme(detail.title, videoId);
             applyTheme(theme);
         });
+
+        // 譜面状態の初期化切り替え
+        initRhythmGame(videoId);
     };
 
     // --- 8. NoEmbed APIによる非同期情報取得 ---
@@ -796,6 +995,7 @@ document.addEventListener('DOMContentLoaded', () => {
     applyTheme('theme-cool');
     setupPlayerOverlay();
     initYouTubeAPI(); // 動的読み込みと初期化の開始
+    initRhythmGame(currentVideoId); // リズムゲームの初期起動
     document.addEventListener('click', initAudioContext, { once: true });
     document.addEventListener('touchstart', initAudioContext, { once: true });
 });
