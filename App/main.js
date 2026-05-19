@@ -53,7 +53,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 2. 要素の取得 ---
     const appContainer = document.getElementById('app');
-    const songSelect = document.getElementById('song-select');
     const youtubePlayer = document.getElementById('youtube-player');
     const sparkleContainer = document.getElementById('sparkle-container');
 
@@ -90,12 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'btn-yellow': document.getElementById('btn-yellow')
     };
 
-    // 固定のデフォルト3曲設定
-    const defaultSongs = {
-        'cool_glass': { theme: 'theme-cool', videoId: 'fYibOFCMpnE', sparkleEmoji: '✦', title: '硝子ドール' },
-        'cute_katsudo': { theme: 'theme-cute', videoId: 'BDu-c8m3Elo', sparkleEmoji: '♥', title: 'アイドル活動！' },
-        'pop_happy': { theme: 'theme-pop', videoId: 'e9LkFKbRoq4', sparkleEmoji: '★', title: 'ダイヤHappy' }
-    };
+
 
     // --- 3. 状態管理 (State) ---
     let currentVideoId = 'fYibOFCMpnE';
@@ -605,16 +599,6 @@ document.addEventListener('DOMContentLoaded', () => {
         playVideo(randomId);
     });
 
-    // --- 14. 既存のセレクトボックス楽曲切り替えとの同期 ---
-    if (songSelect) {
-        songSelect.addEventListener('change', (e) => {
-            const key = e.target.value;
-            const song = defaultSongs[key];
-            if (song) {
-                playVideo(song.videoId);
-            }
-        });
-    }
 
     // 初回ロード時の初期化
     applyTheme('theme-cool');
