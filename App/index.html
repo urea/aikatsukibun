@@ -39,6 +39,16 @@
         </div>
       </section>
 
+      <!-- コントロールパネル：ボタン群 (グラスモルフィズムUI) -->
+      <nav class="control-panel">
+        <button id="ctrl-shuffle" class="ctrl-btn" title="おまかせ選曲">☘️ おまかせ</button>
+        <button id="ctrl-select" class="ctrl-btn" title="動画リストから選ぶ">📋 リスト</button>
+        <button id="ctrl-favorites" class="ctrl-btn" title="お気に入り">⭐ お気に入り</button>
+        <button id="ctrl-history" class="ctrl-btn" title="履歴">🕒 履歴</button>
+        <button id="ctrl-add" class="ctrl-btn" title="動画を追加">➕ 追加</button>
+        <button id="ctrl-help" class="ctrl-btn" title="遊び方">❓ 遊び方</button>
+      </nav>
+
       <!-- 下部：タップエリア (40%) -->
       <section class="tap-area">
         <!-- 背景のパーティクルエフェクト描画用コンテナ -->
@@ -61,6 +71,97 @@
       <footer class="footer-area">
         <div class="audience-glow"></div>
       </footer>
+
+      <!-- ==================== モーダルウィンドウ群 ==================== -->
+
+      <!-- 共通すりガラス背景オーバーレイ -->
+      <div id="modal-overlay" class="modal-overlay hidden"></div>
+
+      <!-- ① 遊び方説明モーダル -->
+      <div id="modal-help" class="premium-modal hidden">
+        <header class="modal-header">
+          <h2>❓ 遊び方</h2>
+          <button class="modal-close">&times;</button>
+        </header>
+        <div class="modal-body scrollable">
+          <h3>🎮 基本操作</h3>
+          <p>画面下の丸いジュエルボタンを押してリズムに合わせて遊びましょう！PCキーボードの以下のキーにも対応しています：</p>
+          <ul class="key-list">
+            <li><span class="key-badge red">W</span> 赤ボタン（上）</li>
+            <li><span class="key-badge green">A</span> 緑ボタン（左下）</li>
+            <li><span class="key-badge yellow">D</span> 黄ボタン（右下）</li>
+          </ul>
+          <h3>☘️ おまかせ選曲</h3>
+          <p>「おまかせ」ボタンを押すと、150曲以上のアイカツ！動画の中からランダムに自動選曲され、曲のイメージに合わせてステージ背景がチェンジします！</p>
+          <h3>⭐ お気に入り＆再生履歴</h3>
+          <p>曲のリストやお気に入りの星マークをタップして管理できます。また、最近遊んだ曲は自動的に履歴に保存されます。</p>
+        </div>
+      </div>
+
+      <!-- ② 動画選択（リスト）モーダル -->
+      <div id="modal-select" class="premium-modal hidden">
+        <header class="modal-header">
+          <h2>📋 動画リスト</h2>
+          <button class="modal-close">&times;</button>
+        </header>
+        <div class="modal-search-bar">
+          <input type="text" id="video-search-input" placeholder="曲名やキーワードで検索..." />
+        </div>
+        <div class="modal-body scrollable">
+          <ul id="video-list-container" class="item-list">
+            <!-- JavaScriptで動的生成 -->
+          </ul>
+        </div>
+      </div>
+
+      <!-- ③ お気に入りモーダル -->
+      <div id="modal-favorites" class="premium-modal hidden">
+        <header class="modal-header">
+          <h2>⭐ お気に入り</h2>
+          <div class="modal-header-actions">
+            <button id="btn-clear-favorites" class="action-btn-danger">一括消去</button>
+            <button class="modal-close">&times;</button>
+          </div>
+        </header>
+        <div class="modal-body scrollable">
+          <ul id="favorite-list-container" class="item-list">
+            <!-- JavaScriptで動的生成 -->
+          </ul>
+        </div>
+      </div>
+
+      <!-- ④ 再生履歴モーダル -->
+      <div id="modal-history" class="premium-modal hidden">
+        <header class="modal-header">
+          <h2>🕒 再生履歴</h2>
+          <div class="modal-header-actions">
+            <button id="btn-clear-history" class="action-btn-danger">履歴消去</button>
+            <button class="modal-close">&times;</button>
+          </div>
+        </header>
+        <div class="modal-body scrollable">
+          <ul id="history-list-container" class="item-list">
+            <!-- JavaScriptで動的生成 -->
+          </ul>
+        </div>
+      </div>
+
+      <!-- ⑤ 動画追加モーダル -->
+      <div id="modal-add" class="premium-modal hidden">
+        <header class="modal-header">
+          <h2>➕ 動画の追加</h2>
+          <button class="modal-close">&times;</button>
+        </header>
+        <div class="modal-body">
+          <p class="instruction">YouTube動画のURLを入力して、あなたのお気に入り曲を追加しましょう！</p>
+          <div class="input-group">
+            <input type="text" id="add-video-url" placeholder="https://www.youtube.com/watch?v=..." />
+            <button id="btn-add-submit" class="submit-btn">追加</button>
+          </div>
+          <p id="add-video-error" class="error-text hidden"></p>
+        </div>
+      </div>
+
     </div>
     <script type="module" src="./main.js"></script>
   </body>
