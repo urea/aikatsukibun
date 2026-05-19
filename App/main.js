@@ -721,38 +721,57 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 
-    // --- 14. YouTube API コールバック & 透明オーバーレイ制御 ---
-    window.onYouTubeIframeAPIReady = () => {
-        ytPlayer = new YT.Player('youtube-player', {
-            videoId: currentVideoId,
-            playerVars: {
-                autoplay: 0,       // 初回ロード時は自動再生しない
-                controls: 0,       // 下部コントロールバーを非表示にする
-                disablekb: 1,      // キーボード操作無効
-                fs: 0,             // 全画面表示非表示
-                modestbranding: 1, // YouTubeロゴ最小化
-                rel: 0,            // 関連動画非表示
-                showinfo: 0,       // タイトル等非表示
-                iv_load_policy: 3  // アノテーション非表示
-            },
-            events: {
-                onReady: (event) => {
-                    isApiReady = true;
+    // --- 14. YouTube API 動的読み込み & 透明オーバーレイ制御 ---
+    const initYouTubeAPI = () => {
+        // すでにAPIが読み込み済み、またはインスタンスが存在する場合は即時実行
+        if (window.YT && window.YT.Player) {
+            window.onYouTubeIframeAPIReady();
+            return;
+        }
+
+        // コールバック関数を確実にグローバル（window）に定義
+        window.onYouTubeIframeAPIReady = () => {
+            ytPlayer = new YT.Player('youtube-player', {
+                videoId: currentVideoId,
+                playerVars: {
+                    autoplay: 0,       // 初回ロード時は自動再生しない
+                    controls: 0,       // 下部コントロールバーを非表示にする
+                    disablekb: 1,      // キーボード操作無効
+                    fs: 0,             // 全画面表示非表示
+                    modestbranding: 1, // YouTubeロゴ最小化
+                    rel: 0,            // 関連動画非表示
+                    showinfo: 0,       // タイトル等非表示
+                    iv_load_policy: 3  // アノテーション非表示
                 },
-                onStateChange: (event) => {
-                    const overlay = document.getElementById('player-overlay');
-                    if (!overlay) return;
-                    
-                    if (event.data === YT.PlayerState.PLAYING) {
-                        overlay.classList.remove('paused');
-                    } else if (event.data === YT.PlayerState.PAUSED) {
-                        overlay.classList.add('paused');
-                    } else if (event.data === YT.PlayerState.ENDED) {
-                        overlay.classList.add('paused');
+                events: {
+                    onReady: (event) => {
+                        isApiReady = true;
+                    },
+                    onStateChange: (event) => {
+                        const overlay = document.getElementById('player-overlay');
+                        if (!overlay) return;
+                        
+                        if (event.data === YT.PlayerState.PLAYING) {
+                            overlay.classList.remove('paused');
+                        } else if (event.data === YT.PlayerState.PAUSED) {
+                            overlay.classList.add('paused');
+                        } else if (event.data === YT.PlayerState.ENDED) {
+                            overlay.classList.add('paused');
+                        }
                     }
                 }
-            }
-        });
+            });
+        };
+
+        // スクリプトタグを動的に生成し、確実にコールバック定義後に挿入・開始させる
+        const tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        if (firstScriptTag) {
+            firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+        } else {
+            document.head.appendChild(tag);
+        }
     };
 
     const setupPlayerOverlay = () => {
@@ -776,6 +795,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 初回ロード時の初期化
     applyTheme('theme-cool');
     setupPlayerOverlay();
+    initYouTubeAPI(); // 動的読み込みと初期化の開始
     document.addEventListener('click', initAudioContext, { once: true });
     document.addEventListener('touchstart', initAudioContext, { once: true });
 });
