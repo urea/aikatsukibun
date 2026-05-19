@@ -18,17 +18,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const songData = {
         'cool_glass': {
             theme: 'theme-cool',
-            videoId: 'fYibOFCMpnE', // 硝子ドール
+            videoId: 'fYibOFCMpnE', // 硝子ドール (埋め込み可能)
             sparkleEmoji: '✦'
         },
         'cute_katsudo': {
             theme: 'theme-cute',
-            videoId: '1_m0kP8yD6Y', // アイドル活動！
+            videoId: 'BDu-c8m3Elo', // アイドル活動！(Rock Ver.プレイ動画 - 埋め込み可能)
             sparkleEmoji: '♥'
         },
         'pop_happy': {
             theme: 'theme-pop',
-            videoId: 'H0MhA6n_qj4', // ダイヤモンドハッピー
+            videoId: 'e9LkFKbRoq4', // ダイヤモンドハッピー(ミルキーヴィーナスコーデプレイ動画 - 埋め込み可能)
             sparkleEmoji: '★'
         }
     };
@@ -39,15 +39,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 2. Web Audio API 音響シンセサイザー ---
     let audioCtx = null;
+    let noiseBuffer = null;
 
     // 音声コンテキストの初期化（ブラウザポリシー回避用）
     const initAudioContext = () => {
         if (audioCtx) return;
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        // ホワイトノイズバッファの事前生成（1回限り）
+        const bufferSize = audioCtx.sampleRate * 0.15; // 0.15秒分
+        noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const data = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1;
+        }
     };
 
-    // 各ボタンに対応したキラキラタップSEの動的生成
-    const playTapSound = (btnId) => {
+    // ノイズバッファの取得
+    const getNoiseBuffer = () => {
+        if (!noiseBuffer && audioCtx) {
+            const bufferSize = audioCtx.sampleRate * 0.15;
+            noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = noiseBuffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+        }
+        return noiseBuffer;
+    };
+
+    // アイカツ！筐体風「小気味よいタンッ＆シャンッ」タップSEの生成（3ボタン共通）
+    const playTapSound = () => {
         initAudioContext();
         if (!audioCtx) return;
 
@@ -58,61 +80,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const now = audioCtx.currentTime;
 
-        // キラキラ感とシンセ打鍵音を表現するための複数オシレーター構成
-        if (btnId === 'btn-red') {
-            // 💜 クール: 透き通った荘厳なゴシックベル調の金属音
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
+        // 1. 【太鼓成分（タンッ）】
+        // アタック感のある力強い打撃低音を三角波で生成
+        const osc = audioCtx.createOscillator();
+        const oscGain = audioCtx.createGain();
+        
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(240, now); // 少し引き締まったアタック音
+        osc.frequency.exponentialRampToValueAtTime(70, now + 0.08); // 周波数の急降下
+        
+        oscGain.gain.setValueAtTime(0.35, now); // 音量
+        oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08); // すぐ消える
+        
+        osc.connect(oscGain);
+        oscGain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.08);
+
+        // 2. 【鈴／タンバリン成分（シャンッ）】
+        // ハイパスフィルターを通したホワイトノイズで金属の輝きを表現
+        const currentNoiseBuffer = getNoiseBuffer();
+        if (currentNoiseBuffer) {
+            const noiseSource = document.createElement ? null : audioCtx.createBufferSource();
+            // (※安全にバッファソースを毎回生成)
+            const actualSource = audioCtx.createBufferSource();
+            actualSource.buffer = currentNoiseBuffer;
             
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(880, now); // A5 (ラ)
-            osc.frequency.exponentialRampToValueAtTime(1760, now + 0.1); // 超高速オクターブ上昇
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'highpass';
+            filter.frequency.setValueAtTime(6500, now); // 高音域のみ（シャリシャリ感）
             
-            gain.gain.setValueAtTime(0.25, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+            const noiseGain = audioCtx.createGain();
+            noiseGain.gain.setValueAtTime(0.18, now); // 金属的なきらめき音量
+            noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.12); // 太鼓より少し長めに残す
             
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start(now);
-            osc.stop(now + 0.3);
-        } 
-        else if (btnId === 'btn-green') {
-            // 💗 キュート: 可愛らしく駆け上がる「超高速きらきらアルペジオ」
-            const times = [0, 0.03, 0.06];
-            const freqs = [1046.50, 1318.51, 1568.0]; // C6(ド) -> E6(ミ) -> G6(ソ)
+            actualSource.connect(filter);
+            filter.connect(noiseGain);
+            noiseGain.connect(audioCtx.destination);
             
-            times.forEach((t, index) => {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(freqs[index], now + t);
-                
-                gain.gain.setValueAtTime(0.18, now + t);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + t + 0.15);
-                
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start(now + t);
-                osc.stop(now + t + 0.2);
-            });
-        } 
-        else if (btnId === 'btn-yellow') {
-            // 💛 ポップ: 弾ける果実のようなスライディングポップ音
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(1174.66, now); // D6 (レ)
-            osc.frequency.exponentialRampToValueAtTime(587.33, now + 0.14); // オクターブ急降下
-            
-            gain.gain.setValueAtTime(0.22, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
-            
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start(now);
-            osc.stop(now + 0.2);
+            actualSource.start(now);
+            actualSource.stop(now + 0.12);
         }
     };
 
@@ -172,8 +179,8 @@ document.addEventListener('DOMContentLoaded', () => {
             navigator.vibrate(15);
         }
 
-        // 音声の再生
-        playTapSound(btnId);
+        // 音声の再生 (3ボタン共通のアイカツ！筐体音)
+        playTapSound();
 
         // パーティクルの生成
         createSparkleParticles(btn);
