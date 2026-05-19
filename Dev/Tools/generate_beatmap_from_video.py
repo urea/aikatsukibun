@@ -4,16 +4,17 @@ import json
 import argparse
 import os
 import subprocess
+import math
 
-# 640x360 解像度における水色の判定リングの中心座標
-TARGET_CX = 315
-TARGET_CY = 193
+# 640x360 解像度における水色の判定リングのデフォルトの初期座標
+DEFAULT_TARGET_CX = 315
+DEFAULT_TARGET_CY = 193
 ROI_SIZE = 15            # 中心から上下左右15px（30x30の矩形）
 
 COOLDOWN_FRAMES = 12      # 多重検出防止クールダウン
 THRESHOLD_PX_DIFF = 45   # カラーピクセル数の急激な増加（立ち上がり）の閾値
 
-# HSV カラーレンジの定義 (Hue: 0-180, Sat: 0-255, Val: 0-255)
+# HSV カラーレンジ of 監視色 (Hue: 0-180, Sat: 0-255, Val: 0-255)
 COLOR_RANGES = {
     "yellow": [
         (np.array([12, 70, 70]), np.array([32, 255, 255]))
@@ -27,6 +28,9 @@ COLOR_RANGES = {
     ]
 }
 
+# 水色（判定リング本体）のHSVカラーレンジ
+CYAN_RANGE = (np.array([85, 70, 70]), np.array([115, 255, 255]))
+
 def download_video(url, output_path):
     """yt-dlp を使用して動画をダウンロードします"""
     print(f"Downloading video from URL: {url} -> {output_path}")
@@ -39,10 +43,53 @@ def download_video(url, output_path):
     subprocess.run(cmd, check=True)
     print("Download completed.")
 
-def analyze_video_fixed_target(video_path, threshold_diff, start_time):
-    """判定リングの固定座標を定点監視し、各色のピクセル数急増からタップタイミングを抽出します"""
-    print(f"Analyzing video with Fixed Target Pixel Count change: {video_path}")
-    print(f"Target coordinates: ({TARGET_CX}, {TARGET_CY}), ROI size: {ROI_SIZE*2}x{ROI_SIZE*2}")
+def dist(p1, p2):
+    return math.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
+
+def detect_cyan_judgment_ring(hsv_frame, last_cx, last_cy, lost_frames):
+    """HSV色空間から水色の判定リングを検出し、中心座標とロストフレーム数を返します"""
+    low, high = CYAN_RANGE
+    mask = cv2.inRange(hsv_frame, low, high)
+    
+    # 輪郭の抽出
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    
+    candidates = []
+    for cnt in contours:
+        area = cv2.contourArea(cnt)
+        perimeter = cv2.arcLength(cnt, True)
+        
+        # 面積フィルタ（判定リングサイズに適するもの）
+        if 200 <= area <= 1500:
+            if perimeter > 0:
+                # 円形度 (Circularity) を計算
+                circularity = (4 * np.pi * area) / (perimeter ** 2)
+                # ノーツが重なったりエフェクトで歪むため、円形度の閾値を 0.20 に引き下げます
+                if circularity >= 0.20:
+                    M = cv2.moments(cnt)
+                    if M["m00"] > 0:
+                        cx = int(M["m10"] / M["m00"])
+                        cy = int(M["m01"] / M["m00"])
+                        candidates.append((cx, cy))
+                        
+    if len(candidates) > 0:
+        # もし長期間見失っている（または未初期化）なら、距離制限なしで、
+        # デフォルト初期座標に最も近い水色候補を瞬時に強制ロックオンする（ロスト復帰）
+        if lost_frames >= 5:
+            best_ring = min(candidates, key=lambda p: dist(p, (DEFAULT_TARGET_CX, DEFAULT_TARGET_CY)))
+            return best_ring[0], best_ring[1], 0
+        else:
+            # 安定追尾中なら、前フレームの座標に最も近いものを選択
+            best_ring = min(candidates, key=lambda p: dist(p, (last_cx, last_cy)))
+            if dist(best_ring, (last_cx, last_cy)) < 100:
+                return best_ring[0], best_ring[1], 0
+            
+    # 見つからない場合はロストフレーム数をカウントアップ
+    return last_cx, last_cy, lost_frames + 1
+
+def analyze_video_dynamic_target(video_path, threshold_diff, start_time):
+    """判定リング自体を動的トラッキングし、リング周辺のカラーピクセル急増からタイミングを抽出します"""
+    print(f"Analyzing video with DYNAMIC TARGET (Cyan Ring) tracking: {video_path}")
     
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
@@ -54,6 +101,10 @@ def analyze_video_fixed_target(video_path, threshold_diff, start_time):
     print(f"Video stats: {fps} FPS, {total_frames} total frames.")
     
     # 状態管理変数
+    target_cx = DEFAULT_TARGET_CX
+    target_cy = DEFAULT_TARGET_CY
+    lost_frames = 100  # 初期状態はロスト状態（100フレームロスト扱い）とし、最初のフレームで強制ロックオンを走らせる
+    
     prev_px = {color: 0 for color in COLOR_RANGES}
     cooldown = {color: 0 for color in COLOR_RANGES}
     beatmap = []
@@ -77,9 +128,21 @@ def analyze_video_fixed_target(video_path, threshold_diff, start_time):
         if frame.shape[1] != 640 or frame.shape[0] != 360:
             frame = cv2.resize(frame, (640, 360))
             
-        # 判定リング周辺のROI抽出
-        roi = frame[TARGET_CY - ROI_SIZE:TARGET_CY + ROI_SIZE, TARGET_CX - ROI_SIZE:TARGET_CX + ROI_SIZE]
-        hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
+        hsv_full = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        
+        # 水色判定リングのリアルタイム追尾（ロスト復帰付き）
+        target_cx, target_cy, lost_frames = detect_cyan_judgment_ring(
+            hsv_full, target_cx, target_cy, lost_frames
+        )
+        
+        # 境界ガード付きのROI抽出座標
+        ry1 = max(0, target_cy - ROI_SIZE)
+        ry2 = min(360, target_cy + ROI_SIZE)
+        rx1 = max(0, target_cx - ROI_SIZE)
+        rx2 = min(640, target_cx + ROI_SIZE)
+        
+        roi = frame[ry1:ry2, rx1:rx2]
+        hsv_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
         
         for color in COLOR_RANGES:
             # クールダウン処理
@@ -89,7 +152,7 @@ def analyze_video_fixed_target(video_path, threshold_diff, start_time):
             # 各カラーマスクの生成
             mask = None
             for low, high in COLOR_RANGES[color]:
-                m = cv2.inRange(hsv, low, high)
+                m = cv2.inRange(hsv_roi, low, high)
                 if mask is None:
                     mask = m
                 else:
@@ -108,9 +171,9 @@ def analyze_video_fixed_target(video_path, threshold_diff, start_time):
                     "time": round(timestamp, 3),
                     "type": color,
                     "intensity": int(diff),
-                    "detected_pos": [TARGET_CX, TARGET_CY]
+                    "detected_pos": [target_cx, target_cy]  # その瞬間の判定リングの位置を動的保存！
                 })
-                print(f"[DETECTED] Time: {timestamp:.3f}s | Color: {color:<6} | Px Diff: +{diff} | Px Total: {current_px}")
+                print(f"[DETECTED] Time: {timestamp:.3f}s | Color: {color:<6} | Ring Pos: ({target_cx}, {target_cy}) | Px Diff: +{diff}")
                 cooldown[color] = COOLDOWN_FRAMES
                 
             prev_px[color] = current_px
@@ -122,7 +185,7 @@ def analyze_video_fixed_target(video_path, threshold_diff, start_time):
     return beatmap
 
 def main():
-    parser = argparse.ArgumentParser(description="Extract beatmap from Aikatsu play video via fixed target monitoring.")
+    parser = argparse.ArgumentParser(description="Extract beatmap from Aikatsu play video via dynamic target tracking.")
     parser.add_argument("-u", "--url", help="YouTube video URL")
     parser.add_argument("-i", "--input", help="Local MP4 video path")
     parser.add_argument("-o", "--output", default=os.path.join("Dev", "Tools", "beatmap_output.json"), help="Output JSON path")
@@ -145,8 +208,8 @@ def main():
             print("Error: No input video specified and default demo.mp4 not found.")
             return
 
-    # 定点ピクセル監視で解析実行
-    beatmap = analyze_video_fixed_target(video_file, args.threshold, args.start)
+    # 動的ピクセル監視で解析実行
+    beatmap = analyze_video_dynamic_target(video_file, args.threshold, args.start)
     
     if beatmap is not None:
         output_data = {
@@ -154,8 +217,8 @@ def main():
                 "source_video": video_file,
                 "total_notes": len(beatmap),
                 "threshold_used": args.threshold,
-                "fixed_target_monitoring": True,
-                "target_coordinates": [TARGET_CX, TARGET_CY],
+                "dynamic_target_tracking": True,
+                "default_coordinates": [DEFAULT_TARGET_CX, DEFAULT_TARGET_CY],
                 "start_time_ignore": args.start
             },
             "beatmap": beatmap

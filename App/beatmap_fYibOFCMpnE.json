@@ -1,10 +1,10 @@
 {
   "metadata": {
     "source_video": "Dev/Tools/demo.mp4",
-    "total_notes": 142,
+    "total_notes": 118,
     "threshold_used": 45,
-    "fixed_target_monitoring": true,
-    "target_coordinates": [
+    "dynamic_target_tracking": true,
+    "default_coordinates": [
       315,
       193
     ],
@@ -13,1422 +13,1182 @@
   "beatmap": [
     {
       "beat_index": 1,
-      "time": 6.433,
+      "time": 6.233,
       "type": "yellow",
-      "intensity": 70,
+      "intensity": 274,
       "detected_pos": [
-        315,
-        193
+        540,
+        262
       ]
     },
     {
       "beat_index": 2,
-      "time": 6.967,
-      "type": "yellow",
-      "intensity": 90,
+      "time": 6.233,
+      "type": "green",
+      "intensity": 64,
       "detected_pos": [
-        315,
-        193
+        540,
+        262
       ]
     },
     {
       "beat_index": 3,
-      "time": 7.033,
-      "type": "green",
-      "intensity": 99,
+      "time": 6.7,
+      "type": "yellow",
+      "intensity": 161,
       "detected_pos": [
-        315,
-        193
+        540,
+        262
       ]
     },
     {
       "beat_index": 4,
-      "time": 7.5,
+      "time": 6.7,
       "type": "green",
-      "intensity": 82,
+      "intensity": 254,
       "detected_pos": [
-        315,
-        193
+        540,
+        262
       ]
     },
     {
       "beat_index": 5,
-      "time": 7.7,
+      "time": 7.5,
       "type": "yellow",
-      "intensity": 48,
+      "intensity": 166,
       "detected_pos": [
-        315,
-        193
+        540,
+        261
       ]
     },
     {
       "beat_index": 6,
-      "time": 7.933,
+      "time": 7.5,
       "type": "green",
-      "intensity": 52,
+      "intensity": 188,
       "detected_pos": [
-        315,
-        193
+        540,
+        261
       ]
     },
     {
       "beat_index": 7,
-      "time": 9.433,
+      "time": 8.067,
       "type": "yellow",
-      "intensity": 52,
+      "intensity": 45,
       "detected_pos": [
-        315,
-        193
+        540,
+        263
       ]
     },
     {
       "beat_index": 8,
-      "time": 9.833,
-      "type": "yellow",
-      "intensity": 57,
+      "time": 9.633,
+      "type": "green",
+      "intensity": 48,
       "detected_pos": [
-        315,
-        193
+        540,
+        262
       ]
     },
     {
       "beat_index": 9,
-      "time": 10.0,
-      "type": "green",
-      "intensity": 76,
+      "time": 11.133,
+      "type": "red",
+      "intensity": 57,
       "detected_pos": [
-        315,
-        193
+        540,
+        263
       ]
     },
     {
       "beat_index": 10,
-      "time": 10.233,
+      "time": 11.867,
       "type": "yellow",
-      "intensity": 102,
+      "intensity": 48,
       "detected_pos": [
-        315,
-        193
+        540,
+        261
       ]
     },
     {
       "beat_index": 11,
-      "time": 10.567,
-      "type": "green",
-      "intensity": 58,
+      "time": 12.6,
+      "type": "red",
+      "intensity": 54,
       "detected_pos": [
-        315,
-        193
+        540,
+        261
       ]
     },
     {
       "beat_index": 12,
-      "time": 10.733,
+      "time": 13.667,
       "type": "yellow",
-      "intensity": 58,
+      "intensity": 147,
       "detected_pos": [
-        315,
-        193
+        574,
+        334
       ]
     },
     {
       "beat_index": 13,
-      "time": 10.967,
+      "time": 13.7,
       "type": "green",
-      "intensity": 109,
+      "intensity": 61,
       "detected_pos": [
-        315,
-        193
+        540,
+        263
       ]
     },
     {
       "beat_index": 14,
-      "time": 12.433,
-      "type": "red",
-      "intensity": 79,
+      "time": 14.533,
+      "type": "green",
+      "intensity": 54,
       "detected_pos": [
-        315,
-        193
+        540,
+        260
       ]
     },
     {
       "beat_index": 15,
-      "time": 13.233,
-      "type": "yellow",
-      "intensity": 75,
+      "time": 16.233,
+      "type": "green",
+      "intensity": 59,
       "detected_pos": [
-        315,
-        193
+        568,
+        256
       ]
     },
     {
       "beat_index": 16,
-      "time": 14.0,
-      "type": "red",
-      "intensity": 73,
+      "time": 16.433,
+      "type": "yellow",
+      "intensity": 130,
       "detected_pos": [
-        315,
-        193
+        540,
+        262
       ]
     },
     {
       "beat_index": 17,
-      "time": 14.733,
-      "type": "green",
-      "intensity": 64,
+      "time": 16.833,
+      "type": "yellow",
+      "intensity": 92,
       "detected_pos": [
-        315,
-        193
+        535,
+        329
       ]
     },
     {
       "beat_index": 18,
-      "time": 15.467,
+      "time": 18.567,
       "type": "green",
-      "intensity": 80,
+      "intensity": 69,
       "detected_pos": [
-        315,
-        193
+        507,
+        325
       ]
     },
     {
       "beat_index": 19,
-      "time": 15.867,
-      "type": "green",
-      "intensity": 47,
+      "time": 19.367,
+      "type": "yellow",
+      "intensity": 56,
       "detected_pos": [
-        315,
-        193
+        519,
+        336
       ]
     },
     {
       "beat_index": 20,
-      "time": 16.333,
+      "time": 20.3,
       "type": "green",
-      "intensity": 85,
+      "intensity": 55,
       "detected_pos": [
-        315,
-        193
+        482,
+        302
       ]
     },
     {
       "beat_index": 21,
-      "time": 16.633,
+      "time": 25.133,
       "type": "yellow",
-      "intensity": 80,
+      "intensity": 306,
       "detected_pos": [
-        315,
-        193
+        541,
+        274
       ]
     },
     {
       "beat_index": 22,
-      "time": 16.967,
+      "time": 25.133,
       "type": "green",
-      "intensity": 102,
+      "intensity": 70,
       "detected_pos": [
-        315,
-        193
+        541,
+        274
       ]
     },
     {
       "beat_index": 23,
-      "time": 17.1,
-      "type": "red",
-      "intensity": 66,
+      "time": 27.533,
+      "type": "yellow",
+      "intensity": 148,
       "detected_pos": [
-        315,
-        193
+        523,
+        172
       ]
     },
     {
       "beat_index": 24,
-      "time": 17.467,
-      "type": "green",
-      "intensity": 104,
+      "time": 29.1,
+      "type": "red",
+      "intensity": 130,
       "detected_pos": [
-        315,
-        193
+        215,
+        180
       ]
     },
     {
       "beat_index": 25,
-      "time": 17.6,
+      "time": 29.5,
       "type": "red",
-      "intensity": 48,
+      "intensity": 63,
       "detected_pos": [
-        315,
-        193
+        278,
+        178
       ]
     },
     {
       "beat_index": 26,
-      "time": 17.867,
-      "type": "green",
-      "intensity": 115,
+      "time": 29.9,
+      "type": "red",
+      "intensity": 47,
       "detected_pos": [
-        315,
-        193
+        198,
+        219
       ]
     },
     {
       "beat_index": 27,
-      "time": 18.1,
+      "time": 30.367,
       "type": "red",
-      "intensity": 64,
+      "intensity": 168,
       "detected_pos": [
-        315,
-        193
+        285,
+        151
       ]
     },
     {
       "beat_index": 28,
-      "time": 18.467,
+      "time": 30.433,
       "type": "yellow",
-      "intensity": 57,
+      "intensity": 66,
       "detected_pos": [
-        315,
-        193
+        215,
+        215
       ]
     },
     {
       "beat_index": 29,
-      "time": 18.933,
-      "type": "yellow",
-      "intensity": 58,
+      "time": 31.067,
+      "type": "red",
+      "intensity": 56,
       "detected_pos": [
-        315,
-        193
+        237,
+        241
       ]
     },
     {
       "beat_index": 30,
-      "time": 19.333,
+      "time": 31.367,
       "type": "yellow",
-      "intensity": 71,
+      "intensity": 123,
       "detected_pos": [
-        315,
-        193
+        236,
+        213
       ]
     },
     {
       "beat_index": 31,
-      "time": 19.567,
-      "type": "green",
-      "intensity": 64,
+      "time": 32.467,
+      "type": "yellow",
+      "intensity": 107,
       "detected_pos": [
-        315,
-        193
+        305,
+        249
       ]
     },
     {
       "beat_index": 32,
-      "time": 20.0,
+      "time": 34.3,
       "type": "yellow",
-      "intensity": 66,
+      "intensity": 52,
       "detected_pos": [
-        315,
-        193
+        274,
+        333
       ]
     },
     {
       "beat_index": 33,
-      "time": 20.433,
-      "type": "yellow",
-      "intensity": 70,
+      "time": 34.3,
+      "type": "green",
+      "intensity": 51,
       "detected_pos": [
-        315,
-        193
+        274,
+        333
       ]
     },
     {
       "beat_index": 34,
-      "time": 20.833,
-      "type": "yellow",
-      "intensity": 96,
+      "time": 35.2,
+      "type": "green",
+      "intensity": 114,
       "detected_pos": [
-        315,
-        193
+        365,
+        333
       ]
     },
     {
       "beat_index": 35,
-      "time": 21.1,
-      "type": "red",
-      "intensity": 49,
+      "time": 35.4,
+      "type": "yellow",
+      "intensity": 127,
       "detected_pos": [
-        315,
-        193
+        417,
+        324
       ]
     },
     {
       "beat_index": 36,
-      "time": 24.4,
-      "type": "yellow",
-      "intensity": 70,
+      "time": 36.6,
+      "type": "green",
+      "intensity": 163,
       "detected_pos": [
-        315,
-        193
+        345,
+        219
       ]
     },
     {
       "beat_index": 37,
-      "time": 24.933,
+      "time": 38.0,
       "type": "green",
-      "intensity": 61,
+      "intensity": 64,
       "detected_pos": [
-        315,
-        193
+        385,
+        217
       ]
     },
     {
       "beat_index": 38,
-      "time": 25.2,
+      "time": 38.5,
       "type": "red",
-      "intensity": 67,
+      "intensity": 113,
       "detected_pos": [
-        315,
-        193
+        342,
+        285
       ]
     },
     {
       "beat_index": 39,
-      "time": 25.533,
-      "type": "yellow",
-      "intensity": 110,
+      "time": 38.533,
+      "type": "green",
+      "intensity": 77,
       "detected_pos": [
-        315,
-        193
+        422,
+        284
       ]
     },
     {
       "beat_index": 40,
-      "time": 26.0,
+      "time": 38.7,
       "type": "yellow",
-      "intensity": 75,
+      "intensity": 147,
       "detected_pos": [
-        315,
-        193
+        342,
+        227
       ]
     },
     {
       "beat_index": 41,
-      "time": 26.5,
+      "time": 40.7,
       "type": "yellow",
-      "intensity": 140,
+      "intensity": 66,
       "detected_pos": [
-        315,
-        193
+        219,
+        325
       ]
     },
     {
       "beat_index": 42,
-      "time": 26.5,
+      "time": 40.7,
       "type": "green",
-      "intensity": 184,
+      "intensity": 46,
       "detected_pos": [
-        315,
-        193
+        219,
+        325
       ]
     },
     {
       "beat_index": 43,
-      "time": 26.5,
+      "time": 44.0,
       "type": "red",
-      "intensity": 217,
+      "intensity": 149,
       "detected_pos": [
-        315,
-        193
+        362,
+        108
       ]
     },
     {
       "beat_index": 44,
-      "time": 26.933,
-      "type": "yellow",
-      "intensity": 80,
+      "time": 45.633,
+      "type": "green",
+      "intensity": 48,
       "detected_pos": [
-        315,
-        193
+        379,
+        138
       ]
     },
     {
       "beat_index": 45,
-      "time": 26.933,
-      "type": "red",
-      "intensity": 55,
+      "time": 46.9,
+      "type": "yellow",
+      "intensity": 86,
       "detected_pos": [
-        315,
-        193
+        394,
+        242
       ]
     },
     {
       "beat_index": 46,
-      "time": 27.433,
-      "type": "red",
-      "intensity": 78,
+      "time": 48.1,
+      "type": "yellow",
+      "intensity": 84,
       "detected_pos": [
-        315,
-        193
+        521,
+        331
       ]
     },
     {
       "beat_index": 47,
-      "time": 27.867,
+      "time": 48.2,
       "type": "green",
-      "intensity": 53,
+      "intensity": 103,
       "detected_pos": [
-        315,
-        193
+        541,
+        245
       ]
     },
     {
       "beat_index": 48,
-      "time": 27.9,
+      "time": 49.9,
       "type": "yellow",
-      "intensity": 62,
+      "intensity": 140,
       "detected_pos": [
-        315,
-        193
+        540,
+        245
       ]
     },
     {
       "beat_index": 49,
-      "time": 27.967,
-      "type": "red",
-      "intensity": 82,
+      "time": 51.6,
+      "type": "yellow",
+      "intensity": 179,
       "detected_pos": [
-        315,
-        193
+        541,
+        241
       ]
     },
     {
       "beat_index": 50,
-      "time": 28.467,
-      "type": "red",
-      "intensity": 102,
+      "time": 51.6,
+      "type": "green",
+      "intensity": 122,
       "detected_pos": [
-        315,
-        193
+        541,
+        241
       ]
     },
     {
       "beat_index": 51,
-      "time": 28.5,
+      "time": 52.167,
       "type": "yellow",
-      "intensity": 50,
+      "intensity": 210,
       "detected_pos": [
-        315,
-        193
+        540,
+        243
       ]
     },
     {
       "beat_index": 52,
-      "time": 28.933,
-      "type": "yellow",
-      "intensity": 55,
+      "time": 52.167,
+      "type": "green",
+      "intensity": 111,
       "detected_pos": [
-        315,
-        193
+        540,
+        243
       ]
     },
     {
       "beat_index": 53,
-      "time": 29.1,
-      "type": "red",
-      "intensity": 70,
+      "time": 53.267,
+      "type": "green",
+      "intensity": 172,
       "detected_pos": [
-        315,
-        193
+        272,
+        231
       ]
     },
     {
       "beat_index": 54,
-      "time": 29.333,
+      "time": 55.2,
       "type": "green",
-      "intensity": 82,
+      "intensity": 144,
       "detected_pos": [
-        315,
-        193
+        297,
+        300
       ]
     },
     {
       "beat_index": 55,
-      "time": 29.5,
-      "type": "red",
-      "intensity": 65,
+      "time": 55.3,
+      "type": "yellow",
+      "intensity": 53,
       "detected_pos": [
-        315,
-        193
+        278,
+        236
       ]
     },
     {
       "beat_index": 56,
-      "time": 29.633,
-      "type": "yellow",
-      "intensity": 85,
+      "time": 56.033,
+      "type": "green",
+      "intensity": 59,
       "detected_pos": [
-        315,
-        193
+        470,
+        280
       ]
     },
     {
       "beat_index": 57,
-      "time": 30.233,
-      "type": "red",
-      "intensity": 252,
+      "time": 56.067,
+      "type": "yellow",
+      "intensity": 101,
       "detected_pos": [
-        315,
-        193
+        517,
+        217
       ]
     },
     {
       "beat_index": 58,
-      "time": 30.7,
-      "type": "red",
-      "intensity": 67,
+      "time": 56.533,
+      "type": "yellow",
+      "intensity": 113,
       "detected_pos": [
-        315,
-        193
+        540,
+        243
       ]
     },
     {
       "beat_index": 59,
-      "time": 31.367,
-      "type": "yellow",
-      "intensity": 51,
+      "time": 58.333,
+      "type": "red",
+      "intensity": 90,
       "detected_pos": [
-        315,
-        193
+        469,
+        241
       ]
     },
     {
       "beat_index": 60,
-      "time": 32.867,
-      "type": "red",
-      "intensity": 58,
+      "time": 58.367,
+      "type": "yellow",
+      "intensity": 215,
       "detected_pos": [
-        315,
-        193
+        541,
+        237
       ]
     },
     {
       "beat_index": 61,
-      "time": 38.033,
-      "type": "red",
-      "intensity": 78,
+      "time": 58.367,
+      "type": "green",
+      "intensity": 136,
       "detected_pos": [
-        315,
-        193
+        541,
+        237
       ]
     },
     {
       "beat_index": 62,
-      "time": 38.667,
-      "type": "yellow",
-      "intensity": 342,
+      "time": 58.767,
+      "type": "red",
+      "intensity": 57,
       "detected_pos": [
-        315,
-        193
+        576,
+        287
       ]
     },
     {
       "beat_index": 63,
-      "time": 38.833,
-      "type": "green",
-      "intensity": 70,
+      "time": 59.533,
+      "type": "red",
+      "intensity": 60,
       "detected_pos": [
-        315,
-        193
+        292,
+        189
       ]
     },
     {
       "beat_index": 64,
-      "time": 39.767,
+      "time": 59.967,
       "type": "red",
-      "intensity": 72,
+      "intensity": 188,
       "detected_pos": [
-        315,
-        193
+        424,
+        76
       ]
     },
     {
       "beat_index": 65,
-      "time": 39.8,
+      "time": 61.667,
       "type": "yellow",
-      "intensity": 489,
+      "intensity": 48,
       "detected_pos": [
-        315,
-        193
+        394,
+        292
       ]
     },
     {
       "beat_index": 66,
-      "time": 39.933,
-      "type": "green",
-      "intensity": 58,
+      "time": 62.467,
+      "type": "yellow",
+      "intensity": 168,
       "detected_pos": [
-        315,
-        193
+        316,
+        246
       ]
     },
     {
       "beat_index": 67,
-      "time": 49.333,
-      "type": "red",
-      "intensity": 54,
+      "time": 64.3,
+      "type": "yellow",
+      "intensity": 55,
       "detected_pos": [
-        315,
-        193
+        273,
+        333
       ]
     },
     {
       "beat_index": 68,
-      "time": 50.833,
-      "type": "red",
-      "intensity": 92,
+      "time": 65.167,
+      "type": "yellow",
+      "intensity": 46,
       "detected_pos": [
-        315,
-        193
+        273,
+        333
       ]
     },
     {
       "beat_index": 69,
-      "time": 51.233,
-      "type": "red",
-      "intensity": 98,
+      "time": 67.433,
+      "type": "yellow",
+      "intensity": 163,
       "detected_pos": [
-        315,
-        193
+        46,
+        250
       ]
     },
     {
       "beat_index": 70,
-      "time": 53.7,
-      "type": "green",
-      "intensity": 80,
+      "time": 68.133,
+      "type": "red",
+      "intensity": 145,
       "detected_pos": [
-        315,
-        193
+        369,
+        208
       ]
     },
     {
       "beat_index": 71,
-      "time": 54.333,
-      "type": "red",
-      "intensity": 47,
+      "time": 68.233,
+      "type": "yellow",
+      "intensity": 76,
       "detected_pos": [
-        315,
-        193
+        468,
+        309
       ]
     },
     {
       "beat_index": 72,
-      "time": 54.433,
-      "type": "yellow",
-      "intensity": 91,
+      "time": 68.233,
+      "type": "green",
+      "intensity": 66,
       "detected_pos": [
-        315,
-        193
+        468,
+        309
       ]
     },
     {
       "beat_index": 73,
-      "time": 55.2,
-      "type": "red",
-      "intensity": 52,
+      "time": 68.867,
+      "type": "green",
+      "intensity": 138,
       "detected_pos": [
-        315,
-        193
+        257,
+        293
       ]
     },
     {
       "beat_index": 74,
-      "time": 55.633,
-      "type": "red",
-      "intensity": 49,
+      "time": 69.433,
+      "type": "yellow",
+      "intensity": 60,
       "detected_pos": [
-        315,
-        193
+        220,
+        324
       ]
     },
     {
       "beat_index": 75,
-      "time": 56.0,
-      "type": "yellow",
-      "intensity": 72,
+      "time": 69.433,
+      "type": "green",
+      "intensity": 45,
       "detected_pos": [
-        315,
-        193
+        220,
+        324
       ]
     },
     {
       "beat_index": 76,
-      "time": 56.367,
+      "time": 70.767,
       "type": "green",
-      "intensity": 51,
+      "intensity": 61,
       "detected_pos": [
-        315,
-        193
+        118,
+        321
       ]
     },
     {
       "beat_index": 77,
-      "time": 56.467,
+      "time": 71.067,
       "type": "red",
-      "intensity": 65,
+      "intensity": 78,
       "detected_pos": [
-        315,
-        193
+        117,
+        322
       ]
     },
     {
       "beat_index": 78,
-      "time": 56.767,
+      "time": 71.7,
       "type": "yellow",
-      "intensity": 75,
+      "intensity": 154,
       "detected_pos": [
-        315,
-        193
+        537,
+        68
       ]
     },
     {
       "beat_index": 79,
-      "time": 56.867,
-      "type": "red",
-      "intensity": 165,
+      "time": 71.7,
+      "type": "green",
+      "intensity": 95,
       "detected_pos": [
-        315,
-        193
+        537,
+        68
       ]
     },
     {
       "beat_index": 80,
-      "time": 57.067,
-      "type": "green",
-      "intensity": 64,
+      "time": 72.7,
+      "type": "yellow",
+      "intensity": 120,
       "detected_pos": [
-        315,
-        193
+        539,
+        63
       ]
     },
     {
       "beat_index": 81,
-      "time": 57.467,
+      "time": 74.0,
       "type": "yellow",
-      "intensity": 98,
+      "intensity": 104,
       "detected_pos": [
-        315,
-        193
+        522,
+        260
       ]
     },
     {
       "beat_index": 82,
-      "time": 58.3,
+      "time": 79.133,
       "type": "yellow",
-      "intensity": 167,
+      "intensity": 46,
       "detected_pos": [
-        315,
-        193
+        515,
+        251
       ]
     },
     {
       "beat_index": 83,
-      "time": 58.6,
-      "type": "red",
-      "intensity": 184,
+      "time": 81.1,
+      "type": "yellow",
+      "intensity": 120,
       "detected_pos": [
-        315,
-        193
+        517,
+        311
       ]
     },
     {
       "beat_index": 84,
-      "time": 59.1,
-      "type": "red",
-      "intensity": 65,
+      "time": 81.2,
+      "type": "green",
+      "intensity": 56,
       "detected_pos": [
-        315,
-        193
+        562,
+        270
       ]
     },
     {
       "beat_index": 85,
-      "time": 60.067,
-      "type": "red",
-      "intensity": 477,
+      "time": 83.567,
+      "type": "green",
+      "intensity": 51,
       "detected_pos": [
-        315,
-        193
+        285,
+        127
       ]
     },
     {
       "beat_index": 86,
-      "time": 61.0,
-      "type": "red",
-      "intensity": 93,
+      "time": 85.133,
+      "type": "yellow",
+      "intensity": 50,
       "detected_pos": [
-        315,
-        193
+        516,
+        236
       ]
     },
     {
       "beat_index": 87,
-      "time": 61.4,
+      "time": 85.9,
       "type": "yellow",
-      "intensity": 52,
+      "intensity": 60,
       "detected_pos": [
-        315,
-        193
+        516,
+        305
       ]
     },
     {
       "beat_index": 88,
-      "time": 62.867,
-      "type": "red",
-      "intensity": 53,
+      "time": 86.0,
+      "type": "green",
+      "intensity": 46,
       "detected_pos": [
-        315,
-        193
+        517,
+        237
       ]
     },
     {
       "beat_index": 89,
-      "time": 68.033,
-      "type": "red",
-      "intensity": 112,
+      "time": 86.733,
+      "type": "yellow",
+      "intensity": 50,
       "detected_pos": [
-        315,
-        193
+        516,
+        224
       ]
     },
     {
       "beat_index": 90,
-      "time": 68.667,
-      "type": "yellow",
-      "intensity": 400,
+      "time": 86.833,
+      "type": "green",
+      "intensity": 51,
       "detected_pos": [
-        315,
-        193
+        518,
+        228
       ]
     },
     {
       "beat_index": 91,
-      "time": 68.867,
-      "type": "green",
-      "intensity": 56,
+      "time": 87.133,
+      "type": "yellow",
+      "intensity": 65,
       "detected_pos": [
-        315,
-        193
+        576,
+        266
       ]
     },
     {
       "beat_index": 92,
-      "time": 69.8,
+      "time": 87.133,
       "type": "red",
-      "intensity": 95,
+      "intensity": 64,
       "detected_pos": [
-        315,
-        193
+        576,
+        266
       ]
     },
     {
       "beat_index": 93,
-      "time": 69.833,
+      "time": 87.7,
       "type": "yellow",
-      "intensity": 225,
+      "intensity": 137,
       "detected_pos": [
-        315,
-        193
+        320,
+        230
       ]
     },
     {
       "beat_index": 94,
-      "time": 69.967,
+      "time": 88.0,
       "type": "green",
-      "intensity": 47,
+      "intensity": 52,
       "detected_pos": [
-        315,
-        193
+        317,
+        220
       ]
     },
     {
       "beat_index": 95,
-      "time": 71.033,
+      "time": 88.8,
       "type": "yellow",
-      "intensity": 207,
+      "intensity": 62,
       "detected_pos": [
-        315,
-        193
+        560,
+        329
       ]
     },
     {
       "beat_index": 96,
-      "time": 71.033,
-      "type": "red",
-      "intensity": 178,
+      "time": 89.033,
+      "type": "green",
+      "intensity": 137,
       "detected_pos": [
-        315,
-        193
+        420,
+        336
       ]
     },
     {
       "beat_index": 97,
-      "time": 71.067,
-      "type": "green",
-      "intensity": 72,
+      "time": 89.9,
+      "type": "yellow",
+      "intensity": 60,
       "detected_pos": [
-        315,
-        193
+        517,
+        293
       ]
     },
     {
       "beat_index": 98,
-      "time": 71.8,
+      "time": 91.067,
       "type": "yellow",
-      "intensity": 281,
+      "intensity": 60,
       "detected_pos": [
-        315,
-        193
+        515,
+        295
       ]
     },
     {
       "beat_index": 99,
-      "time": 71.8,
-      "type": "red",
-      "intensity": 236,
+      "time": 91.633,
+      "type": "yellow",
+      "intensity": 74,
       "detected_pos": [
-        315,
-        193
+        516,
+        302
       ]
     },
     {
       "beat_index": 100,
-      "time": 73.867,
-      "type": "red",
-      "intensity": 216,
+      "time": 91.7,
+      "type": "green",
+      "intensity": 56,
       "detected_pos": [
-        315,
-        193
+        398,
+        280
       ]
     },
     {
       "beat_index": 101,
-      "time": 74.933,
-      "type": "red",
-      "intensity": 164,
+      "time": 92.1,
+      "type": "yellow",
+      "intensity": 56,
       "detected_pos": [
-        315,
-        193
+        518,
+        334
       ]
     },
     {
       "beat_index": 102,
-      "time": 75.5,
-      "type": "red",
-      "intensity": 58,
+      "time": 93.133,
+      "type": "yellow",
+      "intensity": 130,
       "detected_pos": [
-        315,
-        193
+        566,
+        254
       ]
     },
     {
       "beat_index": 103,
-      "time": 83.6,
-      "type": "red",
-      "intensity": 48,
+      "time": 94.267,
+      "type": "yellow",
+      "intensity": 185,
       "detected_pos": [
-        315,
-        193
+        541,
+        280
       ]
     },
     {
       "beat_index": 104,
-      "time": 83.867,
-      "type": "yellow",
-      "intensity": 46,
+      "time": 94.267,
+      "type": "green",
+      "intensity": 69,
       "detected_pos": [
-        315,
-        193
+        541,
+        280
       ]
     },
     {
       "beat_index": 105,
-      "time": 84.4,
-      "type": "red",
-      "intensity": 51,
+      "time": 94.733,
+      "type": "yellow",
+      "intensity": 176,
       "detected_pos": [
-        315,
-        193
+        541,
+        279
       ]
     },
     {
       "beat_index": 106,
-      "time": 84.9,
-      "type": "red",
-      "intensity": 336,
+      "time": 94.733,
+      "type": "green",
+      "intensity": 73,
       "detected_pos": [
-        315,
-        193
+        541,
+        279
       ]
     },
     {
       "beat_index": 107,
-      "time": 84.933,
+      "time": 100.4,
       "type": "yellow",
-      "intensity": 152,
+      "intensity": 103,
       "detected_pos": [
-        315,
-        193
+        541,
+        271
       ]
     },
     {
       "beat_index": 108,
-      "time": 85.133,
-      "type": "green",
-      "intensity": 58,
+      "time": 101.8,
+      "type": "red",
+      "intensity": 164,
       "detected_pos": [
-        315,
-        193
+        215,
+        159
       ]
     },
     {
       "beat_index": 109,
-      "time": 85.533,
-      "type": "red",
-      "intensity": 47,
+      "time": 103.3,
+      "type": "yellow",
+      "intensity": 45,
       "detected_pos": [
-        315,
-        193
+        273,
+        333
       ]
     },
     {
       "beat_index": 110,
-      "time": 85.667,
+      "time": 104.2,
       "type": "yellow",
-      "intensity": 61,
+      "intensity": 75,
       "detected_pos": [
-        315,
-        193
+        294,
+        242
       ]
     },
     {
       "beat_index": 111,
-      "time": 86.133,
+      "time": 107.033,
       "type": "red",
-      "intensity": 172,
+      "intensity": 45,
       "detected_pos": [
-        315,
-        193
+        386,
+        304
       ]
     },
     {
       "beat_index": 112,
-      "time": 86.5,
-      "type": "yellow",
-      "intensity": 82,
+      "time": 107.633,
+      "type": "green",
+      "intensity": 60,
       "detected_pos": [
-        315,
-        193
+        271,
+        332
       ]
     },
     {
       "beat_index": 113,
-      "time": 86.5,
-      "type": "green",
-      "intensity": 78,
+      "time": 107.8,
+      "type": "yellow",
+      "intensity": 436,
       "detected_pos": [
-        315,
-        193
+        271,
+        332
       ]
     },
     {
       "beat_index": 114,
-      "time": 86.833,
-      "type": "red",
-      "intensity": 89,
+      "time": 108.367,
+      "type": "green",
+      "intensity": 64,
       "detected_pos": [
-        315,
-        193
+        160,
+        307
       ]
     },
     {
       "beat_index": 115,
-      "time": 87.433,
+      "time": 108.4,
       "type": "yellow",
-      "intensity": 72,
+      "intensity": 46,
       "detected_pos": [
-        315,
-        193
+        220,
+        324
       ]
     },
     {
       "beat_index": 116,
-      "time": 87.967,
-      "type": "green",
-      "intensity": 55,
+      "time": 109.333,
+      "type": "yellow",
+      "intensity": 195,
       "detected_pos": [
-        315,
-        193
+        255,
+        301
       ]
     },
     {
       "beat_index": 117,
-      "time": 88.0,
-      "type": "yellow",
-      "intensity": 66,
+      "time": 109.667,
+      "type": "green",
+      "intensity": 55,
       "detected_pos": [
-        315,
-        193
+        219,
+        325
       ]
     },
     {
       "beat_index": 118,
-      "time": 88.933,
-      "type": "red",
-      "intensity": 54,
-      "detected_pos": [
-        315,
-        193
-      ]
-    },
-    {
-      "beat_index": 119,
-      "time": 89.467,
-      "type": "yellow",
-      "intensity": 73,
-      "detected_pos": [
-        315,
-        193
-      ]
-    },
-    {
-      "beat_index": 120,
-      "time": 90.067,
+      "time": 110.5,
       "type": "green",
-      "intensity": 138,
+      "intensity": 67,
       "detected_pos": [
-        315,
-        193
-      ]
-    },
-    {
-      "beat_index": 121,
-      "time": 90.6,
-      "type": "red",
-      "intensity": 91,
-      "detected_pos": [
-        315,
-        193
-      ]
-    },
-    {
-      "beat_index": 122,
-      "time": 91.0,
-      "type": "red",
-      "intensity": 61,
-      "detected_pos": [
-        315,
-        193
-      ]
-    },
-    {
-      "beat_index": 123,
-      "time": 93.033,
-      "type": "green",
-      "intensity": 77,
-      "detected_pos": [
-        315,
-        193
-      ]
-    },
-    {
-      "beat_index": 124,
-      "time": 94.567,
-      "type": "red",
-      "intensity": 88,
-      "detected_pos": [
-        315,
-        193
-      ]
-    },
-    {
-      "beat_index": 125,
-      "time": 94.9,
-      "type": "yellow",
-      "intensity": 106,
-      "detected_pos": [
-        315,
-        193
-      ]
-    },
-    {
-      "beat_index": 126,
-      "time": 95.033,
-      "type": "red",
-      "intensity": 82,
-      "detected_pos": [
-        315,
-        193
-      ]
-    },
-    {
-      "beat_index": 127,
-      "time": 95.433,
-      "type": "red",
-      "intensity": 63,
-      "detected_pos": [
-        315,
-        193
-      ]
-    },
-    {
-      "beat_index": 128,
-      "time": 96.033,
-      "type": "yellow",
-      "intensity": 65,
-      "detected_pos": [
-        315,
-        193
-      ]
-    },
-    {
-      "beat_index": 129,
-      "time": 96.467,
-      "type": "yellow",
-      "intensity": 62,
-      "detected_pos": [
-        315,
-        193
-      ]
-    },
-    {
-      "beat_index": 130,
-      "time": 97.933,
-      "type": "green",
-      "intensity": 50,
-      "detected_pos": [
-        315,
-        193
-      ]
-    },
-    {
-      "beat_index": 131,
-      "time": 98.3,
-      "type": "yellow",
-      "intensity": 52,
-      "detected_pos": [
-        315,
-        193
-      ]
-    },
-    {
-      "beat_index": 132,
-      "time": 98.667,
-      "type": "red",
-      "intensity": 80,
-      "detected_pos": [
-        315,
-        193
-      ]
-    },
-    {
-      "beat_index": 133,
-      "time": 100.4,
-      "type": "yellow",
-      "intensity": 47,
-      "detected_pos": [
-        315,
-        193
-      ]
-    },
-    {
-      "beat_index": 134,
-      "time": 101.833,
-      "type": "red",
-      "intensity": 55,
-      "detected_pos": [
-        315,
-        193
-      ]
-    },
-    {
-      "beat_index": 135,
-      "time": 107.0,
-      "type": "red",
-      "intensity": 77,
-      "detected_pos": [
-        315,
-        193
-      ]
-    },
-    {
-      "beat_index": 136,
-      "time": 107.667,
-      "type": "yellow",
-      "intensity": 415,
-      "detected_pos": [
-        315,
-        193
-      ]
-    },
-    {
-      "beat_index": 137,
-      "time": 108.8,
-      "type": "red",
-      "intensity": 134,
-      "detected_pos": [
-        315,
-        193
-      ]
-    },
-    {
-      "beat_index": 138,
-      "time": 108.833,
-      "type": "yellow",
-      "intensity": 289,
-      "detected_pos": [
-        315,
-        193
-      ]
-    },
-    {
-      "beat_index": 139,
-      "time": 109.933,
-      "type": "red",
-      "intensity": 449,
-      "detected_pos": [
-        315,
-        193
-      ]
-    },
-    {
-      "beat_index": 140,
-      "time": 110.8,
-      "type": "red",
-      "intensity": 131,
-      "detected_pos": [
-        315,
-        193
-      ]
-    },
-    {
-      "beat_index": 141,
-      "time": 112.233,
-      "type": "red",
-      "intensity": 51,
-      "detected_pos": [
-        315,
-        193
-      ]
-    },
-    {
-      "beat_index": 142,
-      "time": 114.5,
-      "type": "red",
-      "intensity": 150,
-      "detected_pos": [
-        315,
-        193
+        175,
+        315
       ]
     }
   ]
