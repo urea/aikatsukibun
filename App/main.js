@@ -273,19 +273,118 @@ document.addEventListener('DOMContentLoaded', () => {
         else currentSparkleEmoji = '✦';
     };
 
-    // 曲のタイトル名等からテーマタイプを自動判定する
-    const detectThemeFromTitle = (title) => {
-        const cuteRegex = /キュート|cute|ピンク|pink|アイドル活動|ハッピーレインボー|Angely Sugar|エンジェリーシュガー|マリア|さくら/i;
-        const coolRegex = /クール|cool|パープル|purple|セクシー|sexy|硝子|カレイドスコープ|Spicy|ゴス|Goth|ロリゴシック|Loli|美月|ユリカ|蘭/i;
-        const popRegex = /ポップ|pop|イエロー|yellow|オレンジ|orange|ダイヤ|ダイヤモンド|おとめ|きい|セイラ/i;
+    // 主要動画IDとテーマの直接マッピングテーブル（主要なプレイ動画のIDを正確に関連付け）
+    const videoIdThemeMap = {
+        // クールテーマ (theme-cool)
+        'fYibOFCMpnE': 'theme-cool', // 硝子ドール (ユリカ)
+        'RjGv7Sa4YQo': 'theme-cool', // Signalize! (いちご/美月)
+        'Wy_pD0JgHR4': 'theme-cool', // G線上のShining Sky
+        '2BN2jH1zlUA': 'theme-cool', // Growing for a dream
+        'bBYYGWyi_Ig': 'theme-cool', // Take Me Higher (美月/蘭/ユリカ)
+        '7fJuYvx3ou0': 'theme-cool', // Dancing Baby
+        '2t0vIcfvEeY': 'theme-cool', // チュチュ・バレリーナ
+        'ltcZaHcarug': 'theme-cool', // タルト・タタン (スミレ)
+        'HvtKsOu48JU': 'theme-cool', // Moonlight destiny (美月)
+        'lsFTKcP9EyA': 'theme-cool', // Chica×Chica (珠璃/凛/まどか - ※情熱のCool/Sexy)
+        'bz6ejOvk2_U': 'theme-cool', // 永遠の灯 (ユリカ)
+        'vHnENRwluK0': 'theme-cool', // 薄紅デイトリッパー (みやび)
+        'AyNw00TNrCA': 'theme-cool', // MY SHOWTIME! (凛)
+        'cvArV6EOysI': 'theme-cool', // 魅惑の九尾
+        'I8rX7mfQd90': 'theme-cool', // Trap of Love (蘭)
+        'gtXHDzYyCA': 'theme-cool',  // prism spiral (あおい)
+        'KsORl3_jgMQ': 'theme-cool', // 硝子ドール
+        'bz6ejOvk2_U': 'theme-cool', // 永遠の灯
+        '3lFpoJyNmSs': 'theme-cool', // タルト・タタン
+        
+        // キュートテーマ (theme-cute)
+        'BDu-c8m3Elo': 'theme-cute', // アイドル活動！ (Rock)
+        'tsKd6HdXvso': 'theme-cute', // アイドル活動！ (いちご)
+        '3qqJ1WpF1Cg': 'theme-cute', // カレンダーガール (いちご/あおい/蘭)
+        'uISk1HrbFzA': 'theme-cute', // ヒラリ/ヒトリ/キラリ (STAR☆ANIS)
+        'aKPhl4S91mM': 'theme-cute', // ハッピィクレッシェンド
+        'KATAtxUEEy4': 'theme-cute', // Du-Du-Wa DO IT!! (あかり)
+        'ULY7WX4_Sd8': 'theme-cute', // 恋するみたいなキャラメリゼ
+        'pJEKdGGQXdo': 'theme-cute', // 桜色花伝 (さくら)
+        '9w_utuMvfOc': 'theme-cute', // チュチュ・バレリーナ (スミレ/凛 - ※Cute/Cool)
+        'cwZBNZkF4UQ': 'theme-cute', // 笑顔のSuncatcher
+        'UNwx5x2NM9A': 'theme-cute', // Pretty Pretty
+        'S3bGcj2Rm5o': 'theme-cute', // Lovely Party Collection
+        'WLnv4MwbumM': 'theme-cute', // スタートライン！
+        'WO9D0IKmnX0': 'theme-cute', // 始まりの伝説
+        'TrTFIr8f-n0': 'theme-cute', // ハートのメロディ
+        'NLi86WxjPvs': 'theme-cute', // オリジナルスター☆彡
+        'vPWL8vYPHNM': 'theme-cute', // キラリ☆パーティータイム
+        '3gVFHFm9Gxw': 'theme-cute', // カレンダーガール
+        'xiXCHkBaOCg': 'theme-cute', // カレンダーガール
+        
+        // ポップテーマ (theme-pop)
+        'e9LkFKbRoq4': 'theme-pop',  // ダイヤモンドハッピー
+        '4z31xQuGTp4': 'theme-pop',  // ダイヤモンドハッピー (いちご/あおい/蘭)
+        'q5d60AsaN98': 'theme-pop',  // Angel Snow (おとめ)
+        'ZCEXyMPKWhA': 'theme-pop',  // オトナモード (みくる)
+        'sRfanR9ZZ0U': 'theme-pop',  // ハッピークレヨン (おとめ)
+        'qs4FOgqvTj0': 'theme-pop',  // 放課後ポニーテール (しおん)
+        'ujWIfR_rwIg': 'theme-pop',  // マジカルタイム (きい)
+        'tezg1gSJbdo': 'theme-pop',  // KIRA☆Power (いちご/セイラ)
+        'huFkGmp6eaw': 'theme-pop',  // ハローニューワールド (ひなき)
+        'oz9aqDD7F_c': 'theme-pop',  // Poppin' Bubbles (ひなき/珠璃)
+        'THoRA3aT4og': 'theme-pop',  // サマー☆マジック
+        'bu5dmV11-ok': 'theme-pop',  // ミエルエール (みくる)
+        'B8tgwNoJ_8A': 'theme-pop',  // 恋するみたいなキャラメリゼ
+        'S3twekqjVQc': 'theme-pop'   // ドリームバルーン
+    };
 
-        if (cuteRegex.test(title)) return 'theme-cute';
-        if (coolRegex.test(title)) return 'theme-cool';
-        if (popRegex.test(title)) return 'theme-pop';
+    // 曲のタイトル名とIDから、テーマカラーを決定する
+    const detectTheme = (title, videoId) => {
+        // 1. まず動画IDでのマッピングテーブルを最優先チェック
+        if (videoIdThemeMap[videoId]) {
+            return videoIdThemeMap[videoId];
+        }
 
-        // 判定不能な場合はランダムに割り振る
+        const titleLower = title.toLowerCase();
+
+        // 2. タイトルのキーワード（キャラクター、ブランド、楽曲名）から詳細に自動判定
+        
+        // --- キュート属性判定キーワード ---
+        const cuteRegex = new RegExp([
+            'キュート', 'cute', 'ピンク', 'pink', 'アイドル活動', 'カレンダーガール', 
+            'いちご', 'あかり', 'マリア', 'さくら', 'のえる', 'まどか', 'ここね', 
+            'エンジェリーシュガー', 'angely', 'ドリーミークラウン', 'crown',
+            'オーロラファンタジー', 'aurora', 'スウィートスパイア', 'sweet spire', 
+            'ハートのメロディ', 'pretty', 'スターライト', '始まりの伝説', 
+            'オリジナルスター', 'フレンド', 'ハッピィクレッシェンド', 'Blooming'
+        ].join('|'), 'i');
+
+        // --- クール属性判定キーワード ---
+        const coolRegex = new RegExp([
+            'クール', 'cool', 'パープル', 'purple', 'セクシー', 'sexy', 
+            '硝子', 'カレイドスコープ', '美月', 'ユリカ', '蘭', 'セイラ', 'スミレ', '凛', 'みやび', 
+            'エルザ', 'レイ', 'アリシア', 'スパイシーアゲハ', 'spicy', 'ロリゴシック', 'loli', 'goth', 
+            'サングリアロサ', 'sangria', 'シャイニング', 'shining', 'prism', 'spiral', 'trap', 'love', 
+            'precious', 'タルト', 'タタン', 'デイトリッパー', 'flicker', 'destiny', 'higher', 'chica', 
+            'チュチュ', 'シグナライズ', 'signalize', '永遠の灯', '薄紅', 'ダンシングディーヴァ'
+        ].join('|'), 'i');
+
+        // --- ポップ属性判定キーワード ---
+        const popRegex = new RegExp([
+            'ポップ', 'pop', 'イエロー', 'yellow', 'オレンジ', 'orange', 
+            'おとめ', 'きい', 'ひなき', '珠璃', 'みくる', 'ゆず', 'ニーナ',
+            'ハッピーレインボー', 'rainbow', 'マジカルトイ', 'toy', 'ヴィヴィッドキス', 'vivid', 'kiss', 
+            'ダイヤモンド', 'ダイヤ', 'クレヨン', 'サマー', 'ミエル', 'オトナモード', 'ポニーテール',
+            'マジカルタイム', 'kira☆power', 'ハッピークレヨン', 'bubbles'
+        ].join('|'), 'i');
+
+        if (cuteRegex.test(titleLower)) return 'theme-cute';
+        if (coolRegex.test(titleLower)) return 'theme-cool';
+        if (popRegex.test(titleLower)) return 'theme-pop';
+
+        // 3. 全てに引っかからない場合は、一貫性を保つため動画IDのハッシュ値から決定（毎回同じ曲は必ず同じテーマになる）
+        let hash = 0;
+        for (let i = 0; i < videoId.length; i++) {
+            hash += videoId.charCodeAt(i);
+        }
         const defaultThemes = ['theme-cute', 'theme-cool', 'theme-pop'];
-        return defaultThemes[Math.floor(Math.random() * defaultThemes.length)];
+        return defaultThemes[hash % 3];
     };
 
     const playVideo = (videoId, skipHistory = false) => {
@@ -306,7 +405,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // キャッシュデータの取得とテーマ判定
         getVideoDetail(videoId).then(detail => {
-            const theme = detectThemeFromTitle(detail.title);
+            const theme = detectTheme(detail.title, videoId);
             applyTheme(theme);
         });
     };
