@@ -95,7 +95,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentVideoId = 'fYibOFCMpnE';
     let currentTheme = 'theme-cool';
     let currentSparkleEmoji = '✦';
-    let isMuted = true; // 初回はミュート、以後は選曲時に自動的に解除
 
     // LocalStorageから配列を読み込み
     let favoriteIds = JSON.parse(localStorage.getItem('fav_ids') || '[]');
@@ -401,12 +400,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const playVideo = (videoId, skipHistory = false) => {
         currentVideoId = videoId;
         
-        // プレイヤーの書き換え
-        const embedUrl = `https://www.youtube.com/embed/${videoId}?enablejsapi=1&autoplay=1&mute=${isMuted ? 1 : 0}`;
+        // プレイヤーの書き換え（選曲時はユーザー操作直後のため、常にミュートなしで自動再生）
+        const embedUrl = `https://www.youtube.com/embed/${videoId}?enablejsapi=1&autoplay=1&mute=0`;
         youtubePlayer.src = embedUrl;
-
-        // 2回目以降の選曲時はミュートを自動解除
-        if (isMuted) isMuted = false;
 
         // 履歴への追加
         if (!skipHistory) {
