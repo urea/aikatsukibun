@@ -8,6 +8,7 @@
 - **task.md**: [システム・アーティファクト](../../task.md) 【一時的】
 
 ## 履歴・記録 (Dev/docs/misc/)
+- **20260520-0810_AikatsuKibun_画像解析検証Walkthrough.md**: [画像解析検証Walkthrough](./misc/20260520-0810_AikatsuKibun_画像解析検証Walkthrough.md) 【技術資産】
 - **20260520-0738_AikatsuKibun_パワーアップアイデア.md**: [パワーアップアイデア](./misc/20260520-0738_AikatsuKibun_パワーアップアイデア.md) 【提案書】
 - **20260519-1415_AikatsuKibun_進化完了Walkthrough.md**: [超進化完了Walkthrough](./misc/20260519-1415_AikatsuKibun_進化完了Walkthrough.md) 【信頼済み】
 - **20260519-1405_AikatsuKibun_Current_Status.md**: [現在の開発ステータス](./misc/20260519-1405_AikatsuKibun_Current_Status.md) 【Source of Truth】
