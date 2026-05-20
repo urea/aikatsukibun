@@ -234,6 +234,28 @@
         </div>
       </div>
 
+      <!-- ⏳ タイムラインセクション -->
+      <div class="editor-section">
+        <h3>⏳ インタラクティブ・タイムライン</h3>
+        <div id="timeline-container" class="timeline-container">
+          <!-- 再生ヘッド（現在の時間を示す赤い縦バー） -->
+          <div id="timeline-playhead" class="timeline-playhead"></div>
+          <!-- 目盛りとノーツピンをプロットするトラック -->
+          <div id="timeline-track" class="timeline-track">
+            <div id="timeline-ticks" class="timeline-ticks"></div>
+            <div id="timeline-notes" class="timeline-notes"></div>
+          </div>
+        </div>
+        <div class="timeline-controls">
+          <div class="zoom-btn-group">
+            <button id="tl-zoom-out" class="mini-btn">🔍- 縮小</button>
+            <span id="tl-zoom-val" class="offset-display" style="min-width: 35px;">1.0x</span>
+            <button id="tl-zoom-in" class="mini-btn">🔍+ 拡大</button>
+          </div>
+          <span class="offset-help">(タイムラインをクリックしてシーク / ピンをクリックしてノーツ削除)</span>
+        </div>
+      </div>
+
       <!-- ③ JSONインポート / エクスポート -->
       <div class="editor-section flex-grow">
         <h3>📤 JSON 譜面データ (リアルタイム出力)</h3>

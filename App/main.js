@@ -104,6 +104,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let isEditorMode = false;
     let isRecording = false;
     let tempBeatmap = []; // 編集・レコーディング中のテンポラリ配列
+    let timelineZoom = 1.0; // タイムラインの表示倍率
+    const BASE_PIXELS_PER_SECOND = 40; // 1秒あたりの基準ピクセル幅 (ズーム1.0x)
 
     // --- 3.5 リズムゲーム用状態変数と同期・判定ロジック ---
     const scoreVal = document.getElementById('score-val');
@@ -127,6 +129,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const offsetMinus = document.getElementById('offset-minus');
     const offsetPlus = document.getElementById('offset-plus');
     const offsetValEl = document.getElementById('offset-val');
+
+    // ⏳ タイムライン用DOM要素
+    const timelineContainer = document.getElementById('timeline-container');
+    const timelineTrack = document.getElementById('timeline-track');
+    const timelinePlayhead = document.getElementById('timeline-playhead');
+    const timelineTicks = document.getElementById('timeline-ticks');
+    const timelineNotes = document.getElementById('timeline-notes');
+    const tlZoomIn = document.getElementById('tl-zoom-in');
+    const tlZoomOut = document.getElementById('tl-zoom-out');
+    const tlZoomVal = document.getElementById('tl-zoom-val');
 
     let hasBeatmap = false;
     let rawBeatmap = [];      // 全ノーツデータ
@@ -170,36 +182,65 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const currentTime = getSmoothCurrentTime();
 
+            // 🎬 エディター用：タイムライン再生ヘッドの同期
+            if (isEditorMode) {
+                updateTimelinePlayhead(currentTime);
+            }
+
             activeNotes.forEach(note => {
-                if (note.state !== 'active') return;
+                if (isEditorMode && note.state === 'hit') return;
 
                 const timeDiff = (note.time + BEATMAP_OFFSET) - currentTime;
 
-                // 3秒未来から0.5秒過去までの範囲でノーツDOMを作成・破棄
-                if (!note.element && timeDiff <= 3.0 && timeDiff >= -0.5) {
-                    const noteEl = document.createElement('div');
-                    noteEl.className = `lane-note ${note.type}`;
-                    laneNotesContainer.appendChild(noteEl);
-                    note.element = noteEl;
-                }
+                if (isEditorMode) {
+                    // --- 🎬 エディターモード中の描画挙動 ---
+                    if (!note.element && timeDiff <= 3.0 && timeDiff >= -0.5) {
+                        const noteEl = document.createElement('div');
+                        noteEl.className = `lane-note ${note.type}`;
+                        laneNotesContainer.appendChild(noteEl);
+                        note.element = noteEl;
+                    }
 
-                if (note.element) {
-                    if (timeDiff < -0.3) {
-                        // 通過して300ms経過で自動MISS判定
-                        note.state = 'miss';
-                        note.element.remove();
-                        note.element = null;
-                        triggerJudgement('MISS');
-                    } else {
-                        // 右から左へスクロール
-                        const x = JUDGE_LINE_X + timeDiff * NOTE_SPEED;
-                        note.element.style.left = `${x}px`;
+                    if (note.element) {
+                        if (timeDiff < -0.5 || timeDiff > 3.0) {
+                            note.element.remove();
+                            note.element = null;
+                        } else {
+                            const x = JUDGE_LINE_X + timeDiff * NOTE_SPEED;
+                            note.element.style.left = `${x}px`;
+                        }
+                    }
+                    // エディタ中はactiveを維持して逆方向シーク時に再描画できるようにする
+                    note.state = 'active';
+                } else {
+                    // --- 🎮 通常プレイ時の描画＆判定挙動 ---
+                    if (note.state !== 'active') return;
+
+                    if (!note.element && timeDiff <= 3.0 && timeDiff >= -0.5) {
+                        const noteEl = document.createElement('div');
+                        noteEl.className = `lane-note ${note.type}`;
+                        laneNotesContainer.appendChild(noteEl);
+                        note.element = noteEl;
+                    }
+
+                    if (note.element) {
+                        if (timeDiff < -0.3) {
+                            note.state = 'miss';
+                            note.element.remove();
+                            note.element = null;
+                            triggerJudgement('MISS');
+                        } else {
+                            const x = JUDGE_LINE_X + timeDiff * NOTE_SPEED;
+                            note.element.style.left = `${x}px`;
+                        }
                     }
                 }
             });
 
-            // 判定済みのノーツを配列から除外
-            activeNotes = activeNotes.filter(note => note.state === 'active');
+            if (!isEditorMode) {
+                // 通常プレイ時のみアクティブなものだけにフィルタリング
+                activeNotes = activeNotes.filter(note => note.state === 'active');
+            }
 
             animationFrameId = requestAnimationFrame(updateLoop);
         };
@@ -290,6 +331,107 @@ document.addEventListener('DOMContentLoaded', () => {
                 beatmap: tempBeatmap
             };
             editorJsonArea.value = JSON.stringify(exportData, null, 2);
+        }
+        // ⏳ タイムラインのノーツを描画
+        drawTimelineNotes();
+    };
+
+    // ⏳ タイムライン：目盛り ticks 描画
+    const drawTimelineTicks = () => {
+        if (!timelineTicks || !ytPlayer || typeof ytPlayer.getDuration !== 'function') return;
+        timelineTicks.innerHTML = '';
+        
+        const duration = ytPlayer.getDuration() || 180;
+        const pps = BASE_PIXELS_PER_SECOND * timelineZoom;
+        const trackWidth = duration * pps;
+        if (timelineTrack) timelineTrack.style.width = `${trackWidth}px`;
+
+        let step = 1;
+        if (timelineZoom < 0.75) step = 2;
+        if (timelineZoom < 0.4) step = 5;
+        if (timelineZoom < 0.2) step = 10;
+        
+        for (let sec = 0; sec <= duration; sec += step) {
+            const x = sec * pps;
+            const isMajor = sec % 5 === 0;
+
+            const tickLine = document.createElement('div');
+            tickLine.className = `timeline-tick-line ${isMajor ? 'major' : ''}`;
+            tickLine.style.left = `${x}px`;
+            timelineTicks.appendChild(tickLine);
+
+            if (isMajor) {
+                const label = document.createElement('div');
+                label.className = 'timeline-tick-label';
+                label.style.left = `${x}px`;
+                
+                const m = Math.floor(sec / 60);
+                const s = String(sec % 60).padStart(2, '0');
+                label.textContent = `${m}:${s}`;
+                timelineTicks.appendChild(label);
+            }
+        }
+    };
+
+    // ⏳ タイムライン：ノーツピンの描画
+    const drawTimelineNotes = () => {
+        if (!timelineNotes) return;
+        timelineNotes.innerHTML = '';
+
+        const pps = BASE_PIXELS_PER_SECOND * timelineZoom;
+
+        tempBeatmap.forEach((note) => {
+            const x = note.time * pps;
+            const pin = document.createElement('div');
+            pin.className = `timeline-note-pin type-${note.type}`;
+            pin.style.left = `${x}px`;
+            pin.title = `${note.type}ノーツ: ${note.time.toFixed(3)}秒`;
+
+            // ピンクリック時にピンポイント削除
+            pin.addEventListener('click', (e) => {
+                e.stopPropagation(); // タイムラインのシークを防ぐ
+                
+                // 削除処理
+                tempBeatmap = tempBeatmap.filter(n => n.beat_index !== note.beat_index);
+                tempBeatmap.sort((a, b) => a.time - b.time);
+                tempBeatmap.forEach((n, idx) => n.beat_index = idx + 1);
+
+                // 同期
+                rawBeatmap = tempBeatmap;
+                activeNotes = rawBeatmap.map(n => ({
+                    ...n,
+                    element: null,
+                    state: 'active'
+                }));
+
+                if (tempBeatmap.length === 0) {
+                    if (noBeatmapGuide) noBeatmapGuide.classList.remove('hidden');
+                }
+
+                updateEditorUI();
+            });
+
+            timelineNotes.appendChild(pin);
+        });
+    };
+
+    // ⏳ タイムライン：再生ヘッド位置更新＆自動スクロール
+    const updateTimelinePlayhead = (currentTime) => {
+        if (!timelinePlayhead) return;
+        const pps = BASE_PIXELS_PER_SECOND * timelineZoom;
+        const x = currentTime * pps;
+        timelinePlayhead.style.left = `${x}px`;
+
+        if (isEditorMode && timelineContainer) {
+            const containerWidth = timelineContainer.clientWidth;
+            const scrollLeft = timelineContainer.scrollLeft;
+            
+            // ヘッドが右側70%を超えたらスクロール
+            if (x > scrollLeft + containerWidth * 0.7) {
+                timelineContainer.scrollLeft = x - containerWidth * 0.3;
+            } else if (x < scrollLeft) {
+                timelineContainer.scrollLeft = x - containerWidth * 0.3;
+            }
         }
     };
 
@@ -1056,8 +1198,18 @@ document.addEventListener('DOMContentLoaded', () => {
                         
                         if (event.data === YT.PlayerState.PLAYING) {
                             overlay.classList.remove('paused');
+                            // ⏳ タイムライン：再生開始時に目盛りを再構築 (時間幅の同期)
+                            if (isEditorMode) {
+                                drawTimelineTicks();
+                                drawTimelineNotes();
+                            }
                         } else if (event.data === YT.PlayerState.PAUSED) {
                             overlay.classList.add('paused');
+                            // ⏳ タイムライン：一時停止時も目盛りとノーツを更新
+                            if (isEditorMode) {
+                                drawTimelineTicks();
+                                drawTimelineNotes();
+                            }
                         } else if (event.data === YT.PlayerState.ENDED) {
                             overlay.classList.add('paused');
                         }
@@ -1175,6 +1327,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     // 編集用テンポラリ配列を同期
                     tempBeatmap = JSON.parse(JSON.stringify(rawBeatmap));
                     updateEditorUI();
+                    
+                    // ⏳ タイムラインの初期描画を実行
+                    setTimeout(() => {
+                        drawTimelineTicks();
+                        drawTimelineNotes();
+                        updateTimelinePlayhead(getSmoothCurrentTime());
+                    }, 100);
                 } else {
                     ctrlEditor.classList.remove('active');
                     stopRecording();
@@ -1342,6 +1501,48 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 初期表示を反映
         updateOffsetDisplay();
+
+        // ⏳ タイムライン：シーククリック同期
+        if (timelineTrack) {
+            timelineTrack.addEventListener('click', (e) => {
+                if (!ytPlayer || typeof ytPlayer.seekTo !== 'function' || typeof ytPlayer.getDuration !== 'function') return;
+                
+                const rect = timelineTrack.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                const pps = BASE_PIXELS_PER_SECOND * timelineZoom;
+                
+                let targetTime = clickX / pps;
+                const duration = ytPlayer.getDuration();
+                
+                targetTime = Math.max(0, Math.min(duration, targetTime));
+                
+                ytPlayer.seekTo(targetTime, true);
+                updateTimelinePlayhead(targetTime);
+            });
+        }
+
+        // ⏳ タイムライン：ズームコントロール
+        if (tlZoomIn) {
+            tlZoomIn.addEventListener('click', () => {
+                timelineZoom = parseFloat((timelineZoom + 0.25).toFixed(2));
+                if (timelineZoom > 3.0) timelineZoom = 3.0;
+                if (tlZoomVal) tlZoomVal.textContent = `${timelineZoom.toFixed(2)}x`;
+                drawTimelineTicks();
+                drawTimelineNotes();
+                updateTimelinePlayhead(getSmoothCurrentTime());
+            });
+        }
+
+        if (tlZoomOut) {
+            tlZoomOut.addEventListener('click', () => {
+                timelineZoom = parseFloat((timelineZoom - 0.25).toFixed(2));
+                if (timelineZoom < 0.25) timelineZoom = 0.25;
+                if (tlZoomVal) tlZoomVal.textContent = `${timelineZoom.toFixed(2)}x`;
+                drawTimelineTicks();
+                drawTimelineNotes();
+                updateTimelinePlayhead(getSmoothCurrentTime());
+            });
+        }
     };
 
     // 初回ロード時の初期化

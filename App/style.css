@@ -1343,3 +1343,156 @@ body {
   line-height: 1.3;
 }
 
+
+/* ==================== タイムラインコントロール & コンテナ ==================== */
+.timeline-container {
+  width: 100%;
+  height: 85px;
+  background: #08080c;
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  position: relative;
+  overflow-x: auto;
+  overflow-y: hidden;
+  box-sizing: border-box;
+  margin-top: 5px;
+}
+
+/* カスタムスクロールバー (タイムライン専用) */
+.timeline-container::-webkit-scrollbar {
+  height: 6px;
+}
+.timeline-container::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+}
+.timeline-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+.timeline-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.timeline-track {
+  height: 100%;
+  position: relative;
+  min-width: 100%;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.02),
+    rgba(255, 255, 255, 0.02) 25px,
+    transparent 25px,
+    transparent 50px
+  );
+  cursor: pointer;
+}
+
+/* タイムライン再生ヘッド */
+.timeline-playhead {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 2px;
+  height: 100%;
+  background: #ff3366;
+  box-shadow: 0 0 8px #ff3366;
+  z-index: 10;
+  pointer-events: none;
+  transition: left 0.08s linear;
+}
+
+/* タイムラインの目盛り ticks */
+.timeline-ticks {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 20px;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+  pointer-events: none;
+}
+
+.timeline-tick-line {
+  position: absolute;
+  top: 0;
+  width: 1px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.2);
+}
+.timeline-tick-line.major {
+  height: 12px;
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.timeline-tick-label {
+  position: absolute;
+  top: 2px;
+  transform: translateX(-50%);
+  font-size: 8px;
+  font-family: 'Outfit', monospace;
+  color: #777;
+  font-weight: bold;
+}
+
+/* タイムライン上のノーツピン */
+.timeline-notes {
+  position: absolute;
+  top: 20px;
+  left: 0;
+  width: 100%;
+  height: 65px;
+}
+
+.timeline-note-pin {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-left: -5px;
+  border: 1.5px solid #fff;
+  cursor: pointer;
+  z-index: 5;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+/* ピン配置レーン (色ごとに高さを分けて重なりを防止) */
+.timeline-note-pin.type-red {
+  top: 8px;
+  background: #ff3366;
+  box-shadow: 0 0 6px rgba(255, 51, 102, 0.8);
+}
+.timeline-note-pin.type-green {
+  top: 22px;
+  background: #33cc66;
+  box-shadow: 0 0 6px rgba(51, 204, 102, 0.8);
+}
+.timeline-note-pin.type-yellow {
+  top: 36px;
+  background: #ffcc33;
+  box-shadow: 0 0 6px rgba(255, 204, 51, 0.8);
+}
+
+.timeline-note-pin:hover {
+  transform: scale(1.5);
+  z-index: 99;
+  border-color: #ffea85;
+  box-shadow: 0 0 10px #fff;
+}
+
+/* タイムラインの操作UI */
+.timeline-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.7rem;
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+  padding-top: 8px;
+  margin-top: 4px;
+}
+
+.zoom-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
