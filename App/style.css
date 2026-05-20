@@ -12,6 +12,10 @@
   user-select: none;
 }
 
+.hidden {
+  display: none !important;
+}
+
 :root {
   /* 共通のゴールドカラー */
   --gold-primary: #ffd700;
