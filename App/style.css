@@ -1020,19 +1020,29 @@ body {
 @media (min-width: 769px) {
   body.editor-mode-active {
     display: flex;
-    justify-content: flex-start;
-    align-items: flex-start;
+    justify-content: center; /* 左右中央に寄せる */
+    align-items: center;     /* 上下中央に寄せる */
     background: #0d0d12 !important;
+    gap: 50px;               /* 筐体とエディタの間に上品なスペースを確保 */
+    min-height: 100vh;
+    padding: 20px;
+    box-sizing: border-box;
     overflow-x: hidden;
   }
 
   body.editor-mode-active #app {
-    margin: 0 0 0 30px; /* 左端に寄せる */
-    transition: margin 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    margin: 0;               /* 左端寄せマージンをリセット */
+    transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
   }
 
   body.editor-mode-active .editor-panel {
     display: flex;
+    position: relative;      /* 画面右端のfixedから解除し、フレックス並びにする */
+    width: 580px;            /* 横幅を420pxから580pxに大幅拡大 */
+    height: calc(100vh - 40px); /* 画面上下パディングを考慮した美しい高さ */
+    border-left: 1.5px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;     /* 浮遊感のあるプレミアムな角丸 */
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
     animation: slideInRight 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
   }
 }
