@@ -132,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const editPlayTestBtn = document.getElementById('edit-play-test-btn');
     const recStatusVal = document.getElementById('rec-status-val');
     const editorNotesCount = document.getElementById('editor-notes-count');
-    const editSaveBtn = document.getElementById('edit-save-btn');
+
     const offsetMinus = document.getElementById('offset-minus');
     const offsetPlus = document.getElementById('offset-plus');
     const offsetValEl = document.getElementById('offset-val');
@@ -449,21 +449,9 @@ document.addEventListener('DOMContentLoaded', () => {
             animationFrameId = null;
         }
 
-        // 1. ローカルストレージにカスタム譜面があれば最優先ロード
-        const localData = localStorage.getItem('beatmap_' + videoId);
+        // 1. デフォルト曲のみビルトイン譜面をデフォルトロード（非同期でサーバー最新が取得されるまでのプレースホルダー）
         let loadedBeatmap = [];
-
-        if (localData) {
-            try {
-                const parsed = JSON.parse(localData);
-                loadedBeatmap = parsed.beatmap || parsed || [];
-                hasBeatmap = true;
-            } catch(e) {
-                console.error("Local beatmap parse error:", e);
-                hasBeatmap = false;
-            }
-        } else if (videoId === 'fYibOFCMpnE') {
-            // 2. なければ、デフォルト曲のみビルトイン譜面をロード
+        if (videoId === 'fYibOFCMpnE') {
             loadedBeatmap = beatmapData.beatmap || [];
             hasBeatmap = true;
         } else {
@@ -1457,26 +1445,32 @@ document.addEventListener('DOMContentLoaded', () => {
                     activeNotes = [];
                     if (laneNotesContainer) laneNotesContainer.innerHTML = '';
                     updateEditorUI();
-                    localStorage.removeItem('beatmap_' + currentVideoId);
                 }
             });
         }
 
-        // 4. テストプレイ (ローカルストレージへ即時保存して0秒再生)
+        // 4. テストプレイ (編集中のテンポラリデータを直接適用して0秒再生)
         if (editPlayTestBtn) {
             editPlayTestBtn.addEventListener('click', () => {
                 stopRecording();
 
-                localStorage.setItem('beatmap_' + currentVideoId, JSON.stringify({
-                    metadata: {
-                        source_video: `https://www.youtube.com/watch?v=${currentVideoId}`,
-                        total_notes: tempBeatmap.length,
-                        dynamic_target_tracking: true
-                    },
-                    beatmap: tempBeatmap
+                // 編集中の譜面を直接リズムゲームのデータに適用
+                rawBeatmap = tempBeatmap;
+                activeNotes = rawBeatmap.map(note => ({
+                    ...note,
+                    element: null,
+                    state: 'active'
                 }));
 
-                initRhythmGame(currentVideoId);
+                // 描画エリアとゲームループ初期化
+                if (laneNotesContainer) laneNotesContainer.innerHTML = '';
+                if (gameContainer) gameContainer.classList.remove('hidden');
+                
+                if (animationFrameId) {
+                    cancelAnimationFrame(animationFrameId);
+                    animationFrameId = null;
+                }
+                startRhythmGameLoop();
 
                 if (ytPlayer && typeof ytPlayer.seekTo === 'function') {
                     ytPlayer.seekTo(0, true);
