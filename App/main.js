@@ -92,8 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // 👥 ユーザー投稿譜面共有システム関連のDOM
-    const beatmapSelectorContainer = document.getElementById('beatmap-selector-container');
-    const beatmapSelectDropdown = document.getElementById('beatmap-select-dropdown');
+    const editGenerationSelect = document.getElementById('edit-generation-select');
     const editShareDbBtn = document.getElementById('edit-share-db-btn');
     const modalShare = document.getElementById('modal-share');
     const shareAuthorName = document.getElementById('share-author-name');
@@ -512,40 +511,72 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchSharedBeatmaps(videoId);
     };
 
-    // 👥 サーバーから投稿された譜面を取得してドロップダウンを更新する
-    const fetchSharedBeatmaps = async (videoId) => {
-        if (!beatmapSelectDropdown || !beatmapSelectorContainer) return;
+    // 👥 共有譜面データをロードしてゲーム＆エディタに反映するヘルパー
+    const loadSharedBeatmapData = (selected) => {
+        score = 0;
+        combo = 0;
+        if (scoreVal) scoreVal.textContent = '000000';
+        if (comboVal) comboVal.textContent = '0';
+        if (laneNotesContainer) laneNotesContainer.innerHTML = '';
+        if (noBeatmapGuide) noBeatmapGuide.classList.add('hidden');
         
-        // ドロップダウンを初期状態（デフォルトのみ）に戻す
-        beatmapSelectDropdown.innerHTML = '<option value="default">🎵 デフォルト (公式)</option>';
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = null;
+        }
+        
+        rawBeatmap = selected.notes || [];
+        activeNotes = rawBeatmap.map(note => ({
+            ...note,
+            element: null,
+            state: 'active'
+        }));
+        hasBeatmap = rawBeatmap.length > 0;
+        
+        if (hasBeatmap) {
+            if (gameContainer) gameContainer.classList.remove('hidden');
+            startRhythmGameLoop();
+        }
+        
+        // エディタ側を同期
+        tempBeatmap = JSON.parse(JSON.stringify(rawBeatmap));
+        updateEditorUI();
+    };
+
+    // 👥 サーバーから投稿された譜面を取得して自動適用＆エディタ世代リストを更新
+    const fetchSharedBeatmaps = async (videoId) => {
+        if (!editGenerationSelect) return;
+        
+        // 世代選択肢をクリア
+        editGenerationSelect.innerHTML = '<option value="">🎵 最新の公開譜面 (自動適用中)</option>';
         
         try {
             const response = await fetch(`/api/get-beatmaps?videoId=${videoId}`);
             if (response.ok) {
                 const data = await response.json();
                 if (data.beatmaps && data.beatmaps.length > 0) {
-                    // キャッシュをグローバルに格納
+                    // キャッシュに保存
                     window.sharedBeatmapsCache = data.beatmaps;
                     
-                    data.beatmaps.forEach(bm => {
+                    // 最新1件を自動適用
+                    const latestBeatmap = data.beatmaps[0];
+                    loadSharedBeatmapData(latestBeatmap);
+                    
+                    // 世代選択肢に追加
+                    data.beatmaps.forEach((bm, index) => {
                         const option = document.createElement('option');
                         option.value = bm.id;
+                        const timeStr = new Date(bm.created_at).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
                         const titleSuffix = bm.title ? ` [${bm.title}]` : '';
-                        option.textContent = `👤 ${bm.author_name}${titleSuffix}`;
-                        beatmapSelectDropdown.appendChild(option);
+                        option.textContent = `${index === 0 ? '🆕 最新 ' : ''}(${timeStr}) 作成者: ${bm.author_name}${titleSuffix}`;
+                        editGenerationSelect.appendChild(option);
                     });
-                    
-                    // プルダウンを表示
-                    beatmapSelectorContainer.classList.remove('hidden');
                 } else {
-                    beatmapSelectorContainer.classList.add('hidden');
+                    window.sharedBeatmapsCache = [];
                 }
-            } else {
-                beatmapSelectorContainer.classList.add('hidden');
             }
         } catch (e) {
             console.error("Shared beatmaps fetch error:", e);
-            beatmapSelectorContainer.classList.add('hidden');
         }
     };
 
@@ -1757,48 +1788,25 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('click', initAudioContext, { once: true });
     document.addEventListener('touchstart', initAudioContext, { once: true });
 
-    // 👥 ドロップダウン切り替え時のイベント登録
-    if (beatmapSelectDropdown) {
-        beatmapSelectDropdown.addEventListener('change', (e) => {
+    // 👥 世代切り替えイベントの登録
+    if (editGenerationSelect) {
+        editGenerationSelect.addEventListener('change', (e) => {
             const val = e.target.value;
-            if (val === 'default') {
-                // デフォルト譜面をロード
-                initRhythmGame(currentVideoId);
-            } else {
-                // 選択された共有譜面をキャッシュから探してロード
-                const selected = window.sharedBeatmapsCache?.find(bm => String(bm.id) === String(val));
-                if (selected && selected.notes) {
-                    score = 0;
-                    combo = 0;
-                    if (scoreVal) scoreVal.textContent = '000000';
-                    if (comboVal) comboVal.textContent = '0';
-                    if (judgementDisplay) {
-                        judgementDisplay.className = 'judgement-display';
-                        judgementDisplay.textContent = '';
-                    }
-                    if (laneNotesContainer) laneNotesContainer.innerHTML = '';
-                    if (noBeatmapGuide) noBeatmapGuide.classList.add('hidden');
-
-                    if (animationFrameId) {
-                        cancelAnimationFrame(animationFrameId);
-                        animationFrameId = null;
-                    }
-
-                    rawBeatmap = selected.notes;
-                    activeNotes = rawBeatmap.map(note => ({
-                        ...note,
-                        element: null,
-                        state: 'active'
-                    }));
-                    hasBeatmap = true;
-                    
-                    if (gameContainer) gameContainer.classList.remove('hidden');
-                    startRhythmGameLoop();
-                    
-                    // エディタ内のデータも同期
-                    tempBeatmap = JSON.parse(JSON.stringify(rawBeatmap));
-                    updateEditorUI();
+            if (!val) {
+                // 空（最新の自動適用）
+                if (window.sharedBeatmapsCache && window.sharedBeatmapsCache.length > 0) {
+                    loadSharedBeatmapData(window.sharedBeatmapsCache[0]);
+                } else {
+                    // なければデフォルトに戻す
+                    initRhythmGame(currentVideoId);
                 }
+                return;
+            }
+            
+            // 指定されたIDの世代データをロード
+            const selected = window.sharedBeatmapsCache?.find(bm => String(bm.id) === String(val));
+            if (selected) {
+                loadSharedBeatmapData(selected);
             }
         });
     }
