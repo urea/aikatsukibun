@@ -1547,30 +1547,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // 💾 譜面のローカル保存 (LocalStorage)
-        if (editSaveBtn) {
-            editSaveBtn.addEventListener('click', () => {
-                localStorage.setItem('beatmap_' + currentVideoId, JSON.stringify({
-                    metadata: {
-                        source_video: `https://www.youtube.com/watch?v=${currentVideoId}`,
-                        total_notes: tempBeatmap.length,
-                        dynamic_target_tracking: true
-                    },
-                    beatmap: tempBeatmap
-                }));
-
-                const originalText = editSaveBtn.textContent;
-                editSaveBtn.textContent = '✅ 保存完了！';
-                editSaveBtn.style.background = '#33cc66';
-                editSaveBtn.style.color = '#000';
-                setTimeout(() => {
-                    editSaveBtn.textContent = originalText;
-                    editSaveBtn.style.background = '';
-                    editSaveBtn.style.color = '';
-                }, 1500);
-            });
-        }
-
 
 
         // 👥 サーバーへ公開モーダルの開閉＆アップロード
