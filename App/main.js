@@ -513,12 +513,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 👥 共有譜面データをロードしてゲーム＆エディタに反映するヘルパー
     const loadSharedBeatmapData = (selected) => {
+        console.log("👥 loadSharedBeatmapData called. selected data:", selected);
         score = 0;
         combo = 0;
         if (scoreVal) scoreVal.textContent = '000000';
         if (comboVal) comboVal.textContent = '0';
         if (laneNotesContainer) laneNotesContainer.innerHTML = '';
-        if (noBeatmapGuide) noBeatmapGuide.classList.add('hidden');
+        if (noBeatmapGuide) {
+            console.log("👥 Hiding noBeatmapGuide element");
+            noBeatmapGuide.classList.add('hidden');
+        }
         
         if (animationFrameId) {
             cancelAnimationFrame(animationFrameId);
@@ -526,6 +530,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         rawBeatmap = selected.beatmap_data || [];
+        console.log("👥 rawBeatmap notes count:", rawBeatmap.length);
         activeNotes = rawBeatmap.map(note => ({
             ...note,
             element: null,
@@ -534,8 +539,11 @@ document.addEventListener('DOMContentLoaded', () => {
         hasBeatmap = rawBeatmap.length > 0;
         
         if (hasBeatmap) {
+            console.log("👥 Launching rhythm game loop...");
             if (gameContainer) gameContainer.classList.remove('hidden');
             startRhythmGameLoop();
+        } else {
+            console.warn("👥 rawBeatmap is empty, game loop will not start");
         }
         
         // エディタ側を同期
@@ -545,21 +553,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 👥 サーバーから投稿された譜面を取得して自動適用＆エディタ世代リストを更新
     const fetchSharedBeatmaps = async (videoId) => {
-        if (!editGenerationSelect) return;
+        console.log("👥 fetchSharedBeatmaps triggered for videoId:", videoId);
+        if (!editGenerationSelect) {
+            console.warn("👥 editGenerationSelect DOM element not found, skipping fetch!");
+            return;
+        }
         
         // 世代選択肢をクリア
         editGenerationSelect.innerHTML = '<option value="">🎵 最新の公開譜面 (自動適用中)</option>';
         
         try {
+            console.log("👥 Fetching from API: /api/get-beatmaps?video_id=" + videoId);
             const response = await fetch(`/api/get-beatmaps?video_id=${videoId}`);
+            console.log("👥 Fetch response status:", response.status);
+            
             if (response.ok) {
                 const data = await response.json();
+                console.log("👥 Fetched data array:", data);
                 if (data && data.length > 0) {
                     // キャッシュに保存
                     window.sharedBeatmapsCache = data;
                     
                     // 最新1件を自動適用
                     const latestBeatmap = data[0];
+                    console.log("👥 Auto-loading the latest beatmap:", latestBeatmap);
                     loadSharedBeatmapData(latestBeatmap);
                     
                     // 世代選択肢に追加
@@ -571,12 +588,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         option.textContent = `${index === 0 ? '🆕 最新 ' : ''}(${timeStr}) 作成者: ${bm.author}${titleSuffix}`;
                         editGenerationSelect.appendChild(option);
                     });
+                    console.log("👥 editGenerationSelect updated with " + data.length + " generations.");
                 } else {
+                    console.log("👥 No shared beatmaps found in database for this video.");
                     window.sharedBeatmapsCache = [];
                 }
+            } else {
+                console.error("👥 API request failed with status:", response.status);
             }
         } catch (e) {
-            console.error("Shared beatmaps fetch error:", e);
+            console.error("👥 Shared beatmaps fetch error:", e);
         }
     };
 
