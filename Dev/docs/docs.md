@@ -11,7 +11,8 @@
 - **20260520-0810_AikatsuKibun_画像解析検証Walkthrough.md**: [画像解析検証Walkthrough](./misc/20260520-0810_AikatsuKibun_画像解析検証Walkthrough.md) 【技術資産】
 - **20260520-0738_AikatsuKibun_パワーアップアイデア.md**: [パワーアップアイデア](./misc/20260520-0738_AikatsuKibun_パワーアップアイデア.md) 【提案書】
 - **20260519-1415_AikatsuKibun_進化完了Walkthrough.md**: [超進化完了Walkthrough](./misc/20260519-1415_AikatsuKibun_進化完了Walkthrough.md) 【信頼済み】
-- **20260520-0905_AikatsuKibun_Current_Status.md**: [現在の開発ステータス](./misc/20260520-0905_AikatsuKibun_Current_Status.md) 【Source of Truth】
+- **20260520-0920_AikatsuKibun_Current_Status.md**: [現在の開発ステータス](./misc/20260520-0920_AikatsuKibun_Current_Status.md) 【Source of Truth】
+- **20260520-0905_AikatsuKibun_Current_Status.md**: [旧開発ステータス(0520-0905)](./misc/20260520-0905_AikatsuKibun_Current_Status.md) 【アーカイブ】
 - **20260519-1405_AikatsuKibun_Current_Status.md**: [旧開発ステータス(0519)](./misc/20260519-1405_AikatsuKibun_Current_Status.md) 【アーカイブ】
 - **20260402-1515_AikatsuKibun_Walkthrough.md**: [初期構築Walkthrough](./misc/20260402-1515_AikatsuKibun_Walkthrough.md) 【信頼済み】
 - **20260402-1559_AikatsuKibun_Task_List.md**: [構築タスクリスト](./misc/20260402-1559_AikatsuKibun_Task_List.md) 【信頼済み】
