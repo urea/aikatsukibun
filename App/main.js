@@ -1257,64 +1257,14 @@ document.addEventListener('DOMContentLoaded', () => {
         overlay.addEventListener('click', (e) => {
             if (!ytPlayer || typeof ytPlayer.getPlayerState !== 'function') return;
 
-            // --- エディターモード中のクリック処理 (動画上プロット) ---
+            // --- エディターモード中のクリック処理 (再生/一時停止トグルのみ) ---
             if (isEditorMode) {
                 const playerState = ytPlayer.getPlayerState();
                 if (playerState === YT.PlayerState.PLAYING) {
                     ytPlayer.pauseVideo();
-                    return;
+                } else {
+                    ytPlayer.playVideo();
                 }
-
-                // タップ座標を 640x360 解像度に変換
-                const rect = overlay.getBoundingClientRect();
-                const clickX = e.clientX - rect.left;
-                const clickY = e.clientY - rect.top;
-                const x = Math.round((clickX / rect.width) * 640);
-                const y = Math.round((clickY / rect.height) * 360);
-
-                // タップ時間 (秒)
-                const time = parseFloat((getSmoothCurrentTime()).toFixed(3));
-
-                // ラジオボタンから現在選択中のカラーを取得
-                const selectedColorRadio = document.querySelector('input[name="editor-color"]:checked');
-                const noteColor = selectedColorRadio ? selectedColorRadio.value : 'red';
-
-                // 1. プロットマーカー（波紋エフェクト）の生成
-                const marker = document.createElement('div');
-                marker.className = `editor-marker color-${noteColor}`;
-                marker.style.left = `${(clickX / rect.width) * 100}%`;
-                marker.style.top = `${(clickY / rect.height) * 100}%`;
-                overlay.appendChild(marker);
-                setTimeout(() => marker.remove(), 600);
-
-                // 2. タップ音の再生
-                playTapSound();
-
-                // 3. データ追加
-                tempBeatmap.push({
-                    beat_index: tempBeatmap.length + 1,
-                    time: time,
-                    type: noteColor,
-                    intensity: 150,
-                    detected_pos: [x, y]
-                });
-
-                // 時間順ソート & インデックス振り直し
-                tempBeatmap.sort((a, b) => a.time - b.time);
-                tempBeatmap.forEach((n, idx) => n.beat_index = idx + 1);
-
-                // ゲーム本体への即時反映（プレビュー）
-                rawBeatmap = tempBeatmap;
-                activeNotes = rawBeatmap.map(note => ({
-                    ...note,
-                    element: null,
-                    state: 'active'
-                }));
-                hasBeatmap = true;
-                if (noBeatmapGuide) noBeatmapGuide.classList.add('hidden');
-
-                // UIとJSONエリアの更新
-                updateEditorUI();
                 return;
             }
 
