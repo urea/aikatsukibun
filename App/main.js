@@ -1617,6 +1617,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 作者名を次回のために保存
                 localStorage.setItem('share_author_name', authorName);
                 
+                // ボタンの二重クリック防止とローディング表示
+                const originalBtnText = btnShareSubmit.textContent;
+                btnShareSubmit.disabled = true;
+                btnShareSubmit.textContent = '⏳ 送信中...';
+                
                 if (shareStatusMessage) {
                     shareStatusMessage.textContent = '📤 アップロード中...';
                     shareStatusMessage.classList.remove('hidden');
@@ -1643,21 +1648,30 @@ document.addEventListener('DOMContentLoaded', () => {
                             shareStatusMessage.style.color = '#33cc66';
                         }
                         
-                        // 数秒後にモーダルを閉じ、ドロップダウンを更新
-                        setTimeout(() => {
-                            closeModal();
-                            // プルダウンを再取得して更新
-                            fetchSharedBeatmaps(currentVideoId);
-                        }, 1500);
+                        // 明確な成功通知ダイアログ
+                        alert('✅ サーバーへの公開が成功しました！');
+                        
+                        closeModal();
+                        fetchSharedBeatmaps(currentVideoId);
                     } else {
-                        const errData = await response.json();
-                        throw new Error(errData.error || 'サーバーエラーが発生しました。');
+                        const errData = await response.json().catch(() => ({}));
+                        const errMsg = errData.error || response.statusText || 'サーバーエラー';
+                        if (shareStatusMessage) {
+                            shareStatusMessage.textContent = `❌ 公開失敗: ${errMsg}`;
+                            shareStatusMessage.style.color = '#ff3366';
+                        }
+                        alert(`❌ サーバーへの公開に失敗しました: ${errMsg}`);
                     }
                 } catch (err) {
+                    console.error("Upload error:", err);
                     if (shareStatusMessage) {
-                        shareStatusMessage.textContent = `❌ アップロード失敗: ${err.message}`;
+                        shareStatusMessage.textContent = '❌ 送信中に接続エラーが発生しました。';
                         shareStatusMessage.style.color = '#ff3366';
                     }
+                    alert('❌ 送信中にエラーが発生しました。インターネット接続を確認してください。');
+                } finally {
+                    btnShareSubmit.disabled = false;
+                    btnShareSubmit.textContent = originalBtnText;
                 }
             });
         }
