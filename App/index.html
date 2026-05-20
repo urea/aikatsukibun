@@ -276,23 +276,6 @@
         </div>
       </div>
 
-      <!-- ③ JSONインポート / エクスポート -->
-      <div class="editor-section flex-grow">
-        <h3>📤 JSON 譜面データ (入出力)</h3>
-        <p class="section-help">編集内容はリアルタイムでJSONに出力されます。コピーするか、JSONファイルとしてPCにエクスポート/インポートして保存・管理できます。</p>
-        <textarea id="editor-json-area" class="editor-json-area" placeholder="ここに譜面のJSONが出力されます..."></textarea>
-        <div class="editor-btn-group" style="margin-bottom: 8px;">
-          <button id="edit-copy-btn" class="editor-action-btn primary-btn">📋 コピーする</button>
-          <button id="edit-import-btn" class="editor-action-btn">📥 テキストインポート</button>
-        </div>
-        <div class="editor-btn-group">
-          <button id="edit-download-btn" class="editor-action-btn success-btn">📤 ファイル書き出し (.json)</button>
-          <label class="editor-action-btn file-upload-label" style="display: flex; align-items: center; justify-content: center; cursor: pointer;">
-            📥 ファイル読み込み
-            <input type="file" id="edit-upload-file" accept=".json" style="display: none;">
-          </label>
-        </div>
-      </div>
     </aside>
 
     <script type="module" src="./main.js"></script>
