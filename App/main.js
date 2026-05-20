@@ -126,6 +126,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const editorJsonArea = document.getElementById('editor-json-area');
     const editCopyBtn = document.getElementById('edit-copy-btn');
     const editImportBtn = document.getElementById('edit-import-btn');
+    const editSaveBtn = document.getElementById('edit-save-btn');
+    const editDownloadBtn = document.getElementById('edit-download-btn');
+    const editUploadFile = document.getElementById('edit-upload-file');
     const offsetMinus = document.getElementById('offset-minus');
     const offsetPlus = document.getElementById('offset-plus');
     const offsetValEl = document.getElementById('offset-val');
@@ -1541,6 +1544,93 @@ document.addEventListener('DOMContentLoaded', () => {
                 drawTimelineTicks();
                 drawTimelineNotes();
                 updateTimelinePlayhead(getSmoothCurrentTime());
+            });
+        }
+
+        // 💾 譜面のローカル保存 (LocalStorage)
+        if (editSaveBtn) {
+            editSaveBtn.addEventListener('click', () => {
+                localStorage.setItem('beatmap_' + currentVideoId, JSON.stringify({
+                    metadata: {
+                        source_video: `https://www.youtube.com/watch?v=${currentVideoId}`,
+                        total_notes: tempBeatmap.length,
+                        dynamic_target_tracking: true
+                    },
+                    beatmap: tempBeatmap
+                }));
+
+                const originalText = editSaveBtn.textContent;
+                editSaveBtn.textContent = '✅ 保存完了！';
+                editSaveBtn.style.background = '#33cc66';
+                editSaveBtn.style.color = '#000';
+                setTimeout(() => {
+                    editSaveBtn.textContent = originalText;
+                    editSaveBtn.style.background = '';
+                    editSaveBtn.style.color = '';
+                }, 1500);
+            });
+        }
+
+        // 📤 JSONファイル書き出し
+        if (editDownloadBtn) {
+            editDownloadBtn.addEventListener('click', () => {
+                const exportData = {
+                    metadata: {
+                        source_video: `https://www.youtube.com/watch?v=${currentVideoId}`,
+                        total_notes: tempBeatmap.length,
+                        dynamic_target_tracking: true
+                    },
+                    beatmap: tempBeatmap
+                };
+                const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `beatmap_${currentVideoId}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+        }
+
+        // 📥 JSONファイル読み込み (ファイル選択)
+        if (editUploadFile) {
+            editUploadFile.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const parsed = JSON.parse(event.target.result);
+                        const loadedNotes = parsed.beatmap || parsed || [];
+                        if (!Array.isArray(loadedNotes)) {
+                            throw new Error("JSON形式の譜面配列が正しくありません。");
+                        }
+
+                        tempBeatmap = loadedNotes;
+                        tempBeatmap.sort((a, b) => a.time - b.time);
+                        tempBeatmap.forEach((n, idx) => n.beat_index = idx + 1);
+
+                        // 即座にLocalStorageへ保存して同期
+                        localStorage.setItem('beatmap_' + currentVideoId, JSON.stringify({
+                            metadata: {
+                                source_video: `https://www.youtube.com/watch?v=${currentVideoId}`,
+                                total_notes: tempBeatmap.length,
+                                dynamic_target_tracking: true
+                            },
+                            beatmap: tempBeatmap
+                        }));
+
+                        initRhythmGame(currentVideoId);
+                        alert('📂 ファイルから譜面のインポートに成功しました！');
+                        e.target.value = ''; // Inputリセット
+                    } catch(err) {
+                        alert(`❌ ファイルの読み込みに失敗しました: ${err.message}`);
+                    }
+                };
+                reader.readAsText(file);
             });
         }
     };
