@@ -525,7 +525,7 @@ document.addEventListener('DOMContentLoaded', () => {
             animationFrameId = null;
         }
         
-        rawBeatmap = selected.notes || [];
+        rawBeatmap = selected.beatmap_data || [];
         activeNotes = rawBeatmap.map(note => ({
             ...note,
             element: null,
@@ -551,24 +551,24 @@ document.addEventListener('DOMContentLoaded', () => {
         editGenerationSelect.innerHTML = '<option value="">🎵 最新の公開譜面 (自動適用中)</option>';
         
         try {
-            const response = await fetch(`/api/get-beatmaps?videoId=${videoId}`);
+            const response = await fetch(`/api/get-beatmaps?video_id=${videoId}`);
             if (response.ok) {
                 const data = await response.json();
-                if (data.beatmaps && data.beatmaps.length > 0) {
+                if (data && data.length > 0) {
                     // キャッシュに保存
-                    window.sharedBeatmapsCache = data.beatmaps;
+                    window.sharedBeatmapsCache = data;
                     
                     // 最新1件を自動適用
-                    const latestBeatmap = data.beatmaps[0];
+                    const latestBeatmap = data[0];
                     loadSharedBeatmapData(latestBeatmap);
                     
                     // 世代選択肢に追加
-                    data.beatmaps.forEach((bm, index) => {
+                    data.forEach((bm, index) => {
                         const option = document.createElement('option');
                         option.value = bm.id;
                         const timeStr = new Date(bm.created_at).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
                         const titleSuffix = bm.title ? ` [${bm.title}]` : '';
-                        option.textContent = `${index === 0 ? '🆕 最新 ' : ''}(${timeStr}) 作成者: ${bm.author_name}${titleSuffix}`;
+                        option.textContent = `${index === 0 ? '🆕 最新 ' : ''}(${timeStr}) 作成者: ${bm.author}${titleSuffix}`;
                         editGenerationSelect.appendChild(option);
                     });
                 } else {
@@ -1746,10 +1746,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
-                            videoId: currentVideoId,
-                            authorName: authorName,
+                            video_id: currentVideoId,
+                            author: authorName,
                             title: beatmapTitle,
-                            notes: tempBeatmap
+                            beatmap_data: tempBeatmap
                         })
                     });
                     
