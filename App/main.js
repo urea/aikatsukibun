@@ -688,6 +688,24 @@ document.addEventListener('DOMContentLoaded', () => {
     // キーボード操作
     const keyMap = { 'w': 'btn-red', 'a': 'btn-green', 'd': 'btn-yellow' };
     document.addEventListener('keydown', (e) => {
+        // エディターモード時のSpaceキーでの再生・一時停止トグル
+        if (isEditorMode && e.code === 'Space') {
+            const activeEl = document.activeElement;
+            const isInputActive = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
+            if (!isInputActive) {
+                e.preventDefault(); // 画面スクロール防止
+                if (ytPlayer && typeof ytPlayer.getPlayerState === 'function') {
+                    const state = ytPlayer.getPlayerState();
+                    if (state === YT.PlayerState.PLAYING) {
+                        ytPlayer.pauseVideo();
+                    } else {
+                        ytPlayer.playVideo();
+                    }
+                }
+                return;
+            }
+        }
+
         const btnId = keyMap[e.key.toLowerCase()];
         if (btnId) {
             const btn = buttons[btnId];
@@ -1241,6 +1259,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // --- エディターモード中のクリック処理 (動画上プロット) ---
             if (isEditorMode) {
+                const playerState = ytPlayer.getPlayerState();
+                if (playerState === YT.PlayerState.PLAYING) {
+                    ytPlayer.pauseVideo();
+                    return;
+                }
+
                 // タップ座標を 640x360 解像度に変換
                 const rect = overlay.getBoundingClientRect();
                 const clickX = e.clientX - rect.left;
