@@ -54,6 +54,13 @@
             <span id="combo-val" class="info-value">0</span>
           </div>
         </div>
+        <!-- 👥 データベースに登録されている譜面を切り替えるセレクター -->
+        <div id="beatmap-selector-container" class="beatmap-selector-container hidden">
+          <span class="selector-label">👤 譜面:</span>
+          <select id="beatmap-select-dropdown" class="premium-select">
+            <option value="default">🎵 デフォルト (公式)</option>
+          </select>
+        </div>
         <div class="lane-outer">
           <!-- 判定ポイントを示す白円 -->
           <div class="lane-judgeline"></div>
@@ -182,6 +189,29 @@
           <p id="add-video-error" class="error-text hidden"></p>
         </div>
       </div>
+      
+      <!-- ⑥ サーバー公開用モーダル -->
+      <div id="modal-share" class="premium-modal hidden">
+        <header class="modal-header">
+          <h2>🌐 譜面をサーバーへ公開</h2>
+          <button class="modal-close">&times;</button>
+        </header>
+        <div class="modal-body">
+          <p class="instruction">この曲用に作成した譜面をサーバーに保存し、他のプレイヤーが遊べるように公開します！</p>
+          <div class="input-group-vertical" style="display: flex; flex-direction: column; gap: 8px;">
+            <label for="share-author-name" class="input-label" style="font-weight: 800; font-size: 0.9rem; color: var(--color-cool); display: flex; align-items: center; gap: 4px;">👤 ニックネーム (必須)</label>
+            <input type="text" id="share-author-name" placeholder="例: いちご" maxlength="50" style="padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: #fff; font-family: inherit; font-size: 1rem;" />
+            
+            <label for="share-beatmap-title" class="input-label" style="font-weight: 800; font-size: 0.9rem; color: var(--color-cool); display: flex; align-items: center; gap: 4px; margin-top: 8px;">📝 譜面タイトル (任意)</label>
+            <input type="text" id="share-beatmap-title" placeholder="例: 難易度★3 / 特訓用 / かんたん" maxlength="100" style="padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: #fff; font-family: inherit; font-size: 1rem;" />
+            
+            <button id="btn-share-submit" class="submit-btn primary-btn" style="margin-top: 16px; font-weight: 800; padding: 12px; font-size: 1.1rem; border-radius: 8px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; background: linear-gradient(135deg, #4f46e5, #06b6d4); color: white; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(6,182,212,0.3);">
+              🌐 アップロードして公開
+            </button>
+          </div>
+          <p id="share-status-message" class="error-text hidden" style="margin-top: 12px; text-align: center; font-weight: bold;"></p>
+        </div>
+      </div>
 
     </div>
 
@@ -198,6 +228,7 @@
         <div class="editor-btn-group">
           <button id="edit-rec-btn" class="editor-action-btn rec-btn">🔴 REC開始</button>
           <button id="edit-save-btn" class="editor-action-btn save-btn">💾 譜面を保存</button>
+          <button id="edit-share-db-btn" class="editor-action-btn share-db-btn">🌐 サーバーへ公開</button>
           <button id="edit-clear-btn" class="editor-action-btn danger-btn">🗑️ 全クリア</button>
           <button id="edit-play-test-btn" class="editor-action-btn">🔁 最初から再生</button>
         </div>
