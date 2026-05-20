@@ -3,7 +3,15 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "scripts": {
+    "dev": "vite App",
+    "build": "vite build App",
+    "preview": "vite preview App"
+  },
   "dependencies": {
     "@vercel/postgres": "^0.9.0"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
   }
 }
