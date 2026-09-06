@@ -1,282 +1,86 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>アイカツ！気分</title>
-    <!-- Google Fontsの読み込み (Outfit & M PLUS Rounded 1c) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./style.css" />
-  </head>
-  <body>
-    <!-- 全体のコンテナ (スマホ縦画面前提 - 初期テーマはクール) -->
-    <div id="app" class="theme-cool">
-      <!-- 上部：タイトル (10%) -->
-      <header class="header">
-        <h1 class="brand-title">アイカツ！気分</h1>
-      </header>
-
-      <!-- コントロールパネル：ボタン群 (グラスモルフィズムUI) -->
-      <nav class="control-panel">
-        <button id="ctrl-shuffle" class="ctrl-btn" title="おまかせ選曲">☘️ おまかせ</button>
-        <button id="ctrl-select" class="ctrl-btn" title="動画リストから選ぶ">📋 リスト</button>
-        <button id="ctrl-favorites" class="ctrl-btn" title="お気に入り">⭐</button>
-        <button id="ctrl-history" class="ctrl-btn" title="履歴">🕒</button>
-        <button id="ctrl-add" class="ctrl-btn" title="動画を追加">➕</button>
-        <button id="ctrl-editor" class="ctrl-btn" title="譜面を編集 (PC限定)">🎬 編集</button>
-        <button id="ctrl-help" class="ctrl-btn" title="遊び方">❓</button>
-      </nav>
-
-      <!-- 中央：YOUTUBE動画表示エリア (30%) -->
-      <section class="video-area">
-        <div class="video-container">
-          <iframe id="youtube-player" src="https://www.youtube.com/embed/fYibOFCMpnE?enablejsapi=1" title="プレイ動画" frameborder="0" allow="autoplay; encrypted-media"></iframe>
-          <!-- 没入感確保のための透明な操作オーバーレイ（タップで停止/再開） -->
-          <div id="player-overlay" class="player-overlay">
-            <div class="pause-indicator">
-              <span class="pause-icon">||</span>
-            </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1020" />
+  <meta name="description" content="好きなアイカツ！動画に合わせて、3色のボタンを自由にタップ。PCでもスマホでも、アイカツ！気分。" />
+  <title>アイカツ！気分</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  <link rel="preconnect" href="https://www.youtube.com" />
+  <link rel="preconnect" href="https://i.ytimg.com" />
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <main id="app" class="app-shell" data-appearance="dark">
+    <h1 class="sr-only">アイカツ！気分</h1>
+    <div class="studio">
+      <section class="watch" aria-label="動画プレーヤー">
+        <div class="video-box"><iframe id="youtube-player" src="https://www.youtube.com/embed/fYibOFCMpnE?enablejsapi=1&amp;playsinline=1&amp;rel=0" title="アイカツ！プレイ動画" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+        <div class="playback">
+          <div class="seek-row"><span id="current-time">0:00</span><input id="seek" class="seek" type="range" min="0" max="100" value="0" step="0.1" aria-label="再生位置" disabled /><span id="duration">0:00</span></div>
+          <div class="transport">
+            <button id="play-toggle" class="icon-button transport-play" type="button" aria-label="再生" disabled><span data-icon="play"></span></button>
+            <div class="now-playing"><div id="current-title">硝子ドール</div><div id="playback-status" class="secondary" role="status">プレーヤーを準備中…</div></div>
+            <button id="favorite-current" class="icon-button" type="button" aria-label="お気に入りに追加" aria-pressed="false"><span data-icon="star"></span></button>
+            <button id="mute-toggle" class="icon-button" type="button" aria-label="動画をミュート" aria-pressed="false" disabled><span data-icon="volume"></span></button>
+            <button id="fullscreen-toggle" class="icon-button fullscreen-toggle" type="button" aria-label="全画面表示"><span data-icon="maximize"></span></button>
           </div>
+          <div id="player-notice" class="player-notice" role="status" hidden><span id="player-notice-text"></span><button type="button" id="retry-player" class="text-button" hidden>再読み込み</button><a id="youtube-link" href="https://www.youtube.com/watch?v=fYibOFCMpnE" target="_blank" rel="noopener noreferrer">YouTubeで開く<span data-icon="external"></span></a></div>
         </div>
       </section>
-
-      <!-- リズムゲーム用UIコンテナ (動画エリアとタップエリアの間に配置) -->
-      <div id="game-container" class="game-container hidden">
-        <div class="game-info">
-          <div class="info-item">
-            <span class="info-label">SCORE</span>
-            <span id="score-val" class="info-value">000000</span>
+      <aside id="control-slot" class="control-slot" aria-label="タップと選曲">
+        <section id="controller" class="controller" aria-label="タップ操作">
+          <div class="control-heading"><span class="free-play"><span></span>FREE PLAY</span><span class="keyboard-hint">W / A / D</span></div>
+          <div class="pad-area"><div id="sparkles" aria-hidden="true"></div>
+            <button class="tap-pad pad-red" id="btn-red" data-pad="red" type="button" aria-label="赤ボタン W"><span data-icon="sparkle"></span><span class="pad-label">W</span></button>
+            <button class="tap-pad pad-green" id="btn-green" data-pad="green" type="button" aria-label="緑ボタン A"><span data-icon="sparkle"></span><span class="pad-label">A</span></button>
+            <button class="tap-pad pad-yellow" id="btn-yellow" data-pad="yellow" type="button" aria-label="黄ボタン D"><span data-icon="sparkle"></span><span class="pad-label">D</span></button>
           </div>
-          <div class="info-item">
-            <span class="info-label">COMBO</span>
-            <span id="combo-val" class="info-value">0</span>
+          <nav class="main-actions" aria-label="選曲と設定">
+            <button id="shuffle" class="action-button primary" type="button"><span data-icon="shuffle"></span>おまかせ</button>
+            <button id="open-library" class="action-button" type="button" aria-controls="library-panel" aria-expanded="false"><span data-icon="list"></span>選ぶ</button>
+            <button id="open-settings" class="icon-button more-button" type="button" aria-label="設定・遊び方" aria-controls="settings-panel" aria-expanded="false"><span data-icon="more"></span></button>
+          </nav>
+        </section>
+        <section id="library-panel" class="side-panel" aria-labelledby="library-heading" hidden>
+          <div class="sheet-grip" aria-hidden="true"></div>
+          <header class="panel-header"><h2 id="library-heading">曲を選ぶ</h2><button type="button" class="icon-button" data-close aria-label="選曲を閉じる"><span data-icon="close"></span></button></header>
+          <label class="search-box"><span data-icon="search"></span><input id="video-search" type="search" placeholder="曲名やキーワードで検索" aria-label="曲名やキーワードで検索" autocomplete="off" /></label>
+          <div class="library-tabs" role="tablist" aria-label="動画の分類"><button id="tab-all" type="button" role="tab" aria-selected="true" aria-controls="library-results" data-library="all">すべて</button><button id="tab-favorites" type="button" role="tab" aria-selected="false" aria-controls="library-results" data-library="favorites">お気に入り</button><button id="tab-history" type="button" role="tab" aria-selected="false" aria-controls="library-results" data-library="history">履歴</button></div>
+          <div class="list-meta"><span id="library-count">動画を準備中</span><span id="metadata-status"></span></div>
+          <div id="library-results" class="library-results" role="tabpanel" aria-labelledby="tab-all"><ul id="video-list" class="video-list"></ul><p id="library-empty" class="empty-state" hidden>該当する動画がありません。</p></div>
+          <footer class="panel-footer"><button id="open-add" class="action-button" type="button"><span data-icon="plus"></span>動画を追加</button></footer>
+        </section>
+        <section id="settings-panel" class="side-panel" aria-labelledby="settings-heading" hidden>
+          <div class="sheet-grip" aria-hidden="true"></div>
+          <header class="panel-header"><h2 id="settings-heading">設定</h2><button type="button" class="icon-button" data-close aria-label="設定を閉じる"><span data-icon="close"></span></button></header>
+          <div class="panel-content settings-content">
+            <label class="setting-row range-setting"><span>動画の音量 <output id="video-volume-value">70%</output></span><input id="video-volume" type="range" min="0" max="100" value="70" aria-label="動画の音量" /></label>
+            <label class="setting-row"><span>タップ効果音</span><input id="sound-enabled" class="switch" type="checkbox" checked /></label>
+            <label class="setting-row range-setting"><span>効果音の音量 <output id="sound-volume-value">35%</output></span><input id="sound-volume" type="range" min="0" max="100" value="35" aria-label="効果音の音量" /></label>
+            <label class="setting-row"><span>タップ時の振動<small id="vibration-support"></small></span><input id="vibration-enabled" class="switch" type="checkbox" checked /></label>
+            <label class="setting-row"><span>タップ時の光</span><input id="effects-enabled" class="switch" type="checkbox" checked /></label>
+            <label class="setting-row"><span>配色</span><select id="appearance" aria-label="配色"><option value="dark">ダーク</option><option value="light">ライト</option><option value="system">端末に合わせる</option></select></label>
+            <button id="replay" class="action-button wide-button" type="button"><span data-icon="replay"></span>最初から再生</button><button id="open-help" class="action-button wide-button" type="button"><span data-icon="help"></span>遊び方</button>
+            <div class="saved-data"><p class="secondary">このブラウザーの保存データ</p><button id="clear-history" class="text-button" type="button">再生履歴を消去</button><button id="clear-favorites" class="text-button" type="button">お気に入りをすべて外す</button></div>
           </div>
-        </div>
-        <div class="lane-outer">
-          <!-- 判定ポイントを示す白円 -->
-          <div class="lane-judgeline"></div>
-          <!-- ノーツが流れるコンテナ -->
-          <div id="lane-notes-container" class="lane-notes-container"></div>
-        </div>
-        <!-- PERFECT / GREAT / GOOD / MISS の判定ポップアップ表示位置 -->
-        <div id="judgement-display" class="judgement-display"></div>
-        
-        <!-- 譜面がない動画での案内メッセージ表示枠 -->
-        <div id="no-beatmap-guide" class="no-beatmap-guide hidden">
-          <h3>🎵 譜面データがまだありません</h3>
-          <p>PCから「🎬 編集」ボタンを押し、お気に入りの曲の譜面を作成しましょう！</p>
-        </div>
-      </div>
-
-      <!-- 下部：タップエリア (40%) -->
-      <section class="tap-area">
-        <!-- 背景のパーティクルエフェクト描画用コンテナ -->
-        <div id="sparkle-container" class="sparkle-container"></div>
-        
-        <div class="triangle-container">
-          <div class="button btn-red" id="btn-red">
-            <span class="btn-inner"></span>
-          </div>
-          <div class="button btn-green" id="btn-green">
-            <span class="btn-inner"></span>
-          </div>
-          <div class="button btn-yellow" id="btn-yellow">
-            <span class="btn-inner"></span>
-          </div>
-        </div>
-      </section>
-
-      <!-- 空白エリア (20%) -->
-      <footer class="footer-area">
-        <div class="audience-glow"></div>
-      </footer>
-
-      <!-- ==================== モーダルウィンドウ群 ==================== -->
-
-      <!-- 共通すりガラス背景オーバーレイ -->
-      <div id="modal-overlay" class="modal-overlay hidden"></div>
-
-      <!-- ① 遊び方説明モーダル -->
-      <div id="modal-help" class="premium-modal hidden">
-        <header class="modal-header">
-          <h2>❓ 遊び方</h2>
-          <button class="modal-close">&times;</button>
-        </header>
-        <div class="modal-body scrollable">
-          <h3>🎮 基本操作</h3>
-          <p>画面下の丸いジュエルボタンを押してリズムに合わせて遊びましょう！PCキーボードの以下のキーにも対応しています：</p>
-          <ul class="key-list">
-            <li><span class="key-badge red">W</span> 赤ボタン（上）</li>
-            <li><span class="key-badge green">A</span> 緑ボタン（左下）</li>
-            <li><span class="key-badge yellow">D</span> 黄ボタン（右下）</li>
-          </ul>
-          <h3>☘️ おまかせ選曲</h3>
-          <p>「おまかせ」ボタンを押すと、150曲以上のアイカツ！動画の中からランダムに自動選曲され、曲のイメージに合わせてステージ背景がチェンジします！</p>
-          <h3>⭐ お気に入り＆再生履歴</h3>
-          <p>曲のリストやお気に入りの星マークをタップして管理できます。また、最近遊んだ曲は自動的に履歴に保存されます。</p>
-        </div>
-      </div>
-
-      <!-- ② 動画選択（リスト）モーダル -->
-      <div id="modal-select" class="premium-modal hidden">
-        <header class="modal-header">
-          <h2>📋 動画リスト</h2>
-          <button class="modal-close">&times;</button>
-        </header>
-        <div class="modal-search-bar">
-          <input type="text" id="video-search-input" placeholder="曲名やキーワードで検索..." />
-        </div>
-        <div class="modal-body scrollable">
-          <ul id="video-list-container" class="item-list">
-            <!-- JavaScriptで動的生成 -->
-          </ul>
-        </div>
-      </div>
-
-      <!-- ③ お気に入りモーダル -->
-      <div id="modal-favorites" class="premium-modal hidden">
-        <header class="modal-header">
-          <h2>⭐ お気に入り</h2>
-          <div class="modal-header-actions">
-            <button id="btn-clear-favorites" class="action-btn-danger">一括消去</button>
-            <button class="modal-close">&times;</button>
-          </div>
-        </header>
-        <div class="modal-body scrollable">
-          <ul id="favorite-list-container" class="item-list">
-            <!-- JavaScriptで動的生成 -->
-          </ul>
-        </div>
-      </div>
-
-      <!-- ④ 再生履歴モーダル -->
-      <div id="modal-history" class="premium-modal hidden">
-        <header class="modal-header">
-          <h2>🕒 再生履歴</h2>
-          <div class="modal-header-actions">
-            <button id="btn-clear-history" class="action-btn-danger">履歴消去</button>
-            <button class="modal-close">&times;</button>
-          </div>
-        </header>
-        <div class="modal-body scrollable">
-          <ul id="history-list-container" class="item-list">
-            <!-- JavaScriptで動的生成 -->
-          </ul>
-        </div>
-      </div>
-
-      <!-- ⑤ 動画追加モーダル -->
-      <div id="modal-add" class="premium-modal hidden">
-        <header class="modal-header">
-          <h2>➕ 動画の追加</h2>
-          <button class="modal-close">&times;</button>
-        </header>
-        <div class="modal-body">
-          <p class="instruction">YouTube動画のURLを入力して、あなたのお気に入り曲を追加しましょう！</p>
-          <div class="input-group">
-            <input type="text" id="add-video-url" placeholder="https://www.youtube.com/watch?v=..." />
-            <button id="btn-add-submit" class="submit-btn">追加</button>
-          </div>
-          <p id="add-video-error" class="error-text hidden"></p>
-        </div>
-      </div>
-      
-      <!-- ⑥ サーバー公開用モーダル -->
-      <div id="modal-share" class="premium-modal hidden">
-        <header class="modal-header">
-          <h2>🌐 譜面をサーバーへ公開</h2>
-          <button class="modal-close">&times;</button>
-        </header>
-        <div class="modal-body">
-          <p class="instruction">この曲用に作成した譜面をサーバーに保存し、他のプレイヤーが遊べるように公開します！</p>
-          <div class="input-group-vertical" style="display: flex; flex-direction: column; gap: 8px;">
-            <label for="share-author-name" class="input-label" style="font-weight: 800; font-size: 0.9rem; color: var(--color-cool); display: flex; align-items: center; gap: 4px;">👤 ニックネーム (必須)</label>
-            <input type="text" id="share-author-name" placeholder="例: いちご" maxlength="50" style="padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: #fff; font-family: inherit; font-size: 1rem;" />
-            
-            <label for="share-beatmap-title" class="input-label" style="font-weight: 800; font-size: 0.9rem; color: var(--color-cool); display: flex; align-items: center; gap: 4px; margin-top: 8px;">📝 譜面タイトル (任意)</label>
-            <input type="text" id="share-beatmap-title" placeholder="例: 難易度★3 / 特訓用 / かんたん" maxlength="100" style="padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: #fff; font-family: inherit; font-size: 1rem;" />
-            
-            <button id="btn-share-submit" class="submit-btn primary-btn" style="margin-top: 16px; font-weight: 800; padding: 12px; font-size: 1.1rem; border-radius: 8px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; background: linear-gradient(135deg, #4f46e5, #06b6d4); color: white; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(6,182,212,0.3);">
-              🌐 アップロードして公開
-            </button>
-          </div>
-          <p id="share-status-message" class="error-text hidden" style="margin-top: 12px; text-align: center; font-weight: bold;"></p>
-        </div>
-      </div>
-
+        </section>
+        <section id="add-panel" class="side-panel" aria-labelledby="add-heading" hidden>
+          <div class="sheet-grip" aria-hidden="true"></div>
+          <header class="panel-header"><div class="panel-heading-group"><button type="button" class="icon-button" data-back="library-panel" aria-label="選曲に戻る"><span data-icon="back"></span></button><h2 id="add-heading">動画を追加</h2></div><button type="button" class="icon-button" data-close aria-label="動画追加を閉じる"><span data-icon="close"></span></button></header>
+          <form id="add-form" class="panel-content add-form"><label>YouTube URL<input id="add-url" type="text" inputmode="url" placeholder="https://www.youtube.com/watch?v=…" autocomplete="off" required /></label><p class="secondary">共有URLやショート動画のURLにも対応しています。</p><button id="add-submit" class="action-button primary" type="submit"><span data-icon="plus"></span>追加して再生</button><p id="add-message" class="form-message" role="status"></p></form>
+        </section>
+        <section id="help-panel" class="side-panel" aria-labelledby="help-heading" hidden>
+          <div class="sheet-grip" aria-hidden="true"></div>
+          <header class="panel-header"><div class="panel-heading-group"><button type="button" class="icon-button" data-back="settings-panel" aria-label="設定に戻る"><span data-icon="back"></span></button><h2 id="help-heading">遊び方</h2></div><button type="button" class="icon-button" data-close aria-label="遊び方を閉じる"><span data-icon="close"></span></button></header>
+          <div class="panel-content help-content"><p>好きな動画を再生して、リズムに合わせて3色のボタンを自由にタップ。</p><div class="key-guide"><span><kbd>W</kbd>赤</span><span><kbd>A</kbd>緑</span><span><kbd>D</kbd>黄</span></div><p>PCではキーボードでも遊べます。画面のボタンを使うときは同時押しもできます。</p><p>「おまかせ」で次の動画へ。「選ぶ」では、お気に入りや履歴から探せます。</p><p>音量・効果音・振動は設定から調整できます。</p><p class="secondary">お気に入りや設定は、このブラウザーに保存されます。</p></div>
+        </section>
+      </aside>
     </div>
-
-    <!-- 🎬 開発者専用 譜面エディターコントロールパネル (PC限定) -->
-    <aside id="editor-panel" class="editor-panel">
-      <div class="editor-header">
-        <h2>🎬 譜面エディター</h2>
-        <p class="editor-subtitle">「REC開始」ボタンを押すか、キーボード（W/A/D）を押して、曲に合わせてリアルタイムにノーツをレコーディングできます。録音後はタイムライン上のノーツを左右にドラッグしてタイミングを微調整できます。</p>
-      </div>
-
-      <!-- ① 録音・再生コントロール -->
-      <div class="editor-section">
-        <h3>🎛️ レコーディングコントロール</h3>
-        <div class="editor-btn-group">
-          <button id="edit-rec-btn" class="editor-action-btn rec-btn">🔴 REC開始</button>
-          <button id="edit-share-db-btn" class="editor-action-btn share-db-btn">🌐 サーバーへ公開</button>
-          <button id="edit-clear-btn" class="editor-action-btn danger-btn">🗑️ 全クリア</button>
-          <button id="edit-play-test-btn" class="editor-action-btn">🔁 最初から再生</button>
-        </div>
-        <div class="editor-status-bar">
-          <span>録音状態: <strong id="rec-status-val">待機中</strong></span>
-          <span>ノーツ総数: <strong id="editor-notes-count">0</strong></span>
-        </div>
-      </div>
-
-      <!-- 👥 過去の投稿履歴（世代）からロードするUI -->
-      <div class="editor-section">
-        <h3>👥 共有譜面の履歴 (世代から復元)</h3>
-        <div class="offset-group" style="display: flex; gap: 8px; width: 100%;">
-          <select id="edit-generation-select" class="premium-select" style="flex: 1; min-height: 36px; padding: 6px; border-radius: 6px; background: rgba(0,0,0,0.5); color: #fff; border: 1px solid rgba(255,255,255,0.2); font-family: inherit;">
-            <option value="">🎵 最新の公開譜面をロード中...</option>
-          </select>
-        </div>
-        <p class="section-help" style="margin-top: 4px; font-size: 0.8rem; color: #aaa;">過去の世代を選択すると、その時点の譜面がエディターに読み込まれます。</p>
-      </div>
-
-      <!-- ② 編集オプションとカラー選択 -->
-      <div class="editor-section">
-        
-        <div class="offset-group">
-          <span class="picker-label">オフセット調整:</span>
-          <button id="offset-minus" class="mini-btn">-0.05s</button>
-          <span id="offset-val" class="offset-display">-0.15s</span>
-          <button id="offset-plus" class="mini-btn">+0.05s</button>
-          <span class="offset-help">(動画と流れるノーツのズレを調整)</span>
-        </div>
-      </div>
-
-      <!-- ⏳ タイムラインセクション -->
-      <div class="editor-section">
-        <h3>⏳ インタラクティブ・タイムライン</h3>
-        <div id="timeline-container" class="timeline-container">
-          <!-- 再生ヘッド（現在の時間を示す赤い縦バー） -->
-          <div id="timeline-playhead" class="timeline-playhead"></div>
-          <!-- 目盛りとノーツピンをプロットするトラック -->
-          <div id="timeline-track" class="timeline-track">
-            <div id="timeline-ticks" class="timeline-ticks"></div>
-            <div id="timeline-notes" class="timeline-notes"></div>
-          </div>
-        </div>
-        <div class="timeline-controls">
-          <div class="zoom-btn-group">
-            <button id="tl-zoom-out" class="mini-btn">🔍- 縮小</button>
-            <span id="tl-zoom-val" class="offset-display" style="min-width: 35px;">1.0x</span>
-            <button id="tl-zoom-in" class="mini-btn">🔍+ 拡大</button>
-          </div>
-          <span class="offset-help">(タイムラインをクリックしてシーク / ピンをクリックしてノーツ削除)</span>
-        </div>
-      </div>
-
-    </aside>
-
-    <script type="module" src="./main.js"></script>
-  </body>
+    <div id="toast" class="toast" role="status" hidden></div>
+  </main>
+  <noscript>このアプリを使うにはJavaScriptを有効にしてください。</noscript>
+  <script type="module" src="./main.js"></script>
+</body>
 </html>

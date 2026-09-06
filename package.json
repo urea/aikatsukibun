@@ -1,17 +1,12 @@
 {
   "name": "aikatsukibun-root",
   "private": true,
-  "version": "1.0.0",
+  "version": "2.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite App",
-    "build": "vite build App --outDir ../dist",
-    "preview": "vite preview App"
-  },
-  "dependencies": {
-    "@vercel/postgres": "^0.9.0"
-  },
-  "devDependencies": {
-    "vite": "^5.0.0"
+    "dev": "npm --prefix App run dev",
+    "build": "npm --prefix App run build",
+    "preview": "npm --prefix App run preview",
+    "test": "node --test Dev/tests/*.test.js"
   }
 }
