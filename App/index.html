@@ -31,11 +31,10 @@
       </section>
       <aside id="control-slot" class="control-slot" aria-label="タップと選曲">
         <section id="controller" class="controller" aria-label="タップ操作">
-          <div class="control-heading"><span class="free-play"><span></span>FREE PLAY</span><span class="keyboard-hint">W / A / D</span></div>
           <div class="pad-area"><div id="sparkles" aria-hidden="true"></div>
-            <button class="tap-pad pad-red" id="btn-red" data-pad="red" type="button" aria-label="赤ボタン W"><span data-icon="sparkle"></span><span class="pad-label">W</span></button>
-            <button class="tap-pad pad-green" id="btn-green" data-pad="green" type="button" aria-label="緑ボタン A"><span data-icon="sparkle"></span><span class="pad-label">A</span></button>
-            <button class="tap-pad pad-yellow" id="btn-yellow" data-pad="yellow" type="button" aria-label="黄ボタン D"><span data-icon="sparkle"></span><span class="pad-label">D</span></button>
+            <button class="tap-pad pad-red" id="btn-red" data-pad="red" type="button" aria-label="赤・上ボタン W"><svg class="pad-symbol" viewBox="0 0 100 100" aria-hidden="true"><path d="M50 7 84 42H65V92H35V42H16Z"/><text class="pad-key" x="50" y="65">W</text></svg></button>
+            <button class="tap-pad pad-green" id="btn-green" data-pad="green" type="button" aria-label="緑・左ボタン A"><svg class="pad-symbol" viewBox="0 0 100 100" aria-hidden="true"><path d="M7 50 42 16V35H92V65H42V84Z"/><text class="pad-key" x="64" y="50">A</text></svg></button>
+            <button class="tap-pad pad-yellow" id="btn-yellow" data-pad="yellow" type="button" aria-label="黄・右ボタン D"><svg class="pad-symbol" viewBox="0 0 100 100" aria-hidden="true"><path d="M93 50 58 16V35H8V65H58V84Z"/><text class="pad-key" x="36" y="50">D</text></svg></button>
           </div>
           <nav class="main-actions" aria-label="選曲と設定">
             <button id="shuffle" class="action-button primary" type="button"><span data-icon="shuffle"></span>おまかせ</button>
@@ -74,7 +73,7 @@
         <section id="help-panel" class="side-panel" aria-labelledby="help-heading" hidden>
           <div class="sheet-grip" aria-hidden="true"></div>
           <header class="panel-header"><div class="panel-heading-group"><button type="button" class="icon-button" data-back="settings-panel" aria-label="設定に戻る"><span data-icon="back"></span></button><h2 id="help-heading">遊び方</h2></div><button type="button" class="icon-button" data-close aria-label="遊び方を閉じる"><span data-icon="close"></span></button></header>
-          <div class="panel-content help-content"><p>好きな動画を再生して、リズムに合わせて3色のボタンを自由にタップ。</p><div class="key-guide"><span><kbd>W</kbd>赤</span><span><kbd>A</kbd>緑</span><span><kbd>D</kbd>黄</span></div><p>PCではキーボードでも遊べます。画面のボタンを使うときは同時押しもできます。</p><p>「おまかせ」で次の動画へ。「選ぶ」では、お気に入りや履歴から探せます。</p><p>音量・効果音・振動は設定から調整できます。</p><p class="secondary">お気に入りや設定は、このブラウザーに保存されます。</p></div>
+          <div class="panel-content help-content"><p>好きな動画を再生して、リズムに合わせて3色のパネルを自由にタップ。</p><div class="key-guide"><span><kbd>W</kbd>赤・上</span><span><kbd>A</kbd>緑・左</span><span><kbd>D</kbd>黄・右</span></div><p>色のついた面全体を押せます。複数の指で同時に押したり、指を隣の色へ滑らせたりして遊べます。</p><p>PCでは W・A・D キーでも操作できます。</p><p>「おまかせ」で次の動画へ。「選ぶ」では、お気に入りや履歴から探せます。</p><p>音量・効果音・振動は設定から調整できます。</p><p class="secondary">お気に入りや設定は、このブラウザーに保存されます。</p></div>
         </section>
       </aside>
     </div>
