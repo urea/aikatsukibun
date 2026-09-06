@@ -12,6 +12,8 @@ try { storage = window.localStorage; } catch { /* 保存不可でも利用でき
 let saveWarningShown = false;
 let toastTimer;
 function toast(message) {
+  // 全画面の選曲中も、お気に入りなどの通知を手前に表示する。
+  ($('library-dialog').open ? $('library-dialog') : $('app')).append($('toast'));
   $('toast').textContent = message;
   $('toast').hidden = false;
   clearTimeout(toastTimer);
@@ -70,6 +72,7 @@ function toggleFavorite(id) {
 }
 $('favorite-current').addEventListener('click', () => toggleFavorite(currentId));
 
+const libraryDialog = $('library-dialog');
 function closePanel() {
   document.querySelectorAll('.side-panel').forEach(panel => { panel.hidden = true; });
   $('controller').hidden = false;
@@ -77,6 +80,10 @@ function closePanel() {
   $('open-library').setAttribute('aria-expanded', 'false');
   $('open-settings').setAttribute('aria-expanded', 'false');
   panelId = null;
+  $('app').append($('toast'));
+  if (libraryDialog.open) libraryDialog.close();
+  document.body.classList.remove('library-open');
+  $('app').classList.remove('library-open');
   panelOpener?.focus({ preventScroll: true });
 }
 function openPanel(id, opener) {
@@ -90,11 +97,19 @@ function openPanel(id, opener) {
   $('open-settings').setAttribute('aria-expanded', String(['settings-panel', 'help-panel'].includes(id)));
   if (id === 'library-panel') { renderLibrary(); hydrateMissingTitles(); }
   if (id === 'settings-panel') syncSettings();
+  const isLibrary = ['library-panel', 'add-panel'].includes(id);
+  document.body.classList.toggle('library-open', isLibrary);
+  $('app').classList.toggle('library-open', isLibrary);
+  if (isLibrary) {
+    libraryDialog.setAttribute('aria-labelledby', id === 'library-panel' ? 'library-heading' : 'add-heading');
+    if (!libraryDialog.open) libraryDialog.showModal();
+  } else if (libraryDialog.open) libraryDialog.close();
   const focusTarget = id === 'library-panel' ? $('video-search') : id === 'add-panel' ? $('add-url') : $(id).querySelector('[data-close]');
   // スマホで自動的にキーボードを開かず、動画の位置も維持する。
   const pointerIsCoarse = matchMedia('(pointer: coarse)').matches;
   (pointerIsCoarse && focusTarget.tagName === 'INPUT' ? $(id).querySelector('[data-close]') : focusTarget).focus({ preventScroll: true });
 }
+libraryDialog.addEventListener('cancel', event => { event.preventDefault(); closePanel(); });
 $('open-library').addEventListener('click', event => openPanel('library-panel', event.currentTarget));
 $('open-settings').addEventListener('click', event => openPanel('settings-panel', event.currentTarget));
 $('open-help').addEventListener('click', () => openPanel('help-panel'));
@@ -195,7 +210,7 @@ document.querySelectorAll('[data-library]').forEach(button => {
     switchTab(next); $(`tab-${next}`).focus();
   });
 });
-$('video-search').addEventListener('input', renderLibrary);
+$('video-search').addEventListener('input', () => { $('library-results').scrollTop = 0; renderLibrary(); });
 
 $('add-form').addEventListener('submit', async event => {
   event.preventDefault();

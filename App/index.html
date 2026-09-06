@@ -38,18 +38,9 @@
           </div>
           <nav class="main-actions" aria-label="選曲と設定">
             <button id="shuffle" class="action-button primary" type="button"><span data-icon="shuffle"></span>おまかせ</button>
-            <button id="open-library" class="action-button" type="button" aria-controls="library-panel" aria-expanded="false"><span data-icon="list"></span>選ぶ</button>
+            <button id="open-library" class="action-button" type="button" aria-controls="library-dialog" aria-haspopup="dialog" aria-expanded="false"><span data-icon="list"></span>選ぶ</button>
             <button id="open-settings" class="icon-button more-button" type="button" aria-label="設定・遊び方" aria-controls="settings-panel" aria-expanded="false"><span data-icon="more"></span></button>
           </nav>
-        </section>
-        <section id="library-panel" class="side-panel" aria-labelledby="library-heading" hidden>
-          <div class="sheet-grip" aria-hidden="true"></div>
-          <header class="panel-header"><h2 id="library-heading">曲を選ぶ</h2><button type="button" class="icon-button" data-close aria-label="選曲を閉じる"><span data-icon="close"></span></button></header>
-          <label class="search-box"><span data-icon="search"></span><input id="video-search" type="search" placeholder="曲名やキーワードで検索" aria-label="曲名やキーワードで検索" autocomplete="off" /></label>
-          <div class="library-tabs" role="tablist" aria-label="動画の分類"><button id="tab-all" type="button" role="tab" aria-selected="true" aria-controls="library-results" data-library="all">すべて</button><button id="tab-favorites" type="button" role="tab" aria-selected="false" aria-controls="library-results" data-library="favorites">お気に入り</button><button id="tab-history" type="button" role="tab" aria-selected="false" aria-controls="library-results" data-library="history">履歴</button></div>
-          <div class="list-meta"><span id="library-count">動画を準備中</span><span id="metadata-status"></span></div>
-          <div id="library-results" class="library-results" role="tabpanel" aria-labelledby="tab-all"><ul id="video-list" class="video-list"></ul><p id="library-empty" class="empty-state" hidden>該当する動画がありません。</p></div>
-          <footer class="panel-footer"><button id="open-add" class="action-button" type="button"><span data-icon="plus"></span>動画を追加</button></footer>
         </section>
         <section id="settings-panel" class="side-panel" aria-labelledby="settings-heading" hidden>
           <div class="sheet-grip" aria-hidden="true"></div>
@@ -65,11 +56,6 @@
             <div class="saved-data"><p class="secondary">このブラウザーの保存データ</p><button id="clear-history" class="text-button" type="button">再生履歴を消去</button><button id="clear-favorites" class="text-button" type="button">お気に入りをすべて外す</button></div>
           </div>
         </section>
-        <section id="add-panel" class="side-panel" aria-labelledby="add-heading" hidden>
-          <div class="sheet-grip" aria-hidden="true"></div>
-          <header class="panel-header"><div class="panel-heading-group"><button type="button" class="icon-button" data-back="library-panel" aria-label="選曲に戻る"><span data-icon="back"></span></button><h2 id="add-heading">動画を追加</h2></div><button type="button" class="icon-button" data-close aria-label="動画追加を閉じる"><span data-icon="close"></span></button></header>
-          <form id="add-form" class="panel-content add-form"><label>YouTube URL<input id="add-url" type="text" inputmode="url" placeholder="https://www.youtube.com/watch?v=…" autocomplete="off" required /></label><p class="secondary">共有URLやショート動画のURLにも対応しています。</p><button id="add-submit" class="action-button primary" type="submit"><span data-icon="plus"></span>追加して再生</button><p id="add-message" class="form-message" role="status"></p></form>
-        </section>
         <section id="help-panel" class="side-panel" aria-labelledby="help-heading" hidden>
           <div class="sheet-grip" aria-hidden="true"></div>
           <header class="panel-header"><div class="panel-heading-group"><button type="button" class="icon-button" data-back="settings-panel" aria-label="設定に戻る"><span data-icon="back"></span></button><h2 id="help-heading">遊び方</h2></div><button type="button" class="icon-button" data-close aria-label="遊び方を閉じる"><span data-icon="close"></span></button></header>
@@ -77,6 +63,27 @@
         </section>
       </aside>
     </div>
+    <dialog id="library-dialog" class="library-dialog" aria-labelledby="library-heading">
+      <section id="library-panel" class="side-panel" aria-labelledby="library-heading" hidden>
+        <header class="panel-header">
+          <h2 id="library-heading">曲を選ぶ</h2>
+          <div class="library-header-actions">
+            <button id="open-add" class="action-button" type="button" aria-label="動画を追加"><span data-icon="plus"></span><span class="add-button-label">動画を追加</span></button>
+            <button type="button" class="action-button" data-close aria-label="選曲を閉じて再生画面に戻る"><span data-icon="close"></span>戻る</button>
+          </div>
+        </header>
+        <div class="library-toolbar">
+          <label class="search-box"><span data-icon="search"></span><input id="video-search" type="search" placeholder="曲名やキーワードで検索" aria-label="曲名やキーワードで検索" autocomplete="off" /></label>
+          <div class="library-tabs" role="tablist" aria-label="動画の分類"><button id="tab-all" type="button" role="tab" aria-selected="true" aria-controls="library-results" data-library="all">すべて</button><button id="tab-favorites" type="button" role="tab" aria-selected="false" aria-controls="library-results" data-library="favorites">お気に入り</button><button id="tab-history" type="button" role="tab" aria-selected="false" aria-controls="library-results" data-library="history">履歴</button></div>
+        </div>
+        <div class="list-meta"><span id="library-count">動画を準備中</span><span id="metadata-status"></span></div>
+        <div id="library-results" class="library-results" role="tabpanel" aria-labelledby="tab-all" tabindex="0"><ul id="video-list" class="video-list"></ul><p id="library-empty" class="empty-state" hidden>該当する動画がありません。</p></div>
+      </section>
+      <section id="add-panel" class="side-panel" aria-labelledby="add-heading" hidden>
+        <header class="panel-header"><div class="panel-heading-group"><button type="button" class="icon-button" data-back="library-panel" aria-label="選曲に戻る"><span data-icon="back"></span></button><h2 id="add-heading">動画を追加</h2></div><button type="button" class="action-button" data-close aria-label="動画追加を閉じて再生画面に戻る"><span data-icon="close"></span>戻る</button></header>
+        <form id="add-form" class="panel-content add-form"><label>YouTube URL<input id="add-url" type="text" inputmode="url" placeholder="https://www.youtube.com/watch?v=…" autocomplete="off" required /></label><p class="secondary">共有URLやショート動画のURLにも対応しています。</p><button id="add-submit" class="action-button primary" type="submit"><span data-icon="plus"></span>追加して再生</button><p id="add-message" class="form-message" role="status"></p></form>
+      </section>
+    </dialog>
     <div id="toast" class="toast" role="status" hidden></div>
   </main>
   <noscript>このアプリを使うにはJavaScriptを有効にしてください。</noscript>
