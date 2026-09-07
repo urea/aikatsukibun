@@ -101,6 +101,9 @@ function openPanel(id, opener) {
   document.body.classList.toggle('library-open', isLibrary);
   $('app').classList.toggle('library-open', isLibrary);
   if (isLibrary) {
+    // 選曲・動画追加の画面で隠れる動画は再生しない。
+    queuedAutoplay = false;
+    if (playerReady) player.pauseVideo();
     libraryDialog.setAttribute('aria-labelledby', id === 'library-panel' ? 'library-heading' : 'add-heading');
     if (!libraryDialog.open) libraryDialog.showModal();
   } else if (libraryDialog.open) libraryDialog.close();
@@ -312,12 +315,18 @@ function onPlayerReady(event) {
   const loadedId = player.getVideoData()?.video_id;
   if (queuedAutoplay) { queuedAutoplay = false; player.loadVideoById(currentId); }
   else if (loadedId !== currentId) player.cueVideoById(currentId);
+  if (libraryDialog.open) player.pauseVideo();
   $('play-toggle').disabled = false; $('mute-toggle').disabled = false;
   applyVideoVolume();
   if (!playerFailed) { $('player-notice').hidden = true; setStatus('再生して、自由にタップ'); }
 }
 function onPlayerStateChange(event) {
   const state = event.data;
+  // 読み込み完了が画面を開いた後になった場合も、裏で再生させない。
+  if (libraryDialog.open && (state === 1 || state === 3)) {
+    event.target.pauseVideo();
+    return;
+  }
   setIcon($('play-toggle'), state === 1 ? 'pause' : state === 0 ? 'replay' : 'play');
   $('play-toggle').setAttribute('aria-label', state === 1 ? '一時停止' : state === 0 ? 'もう一度再生' : '再生');
   if (playerFailed) return;
