@@ -52,7 +52,7 @@ const unplayable = new Set();
 const allIds = () => uniqueIds([...customVideos.map(video => video.id), ...videoIds, ...favorites, ...history]);
 const titleFor = id => metadata.get(id)?.title || `動画 (${id})`;
 const rangeFor = id => getPlaybackRange(metadata.get(id), playerReady ? player.getDuration() : 0);
-const authorFor = data => [data?.author, data?.authorHandle].filter(Boolean).join(' ');
+const authorFor = data => [data?.author, data?.authorHandle].filter(Boolean).join('');
 function detailsFor(id) {
   const data = metadata.get(id);
   if (!data) return [];
@@ -68,6 +68,7 @@ function renderDetails(container, id) {
   container.hidden = fields.length === 0;
   for (const [label, value] of fields) {
     const item = document.createElement('div');
+    item.dataset.field = label;
     const term = document.createElement('dt'); term.textContent = label;
     const description = document.createElement('dd'); description.textContent = value;
     item.append(term, description); container.append(item);
@@ -175,16 +176,20 @@ function rowFor(id) {
   image.className = 'video-thumbnail'; image.alt = ''; image.loading = 'lazy'; image.decoding = 'async';
   image.src = `https://i.ytimg.com/vi/${id}/mqdefault.jpg`;
   const words = document.createElement('span'); words.className = 'video-words';
+  const heading = document.createElement('span'); heading.className = 'video-heading';
   const title = document.createElement('span'); title.className = 'video-title';
+  const state = document.createElement('span'); state.className = 'video-state'; state.textContent = '選択中';
   const subtitle = document.createElement('span'); subtitle.className = 'video-subtitle';
   const details = document.createElement('dl'); details.className = 'song-details video-details';
-  words.append(title, details, subtitle); select.append(image, words);
+  details.id = `song-details-${id}`;
+  select.setAttribute('aria-describedby', details.id);
+  heading.append(title, state); words.append(heading, details, subtitle); select.append(image, words);
   select.addEventListener('click', () => selectVideo(id));
   const favorite = document.createElement('button');
   favorite.type = 'button'; favorite.className = 'icon-button'; favorite.innerHTML = icon('star');
   favorite.addEventListener('click', () => toggleFavorite(id));
   row.append(select, favorite);
-  const entry = { row, select, title, details, subtitle, favorite };
+  const entry = { row, select, title, state, details, subtitle, favorite };
   rows.set(id, entry);
   return entry;
 }
@@ -200,7 +205,10 @@ function renderLibrary() {
     entry.select.title = titleFor(id);
     entry.select.setAttribute('aria-label', `${displayTitle(titleFor(id))}を再生`);
     renderDetails(entry.details, id);
-    entry.subtitle.textContent = id === currentId ? '選択中' : authorFor(metadata.get(id)) || (metadata.failed.has(id) ? '動画情報を取得できません' : 'YouTube');
+    entry.state.hidden = id !== currentId;
+    entry.select.setAttribute('aria-current', id === currentId ? 'true' : 'false');
+    entry.subtitle.textContent = metadata.failed.has(id) ? '動画情報を取得できません' : metadata.get(id) ? '' : 'YouTube';
+    entry.subtitle.hidden = !entry.subtitle.textContent;
     entry.row.classList.toggle('is-current', id === currentId);
     updateFavorite(entry.favorite, id);
     // メタデータの更新時も、フォーカスとスクロール位置を保つ。
