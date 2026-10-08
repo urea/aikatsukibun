@@ -12,7 +12,6 @@
 <body>
   <main id="app" class="app-shell" data-appearance="dark">
     <h1 class="sr-only">アイカツ！アンコール気分</h1>
-    <a id="related-site" class="related-site" hidden>アイカツ！気分へ</a>
     <div class="studio">
       <section class="watch" aria-label="動画プレーヤー">
         <div class="video-box"><div id="video-empty" class="video-empty"><strong>アイカツ！アンコール気分</strong><p>アンコールの楽曲は準備中です。</p><p class="secondary">動画に合わせて、3色のボタンで遊べます。</p></div><iframe id="youtube-player" hidden title="アイカツ！アンコール プレイ動画" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
@@ -46,6 +45,7 @@
           <div class="sheet-grip" aria-hidden="true"></div>
           <header class="panel-header"><h2 id="settings-heading">設定</h2><button type="button" class="icon-button" data-close aria-label="設定を閉じる"><span data-icon="close"></span></button></header>
           <div class="panel-content settings-content">
+            <a id="related-site" class="related-site" hidden>アイカツ！気分へ</a>
             <label class="setting-row range-setting"><span>動画の音量 <output id="video-volume-value">70%</output></span><input id="video-volume" type="range" min="0" max="100" value="70" aria-label="動画の音量" /></label>
             <label class="setting-row"><span>タップ効果音</span><input id="sound-enabled" class="switch" type="checkbox" checked /></label>
             <label class="setting-row range-setting"><span>効果音の音量 <output id="sound-volume-value">35%</output></span><input id="sound-volume" type="range" min="0" max="100" value="35" aria-label="効果音の音量" /></label>
