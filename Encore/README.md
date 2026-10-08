@@ -1,0 +1,30 @@
+# アイカツ！アンコール気分
+
+通常版の `App/` をコピーした、アンコール用の独立したアプリです。
+
+- アンコール版の公開先: https://aikatsu-encore-kibun.vercel.app/
+- 通常版の公開先: https://aikatsukibun.vercel.app/
+
+- `videos.json`: アンコール用の動画ID一覧。
+- `catalog.json`: 楽曲情報の正本。動画IDごとに `title`（楽曲）、`startSeconds` / `endSeconds`（元動画内の開始・終了秒）、`mode`（モード）、`difficulty`（難易度）、`idol`（アイドル）、`result`（成績）、`author`（投稿者名）、`authorHandle`（ハンドル）を管理します。
+- 「アイドル活動！」（7:15〜8:51、1分36秒）と「君のEntrance」（7:31〜9:57、2分26秒）を登録済みです。楽曲位置・モード・難易度・アイドル・成績はユーザー指定、投稿者は動画情報で確認しています。
+- PCでは再生画面と選曲一覧で楽曲情報を確認できます。幅899px以下では再生画面の詳細情報を非表示にし、選曲一覧で確認できます。検索は楽曲名・モード・難易度・アイドル・成績・投稿者にも対応しています。
+- 登録した楽曲位置で再生・再再生・シークします。進行表示は楽曲区間内の0:00〜曲の長さ。シーク後も終了位置を越えて再生しないようにします。
+- 曲がない場合は「楽曲準備中」を表示し、YouTubeプレーヤーを読み込みません。
+- 履歴・お気に入り・追加動画・設定・最終動画・曲名キャッシュは、すべて `aikatsu_encore:` から始まる保存キーを使います。
+- 通常版の楽曲・譜面・環境設定・保存データは引き継ぎません。
+
+## ローカルで確認
+
+このフォルダーで `npm.cmd ci` を実行後、プロジェクトルートで `npm.cmd run dev:encore -- --host 127.0.0.1 --port 18743 --strictPort` を実行します。確認URLは `http://127.0.0.1:18743/` です。ポートを変更する場合は `D:\Archive\WEB_PORTS.md` と使用状況を確認してください。
+
+ビルドはプロジェクトルートの `npm.cmd run build:encore`。公開用ファイルは `Encore/dist/` に出力されます。
+
+## 楽曲追加と公開
+
+1. アンコールの動画を確認し、`videos.json` に動画IDを、`catalog.json` に対応する楽曲情報を登録します。開始・終了秒は動画全体の先頭から数えます。区間を指定しない追加動画は動画全体を再生します。
+2. Vercelの `aikatsu-encore-kibun` プロジェクトは、Root Directory=`Encore`、Framework=Vite、Install Command=`npm ci`、Build Command=`npm run build`、Output Directory=`dist` で公開します。GitHubの `urea/aikatsukibun` と接続し、通常版とは別のプロジェクトで管理します。
+3. 各Vercelプロジェクトの環境変数 `VITE_RELATED_SITE_URL` に相手の公開URLを設定します。アンコール版では `https://aikatsukibun.vercel.app/`、通常版では `https://aikatsu-encore-kibun.vercel.app/` を使います。未設定の間はリンクを表示しません。ローカル設定の例は `.env.example` にあります。
+4. `main` への更新後、両プロジェクトのデプロイ結果と公開URLを確認します。アンコール版だけにアンコールの曲が表示されること、PC／スマホ表示、楽曲区間の再生、相互リンクでの往復を確認します。
+
+画面の「動画を追加」は、この版の保存領域にだけ追加します。動画のシリーズ判定は自動化していないため、アンコールの動画を選んで登録してください。

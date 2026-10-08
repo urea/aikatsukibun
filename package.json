@@ -7,6 +7,9 @@
     "dev": "npm --prefix App run dev",
     "build": "npm --prefix App run build",
     "preview": "npm --prefix App run preview",
+    "dev:encore": "npm --prefix Encore run dev --",
+    "build:encore": "npm --prefix Encore run build",
+    "preview:encore": "npm --prefix Encore run preview --",
     "test": "node --test Dev/tests/*.test.js"
   }
 }

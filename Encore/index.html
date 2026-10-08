@@ -4,30 +4,29 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0b1020" />
-  <meta name="description" content="好きなアイカツ！動画に合わせて、3色のボタンを自由にタップ。PCでもスマホでも、アイカツ！気分。" />
-  <title>アイカツ！気分</title>
+  <meta name="description" content="アイカツ！アンコールの動画に合わせて、3色のボタンを自由にタップ。アイカツ！アンコール気分。" />
+  <title>アイカツ！アンコール気分</title>
   <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
-  <link rel="preconnect" href="https://www.youtube.com" />
-  <link rel="preconnect" href="https://i.ytimg.com" />
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
   <main id="app" class="app-shell" data-appearance="dark">
-    <h1 class="sr-only">アイカツ！気分</h1>
-    <a id="related-site" class="related-site" hidden>アイカツ！アンコール気分へ</a>
+    <h1 class="sr-only">アイカツ！アンコール気分</h1>
+    <a id="related-site" class="related-site" hidden>アイカツ！気分へ</a>
     <div class="studio">
       <section class="watch" aria-label="動画プレーヤー">
-        <div class="video-box"><iframe id="youtube-player" src="https://www.youtube.com/embed/fYibOFCMpnE?enablejsapi=1&amp;playsinline=1&amp;rel=0" title="アイカツ！プレイ動画" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+        <div class="video-box"><div id="video-empty" class="video-empty"><strong>アイカツ！アンコール気分</strong><p>アンコールの楽曲は準備中です。</p><p class="secondary">動画に合わせて、3色のボタンで遊べます。</p></div><iframe id="youtube-player" hidden title="アイカツ！アンコール プレイ動画" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
         <div class="playback">
           <div class="seek-row"><span id="current-time">0:00</span><input id="seek" class="seek" type="range" min="0" max="100" value="0" step="0.1" aria-label="再生位置" disabled /><span id="duration">0:00</span></div>
           <div class="transport">
             <button id="play-toggle" class="icon-button transport-play" type="button" aria-label="再生" disabled><span data-icon="play"></span></button>
-            <div class="now-playing"><div id="current-title">硝子ドール</div><div id="playback-status" class="secondary" role="status">プレーヤーを準備中…</div></div>
-            <button id="favorite-current" class="icon-button" type="button" aria-label="お気に入りに追加" aria-pressed="false"><span data-icon="star"></span></button>
+            <div class="now-playing"><div id="current-title">アンコールの楽曲は準備中</div><div id="playback-status" class="secondary" role="status">楽曲を登録すると、動画に合わせて遊べます</div></div>
+            <button id="favorite-current" class="icon-button" type="button" aria-label="お気に入りに追加" aria-pressed="false" disabled><span data-icon="star"></span></button>
             <button id="mute-toggle" class="icon-button" type="button" aria-label="動画をミュート" aria-pressed="false" disabled><span data-icon="volume"></span></button>
             <button id="fullscreen-toggle" class="icon-button fullscreen-toggle" type="button" aria-label="全画面表示"><span data-icon="maximize"></span></button>
           </div>
-          <div id="player-notice" class="player-notice" role="status" hidden><span id="player-notice-text"></span><button type="button" id="retry-player" class="text-button" hidden>再読み込み</button><a id="youtube-link" href="https://www.youtube.com/watch?v=fYibOFCMpnE" target="_blank" rel="noopener noreferrer">YouTubeで開く<span data-icon="external"></span></a></div>
+          <dl id="current-details" class="song-details" aria-label="楽曲情報" hidden></dl>
+          <div id="player-notice" class="player-notice" role="status" hidden><span id="player-notice-text"></span><button type="button" id="retry-player" class="text-button" hidden>再読み込み</button><a id="youtube-link" target="_blank" rel="noopener noreferrer" hidden>YouTubeで開く<span data-icon="external"></span></a></div>
         </div>
       </section>
       <aside id="control-slot" class="control-slot" aria-label="タップと選曲">
@@ -38,7 +37,7 @@
             <button class="tap-pad pad-yellow" id="btn-yellow" data-pad="yellow" type="button" aria-label="黄・右ボタン D"><svg class="pad-symbol" viewBox="0 0 100 100" aria-hidden="true"><path d="M93 50 58 16V35H8V65H58V84Z"/><text class="pad-key" x="36" y="50">D</text></svg></button>
           </div>
           <nav class="main-actions" aria-label="選曲と設定">
-            <button id="shuffle" class="action-button primary" type="button"><span data-icon="shuffle"></span>おまかせ</button>
+            <button id="shuffle" class="action-button primary" type="button" disabled><span data-icon="shuffle"></span>おまかせ</button>
             <button id="open-library" class="action-button" type="button" aria-controls="library-dialog" aria-haspopup="dialog" aria-expanded="false"><span data-icon="list"></span>選ぶ</button>
             <button id="open-settings" class="icon-button more-button" type="button" aria-label="設定・遊び方" aria-controls="settings-panel" aria-expanded="false"><span data-icon="more"></span></button>
           </nav>
@@ -67,7 +66,7 @@
     <dialog id="library-dialog" class="library-dialog" aria-labelledby="library-heading">
       <section id="library-panel" class="side-panel" aria-labelledby="library-heading" hidden>
         <header class="panel-header">
-          <h2 id="library-heading">曲を選ぶ</h2>
+          <h2 id="library-heading">アンコールの曲を選ぶ</h2>
           <div class="library-header-actions">
             <button id="open-add" class="action-button" type="button" aria-label="動画を追加"><span data-icon="plus"></span><span class="add-button-label">動画を追加</span></button>
             <button type="button" class="action-button" data-close aria-label="選曲を閉じて再生画面に戻る"><span data-icon="close"></span>戻る</button>
