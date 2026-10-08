@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { validateVideoInput, VIDEO_INPUT_LIMITS, VIDEO_RESULTS, VIDEO_MODES } from '../../Encore/add-video.js';
+import { validateVideoInput, VIDEO_INPUT_LIMITS, VIDEO_RESULTS, VIDEO_MODES, VIDEO_DIFFICULTIES } from '../../Encore/add-video.js';
 
 const input = {
   url: 'https://www.youtube.com/watch?v=tJAcDG-eS-Q',
@@ -41,15 +41,14 @@ test('すべての必須項目で空白や非文字列を拒否し、未完成�
 test('前後の空白だけを除去し、自由入力とHTMLを文字列として保持する', () => {
   const padded = Object.fromEntries(Object.entries(input).map(([field, value]) => [field, `  ${value} \n`]));
   assert.deepEqual(validateVideoInput(padded), validateVideoInput(input));
-  const result = validateVideoInput({ ...input, title: '<img src=x onerror=alert(1)>', idol: 'いちご / あかり', difficulty: '★5' });
+  const result = validateVideoInput({ ...input, title: '<img src=x onerror=alert(1)>', idol: 'いちご / あかり' });
   assert.deepEqual(result.errors, {});
   assert.equal(result.video.title, '<img src=x onerror=alert(1)>');
   assert.equal(result.video.idol, 'いちご / あかり');
-  assert.equal(result.video.difficulty, '★5');
 });
 
 test('テキストは上限ちょうどを許容し、超過時は切り捨てずエラーにする', () => {
-  for (const field of ['title', 'difficulty', 'idol', 'author']) {
+  for (const field of ['title', 'idol', 'author']) {
     assert.ok(validateVideoInput({ ...input, [field]: 'あ'.repeat(VIDEO_INPUT_LIMITS[field]) }).video);
     const result = validateVideoInput({ ...input, [field]: 'あ'.repeat(VIDEO_INPUT_LIMITS[field] + 1) });
     assert.equal(result.video, null);
@@ -112,6 +111,21 @@ test('モードは指定された4種類だけを許容し、表記をそのま�
     assert.equal(result.video, null);
     assert.deepEqual(Object.keys(result.errors), ['mode']);
   }
+});
+
+test('難易度は指定された4種類だけを許容し、未選択をエラーにする', () => {
+  assert.deepEqual(VIDEO_DIFFICULTIES, ['-', 'かんたん', 'ふつう', 'むずかしい']);
+  for (const difficulty of VIDEO_DIFFICULTIES) {
+    const result = validateVideoInput({ ...input, difficulty });
+    assert.deepEqual(result.errors, {});
+    assert.equal(result.video.difficulty, difficulty);
+  }
+  for (const difficulty of ['★5', '簡単', '普通', '難しい', '未設定']) {
+    const result = validateVideoInput({ ...input, difficulty });
+    assert.equal(result.video, null);
+    assert.deepEqual(Object.keys(result.errors), ['difficulty']);
+  }
+  assert.equal(validateVideoInput({ ...input, difficulty: '' }).errors.difficulty, '難易度を選択してください。');
 });
 
 test('共有URL・Shorts・埋め込みURLから同じYouTube動画を抽出する', () => {

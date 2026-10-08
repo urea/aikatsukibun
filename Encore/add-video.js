@@ -1,6 +1,7 @@
 import { extractVideoId } from './model.js';
 
 export const VIDEO_MODES = Object.freeze(['テレビアニメアイカツ！モード', 'アイカツ！オールスターモード', 'じゆうにアイカツ！モード', 'きかんげんていライブ！モード']);
+export const VIDEO_DIFFICULTIES = Object.freeze(['-', 'かんたん', 'ふつう', 'むずかしい']);
 export const VIDEO_RESULTS = Object.freeze(['クリア', 'フルコンボ', 'オールパーフェクト']);
 export const VIDEO_INPUT_LIMITS = Object.freeze({ url: 2048, title: 200, mode: 100, difficulty: 40, idol: 100, author: 200 });
 
@@ -8,7 +9,7 @@ const labels = { url: 'YouTube URL', title: '楽曲名', start: '開始時刻', 
 
 function readText(source, field, errors) {
   const value = typeof source[field] === 'string' ? source[field].trim() : '';
-  if (!value) errors[field] = `${labels[field]}を${['mode', 'result'].includes(field) ? '選択' : '入力'}してください。`;
+  if (!value) errors[field] = `${labels[field]}を${['mode', 'difficulty', 'result'].includes(field) ? '選択' : '入力'}してください。`;
   else if (VIDEO_INPUT_LIMITS[field] && value.length > VIDEO_INPUT_LIMITS[field]) errors[field] = `${labels[field]}は${VIDEO_INPUT_LIMITS[field]}文字以内で入力してください。`;
   return value;
 }
@@ -43,6 +44,7 @@ export function validateVideoInput(input) {
   const id = errors.url ? null : readVideoId(values.url);
   if (!errors.url && !id) errors.url = '有効なYouTube動画のURLを入力してください。';
   if (!errors.mode && !VIDEO_MODES.includes(values.mode)) errors.mode = 'モードはリストの4種類から選択してください。';
+  if (!errors.difficulty && !VIDEO_DIFFICULTIES.includes(values.difficulty)) errors.difficulty = '難易度はリストの4種類から選択してください。';
   if (!errors.result && !VIDEO_RESULTS.includes(values.result)) errors.result = '成績はクリア・フルコンボ・オールパーフェクトから選択してください。';
   if (startSeconds !== null && endSeconds !== null && endSeconds <= startSeconds) errors.end = '終了時刻は開始時刻より後にしてください。';
   const video = Object.keys(errors).length ? null : {
