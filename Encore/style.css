@@ -95,11 +95,22 @@ input::placeholder { color:var(--muted); opacity:1; }
 .wide-button { width:100%; margin-top:14px; }
 .saved-data { margin-top:24px; padding-top:8px; border-top:1px solid var(--line); }
 .saved-data .text-button { display:block; font-size:12px; min-height:40px; }
-.add-form { display:flex; flex-direction:column; gap:16px; }
-.add-form label { display:flex; flex-direction:column; gap:8px; font-size:13px; }
-.add-form input { width:100%; border:1px solid var(--line); background:var(--raised); color:var(--text); border-radius:9px; padding:11px; font-size:16px; }
+.add-form { display:flex; flex-direction:column; gap:12px; }
+.add-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px 16px; }
+.add-field { display:flex; flex-direction:column; gap:4px; min-width:0; }
+.add-field.field-wide { grid-column:1/-1; }
+.add-form label { font-size:13px; font-weight:600; }
+.add-form input,.add-form select { width:100%; min-width:0; border:1px solid var(--line); background:var(--raised); color:var(--text); border-radius:7px; padding:8px 10px; font-size:16px; min-height:40px; }
+.add-form small { color:var(--muted); font-size:11px; line-height:1.5; }
+.add-form [aria-invalid=true] { border-color:var(--red); }
+.field-error { color:var(--red); font-size:12px; overflow-wrap:anywhere; }
+.result-guide { display:flex; flex-direction:column; gap:2px; margin:0; font-size:11px; color:var(--muted); }
+.result-guide > div { display:flex; flex-wrap:wrap; gap:0 6px; }
+.result-guide dt { color:var(--text); }
+.result-guide dd { margin:0; }
 .add-form p { margin:0; }
 .form-message { font-size:13px; color:var(--muted); overflow-wrap:anywhere; }
+.form-message:empty { display:none; }
 .form-message.is-error { color:var(--red); }
 .help-content p { font-size:13px; margin:14px 0; line-height:1.9; }
 .key-guide { display:flex; gap:12px; flex-wrap:wrap; margin:22px 0; }
@@ -188,9 +199,9 @@ body.library-open,.app-shell.library-open:fullscreen { overflow:hidden; }
 .video-row .icon-button svg { width:20px; height:20px; }
 .empty-state { text-align:center; font-size:15px; color:var(--muted); margin:64px 16px; }
 .library-dialog #add-panel { max-width:720px; }
-.library-dialog .add-form { padding:16px 4px; }
-.library-dialog .add-form label { font-size:16px; }
-.library-dialog .add-form .secondary { font-size:14px; }
+.library-dialog .add-form { padding:4px 4px 16px; }
+.library-dialog .add-form .secondary { font-size:12px; }
+@media(max-width:599px) { .field-title,.field-author,.field-mode,.field-result { grid-column:1/-1; } .add-fields { gap:10px 12px; } }
 @media(max-width:699px) {
   .library-dialog { padding-top:max(12px,env(safe-area-inset-top)); }
   .library-dialog .panel-header { padding-bottom:8px; }

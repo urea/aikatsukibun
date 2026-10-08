@@ -31,7 +31,22 @@ export function readSaved(storage, key, fallback) {
 export function normalizeCustomVideos(value) {
   const seen = new Set();
   if (!Array.isArray(value)) return [];
-  return value.filter(item => item && isVideoId(item.id) && !seen.has(item.id) && seen.add(item.id)).map(item => ({ id: item.id, title: typeof item.title === 'string' ? item.title.slice(0, 500) : `追加した動画 (${item.id})` }));
+  return value.filter(item => item && isVideoId(item.id) && !seen.has(item.id) && seen.add(item.id)).map(item => ({ id: item.id, ...normalizeVideoMetadata(item), title: typeof item.title === 'string' ? item.title.slice(0, 500) : `追加した動画 (${item.id})` }));
+}
+
+export function normalizeVideoMetadata(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  const data = {};
+  const limits = { title: 500, mode: 100, difficulty: 40, idol: 100, author: 200, authorHandle: 200 };
+  for (const [key, limit] of Object.entries(limits)) {
+    if (typeof value[key] === 'string') data[key] = value[key].slice(0, limit);
+  }
+  if (['クリア', 'フルコンボ', 'オールパーフェクト'].includes(value.result)) data.result = value.result;
+  if (Number.isSafeInteger(value.startSeconds) && value.startSeconds >= 0 && Number.isSafeInteger(value.endSeconds) && value.endSeconds > value.startSeconds) {
+    data.startSeconds = value.startSeconds;
+    data.endSeconds = value.endSeconds;
+  }
+  return data;
 }
 
 export function normalizeSettings(value) {

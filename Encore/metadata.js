@@ -1,5 +1,5 @@
 import catalog from './catalog.json';
-import { isVideoId, readSaved } from './model.js';
+import { isVideoId, readSaved, normalizeVideoMetadata } from './model.js';
 
 export function createMetadata(storage, save) {
   const key = 'aikatsu_video_cache_v2';
@@ -8,13 +8,17 @@ export function createMetadata(storage, save) {
   if (saved && typeof saved === 'object' && !Array.isArray(saved)) {
     for (const [id, data] of Object.entries(saved)) {
       // 管理済みの楽曲情報は、古いYouTube曲名キャッシュで上書きしない。
-      if (!catalog[id] && isVideoId(id) && typeof data?.title === 'string') cache[id] = { title: data.title.slice(0, 500), author: typeof data.author === 'string' ? data.author.slice(0, 200) : '' };
+      if (!catalog[id] && isVideoId(id) && typeof data?.title === 'string') cache[id] = normalizeVideoMetadata(data);
     }
   }
   const pending = new Map();
   const failed = new Set();
   let saveTimer;
-  function seed(id, title) { if (!cache[id] && title) cache[id] = { title, author: '' }; }
+  function seed(id, data) {
+    if (!isVideoId(id) || catalog[id]) return;
+    const supplied = normalizeVideoMetadata(data);
+    if (supplied.title) cache[id] = { ...cache[id], ...supplied };
+  }
   async function fetchVideo(id) {
     if (!isVideoId(id)) throw new Error('YouTubeのURLを確認してください。');
     if (cache[id]) return cache[id];

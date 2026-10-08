@@ -1,11 +1,12 @@
 import videoIds from './videos.json';
-import { SETTINGS_KEY, isVideoId, uniqueIds, extractVideoId, readSaved, normalizeCustomVideos, normalizeSettings, chooseRandom, formatTime, displayTitle } from './model.js';
+import { SETTINGS_KEY, isVideoId, uniqueIds, readSaved, normalizeCustomVideos, normalizeSettings, chooseRandom, formatTime, displayTitle } from './model.js';
 import { icon, setIcon, mountIcons } from './icons.js';
 import { createTapAudio } from './tap-audio.js';
 import { createPadInput, PAD_KEYS } from './pad-input.js';
 import { createMetadata } from './metadata.js';
 import { createEncoreStorage } from './storage.js';
 import { getPlaybackRange, getClipPosition, seekTimeForPercent, youtubeVideoOptions } from './clip.js';
+import { validateVideoInput } from './add-video.js';
 
 const $ = id => document.getElementById(id);
 mountIcons();
@@ -33,7 +34,7 @@ let history = uniqueIds(readSaved(storage, 'hist_ids', [])).slice(0, 30);
 const customVideos = normalizeCustomVideos(readSaved(storage, 'custom_videos', []));
 const settings = normalizeSettings(readSaved(storage, SETTINGS_KEY, {}));
 const metadata = createMetadata(storage, save);
-customVideos.forEach(video => metadata.seed(video.id, video.title));
+customVideos.forEach(video => metadata.seed(video.id, video));
 const lastVideo = readSaved(storage, 'aikatsu_last_video_v2', null);
 const initialIds = uniqueIds([...customVideos.map(video => video.id), ...videoIds, ...favorites, ...history]);
 let currentId = initialIds.includes(lastVideo) ? lastVideo : initialIds[0] ?? null;
@@ -268,30 +269,72 @@ document.querySelectorAll('[data-library]').forEach(button => {
 });
 $('video-search').addEventListener('input', () => { $('library-results').scrollTop = 0; renderLibrary(); });
 
+const addFields = ['url', 'title', 'author', 'start', 'end', 'mode', 'difficulty', 'idol', 'result'];
+const readAddInput = () => Object.fromEntries(addFields.map(field => [field, $(`add-${field}`).value]));
+let addValidationShown = false;
+function showAddErrors(errors) {
+  for (const field of addFields) {
+    const input = $(`add-${field}`);
+    const error = $(`add-${field}-error`);
+    input.setCustomValidity(errors[field] || '');
+    if (errors[field]) input.setAttribute('aria-invalid', 'true');
+    else input.removeAttribute('aria-invalid');
+    error.textContent = errors[field] || '';
+    error.hidden = !errors[field];
+  }
+}
+for (const field of addFields) {
+  $(`add-${field}`).addEventListener('input', () => {
+    if (addValidationShown) showAddErrors(validateVideoInput(readAddInput()).errors);
+  });
+}
 $('add-form').addEventListener('submit', async event => {
   event.preventDefault();
-  const id = extractVideoId($('add-url').value);
+  if ($('add-submit').disabled) return;
   const message = $('add-message');
   message.classList.remove('is-error');
-  if (!id) { message.textContent = 'YouTubeの動画URLを入力してください。'; message.classList.add('is-error'); $('add-url').focus(); return; }
+  const { video, errors } = validateVideoInput(readAddInput());
+  addValidationShown = true;
+  showAddErrors(errors);
+  if (!video) {
+    message.textContent = '未入力・入力内容を確認してください。';
+    message.classList.add('is-error');
+    $(`add-${addFields.find(field => errors[field])}`).focus();
+    return;
+  }
+  const { id } = video;
+  if (customVideos.some(item => item.id === id) || videoIds.includes(id)) {
+    showAddErrors({ url: 'この動画は登録済みです。選曲一覧から選んでください。' });
+    message.textContent = '同じ動画を重複して追加することはできません。';
+    message.classList.add('is-error');
+    $('add-url').focus();
+    return;
+  }
   $('add-submit').disabled = true;
+  for (const field of addFields) $(`add-${field}`).disabled = true;
   message.textContent = '動画を確認中…';
   try {
-    const video = await metadata.fetch(id);
-    if (!customVideos.some(item => item.id === id) && !videoIds.includes(id)) {
-      customVideos.unshift({ id, title: video.title }); save('custom_videos', customVideos);
-    }
+    await metadata.fetch(id);
+    customVideos.unshift(video);
+    save('custom_videos', customVideos);
+    metadata.seed(id, video);
     if (!favorites.includes(id)) { favorites.unshift(id); save('fav_ids', favorites); }
-    $('add-url').value = ''; message.textContent = '';
+    $('add-form').reset();
+    addValidationShown = false;
+    showAddErrors({});
+    message.textContent = '';
     updateCurrent();
     if (panelId === 'library-panel') renderLibrary();
     // 確認中に別画面へ移動した場合は、再生中の曲を切り替えない。
     if (panelId === 'add-panel') selectVideo(id);
-    toast('お気に入りに追加しました');
+    toast('楽曲情報を保存し、お気に入りに追加しました');
   } catch (error) {
     message.textContent = error.name === 'AbortError' || error instanceof TypeError ? '動画情報を取得できませんでした。通信を確認して、もう一度お試しください。' : error.message;
     message.classList.add('is-error');
-  } finally { $('add-submit').disabled = false; }
+  } finally {
+    $('add-submit').disabled = false;
+    for (const field of addFields) $(`add-${field}`).disabled = false;
+  }
 });
 
 function iframeUrl(id) {
