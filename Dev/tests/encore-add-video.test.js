@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { validateVideoInput, VIDEO_INPUT_LIMITS, VIDEO_RESULTS } from '../../Encore/add-video.js';
+import { validateVideoInput, VIDEO_INPUT_LIMITS, VIDEO_RESULTS, VIDEO_MODES } from '../../Encore/add-video.js';
 
 const input = {
   url: 'https://www.youtube.com/watch?v=tJAcDG-eS-Q',
@@ -41,16 +41,15 @@ test('すべての必須項目で空白や非文字列を拒否し、未完成�
 test('前後の空白だけを除去し、自由入力とHTMLを文字列として保持する', () => {
   const padded = Object.fromEntries(Object.entries(input).map(([field, value]) => [field, `  ${value} \n`]));
   assert.deepEqual(validateVideoInput(padded), validateVideoInput(input));
-  const result = validateVideoInput({ ...input, title: '<img src=x onerror=alert(1)>', mode: '追加モード', idol: 'いちご / あかり', difficulty: '★5' });
+  const result = validateVideoInput({ ...input, title: '<img src=x onerror=alert(1)>', idol: 'いちご / あかり', difficulty: '★5' });
   assert.deepEqual(result.errors, {});
   assert.equal(result.video.title, '<img src=x onerror=alert(1)>');
-  assert.equal(result.video.mode, '追加モード');
   assert.equal(result.video.idol, 'いちご / あかり');
   assert.equal(result.video.difficulty, '★5');
 });
 
 test('テキストは上限ちょうどを許容し、超過時は切り捨てずエラーにする', () => {
-  for (const field of ['title', 'mode', 'difficulty', 'idol', 'author']) {
+  for (const field of ['title', 'difficulty', 'idol', 'author']) {
     assert.ok(validateVideoInput({ ...input, [field]: 'あ'.repeat(VIDEO_INPUT_LIMITS[field]) }).video);
     const result = validateVideoInput({ ...input, [field]: 'あ'.repeat(VIDEO_INPUT_LIMITS[field] + 1) });
     assert.equal(result.video, null);
@@ -102,6 +101,16 @@ test('成績は指定された3種類だけを許容する', () => {
     const checked = validateVideoInput({ ...input, result });
     assert.equal(checked.video, null);
     assert.deepEqual(Object.keys(checked.errors), ['result']);
+  }
+});
+
+test('モードは指定された4種類だけを許容し、表記をそのまま保存する', () => {
+  assert.deepEqual(VIDEO_MODES, ['テレビアニメアイカツ！モード', 'アイカツ！オールスターモード', 'じゆうにアイカツ！モード', 'きかんげんていライブ！モード']);
+  for (const mode of VIDEO_MODES) assert.equal(validateVideoInput({ ...input, mode }).video.mode, mode);
+  for (const mode of ['追加モード', 'テレビアニメモード', '期間限定ライブ！モード']) {
+    const result = validateVideoInput({ ...input, mode });
+    assert.equal(result.video, null);
+    assert.deepEqual(Object.keys(result.errors), ['mode']);
   }
 });
 

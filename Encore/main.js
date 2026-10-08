@@ -6,7 +6,7 @@ import { createPadInput, PAD_KEYS } from './pad-input.js';
 import { createMetadata } from './metadata.js';
 import { createEncoreStorage } from './storage.js';
 import { getPlaybackRange, getClipPosition, seekTimeForPercent, youtubeVideoOptions } from './clip.js';
-import { validateVideoInput } from './add-video.js';
+import { validateVideoInput, VIDEO_MODES } from './add-video.js';
 
 const $ = id => document.getElementById(id);
 mountIcons();
@@ -270,6 +270,12 @@ document.querySelectorAll('[data-library]').forEach(button => {
 $('video-search').addEventListener('input', () => { $('library-results').scrollTop = 0; renderLibrary(); });
 
 const addFields = ['url', 'title', 'author', 'start', 'end', 'mode', 'difficulty', 'idol', 'result'];
+for (const mode of VIDEO_MODES) {
+  const option = document.createElement('option');
+  option.value = mode;
+  option.textContent = mode;
+  $('add-mode').append(option);
+}
 const readAddInput = () => Object.fromEntries(addFields.map(field => [field, $(`add-${field}`).value]));
 let addValidationShown = false;
 function showAddErrors(errors) {
