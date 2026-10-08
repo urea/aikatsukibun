@@ -9,7 +9,10 @@ const labels = { url: 'YouTube URL', title: '楽曲名', start: '開始時刻', 
 
 function readText(source, field, errors) {
   const value = typeof source[field] === 'string' ? source[field].trim() : '';
-  if (!value) errors[field] = `${labels[field]}を${['mode', 'difficulty', 'result'].includes(field) ? '選択' : '入力'}してください。`;
+  if (!value) {
+    const action = ['title', 'idol'].includes(field) ? '選択または入力' : ['mode', 'difficulty', 'result'].includes(field) ? '選択' : '入力';
+    errors[field] = `${labels[field]}を${action}してください。`;
+  }
   else if (VIDEO_INPUT_LIMITS[field] && value.length > VIDEO_INPUT_LIMITS[field]) errors[field] = `${labels[field]}は${VIDEO_INPUT_LIMITS[field]}文字以内で入力してください。`;
   return value;
 }

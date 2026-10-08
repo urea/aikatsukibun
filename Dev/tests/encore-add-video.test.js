@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { validateVideoInput, VIDEO_INPUT_LIMITS, VIDEO_RESULTS, VIDEO_MODES, VIDEO_DIFFICULTIES } from '../../Encore/add-video.js';
+import { normalizeCustomVideos } from '../../Encore/model.js';
+import { VIDEO_IDOLS, VIDEO_SONGS } from '../../Encore/registration-options.js';
 
 const input = {
   url: 'https://www.youtube.com/watch?v=tJAcDG-eS-Q',
@@ -45,6 +47,16 @@ test('前後の空白だけを除去し、自由入力とHTMLを文字列とし�
   assert.deepEqual(result.errors, {});
   assert.equal(result.video.title, '<img src=x onerror=alert(1)>');
   assert.equal(result.video.idol, 'いちご / あかり');
+});
+
+test('候補にない楽曲名・アイドル名も保存と再読み込みで保持する', () => {
+  const title = '一覧にない新しい楽曲';
+  const idol = '一覧にない新しいアイドル';
+  assert.equal(VIDEO_SONGS.includes(title), false);
+  assert.equal(VIDEO_IDOLS.includes(idol), false);
+  const result = validateVideoInput({ ...input, title, idol });
+  assert.deepEqual(result.errors, {});
+  assert.deepEqual(normalizeCustomVideos(JSON.parse(JSON.stringify([result.video]))), [result.video]);
 });
 
 test('テキストは上限ちょうどを許容し、超過時は切り捨てずエラーにする', () => {

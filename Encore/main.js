@@ -7,6 +7,7 @@ import { createMetadata } from './metadata.js';
 import { createEncoreStorage } from './storage.js';
 import { getPlaybackRange, getClipPosition, seekTimeForPercent, youtubeVideoOptions } from './clip.js';
 import { validateVideoInput, VIDEO_MODES, VIDEO_DIFFICULTIES } from './add-video.js';
+import { VIDEO_IDOLS, VIDEO_SONGS } from './registration-options.js';
 
 const $ = id => document.getElementById(id);
 mountIcons();
@@ -270,29 +271,57 @@ document.querySelectorAll('[data-library]').forEach(button => {
 $('video-search').addEventListener('input', () => { $('library-results').scrollTop = 0; renderLibrary(); });
 
 const addFields = ['url', 'title', 'author', 'start', 'end', 'mode', 'difficulty', 'idol', 'result'];
-for (const [field, choices] of Object.entries({ mode: VIDEO_MODES, difficulty: VIDEO_DIFFICULTIES })) {
+const customChoiceValue = '__custom__';
+const customChoiceFields = ['title', 'idol'];
+for (const [field, choices] of Object.entries({ mode: VIDEO_MODES, difficulty: VIDEO_DIFFICULTIES, title: VIDEO_SONGS, idol: VIDEO_IDOLS })) {
   for (const value of choices) {
     const option = document.createElement('option');
     option.value = value;
     option.textContent = value;
     $(`add-${field}`).append(option);
   }
+  if (customChoiceFields.includes(field)) {
+    const option = document.createElement('option');
+    option.value = customChoiceValue;
+    option.textContent = '自由入力';
+    $(`add-${field}`).append(option);
+  }
 }
-const readAddInput = () => Object.fromEntries(addFields.map(field => [field, $(`add-${field}`).value]));
+function syncCustomChoice(field) {
+  const custom = $(`add-${field}-custom`);
+  const active = $(`add-${field}`).value === customChoiceValue;
+  custom.hidden = !active;
+  custom.required = active;
+  return active;
+}
+function getAddControl(field) {
+  return customChoiceFields.includes(field) && $(`add-${field}`).value === customChoiceValue ? $(`add-${field}-custom`) : $(`add-${field}`);
+}
+for (const field of customChoiceFields) {
+  syncCustomChoice(field);
+  $(`add-${field}`).addEventListener('change', () => {
+    if (syncCustomChoice(field)) $(`add-${field}-custom`).focus();
+  });
+}
+const readAddInput = () => Object.fromEntries(addFields.map(field => [field, getAddControl(field).value]));
+const addControls = addFields.flatMap(field => [$(`add-${field}`), $(`add-${field}-custom`)].filter(Boolean));
 let addValidationShown = false;
 function showAddErrors(errors) {
   for (const field of addFields) {
-    const input = $(`add-${field}`);
+    const activeControl = getAddControl(field);
     const error = $(`add-${field}-error`);
-    input.setCustomValidity(errors[field] || '');
-    if (errors[field]) input.setAttribute('aria-invalid', 'true');
-    else input.removeAttribute('aria-invalid');
+    for (const input of [$(`add-${field}`), $(`add-${field}-custom`)].filter(Boolean)) {
+      const message = input === activeControl ? errors[field] || '' : '';
+      input.setCustomValidity(message);
+      if (message) input.setAttribute('aria-invalid', 'true');
+      else input.removeAttribute('aria-invalid');
+    }
     error.textContent = errors[field] || '';
     error.hidden = !errors[field];
   }
 }
-for (const field of addFields) {
-  $(`add-${field}`).addEventListener('input', () => {
+for (const control of addControls) {
+  control.addEventListener(control.tagName === 'SELECT' ? 'change' : 'input', () => {
     if (addValidationShown) showAddErrors(validateVideoInput(readAddInput()).errors);
   });
 }
@@ -307,7 +336,7 @@ $('add-form').addEventListener('submit', async event => {
   if (!video) {
     message.textContent = '未入力・入力内容を確認してください。';
     message.classList.add('is-error');
-    $(`add-${addFields.find(field => errors[field])}`).focus();
+    getAddControl(addFields.find(field => errors[field])).focus();
     return;
   }
   const { id } = video;
@@ -319,7 +348,7 @@ $('add-form').addEventListener('submit', async event => {
     return;
   }
   $('add-submit').disabled = true;
-  for (const field of addFields) $(`add-${field}`).disabled = true;
+  for (const control of addControls) control.disabled = true;
   message.textContent = '動画を確認中…';
   try {
     await metadata.fetch(id);
@@ -328,6 +357,7 @@ $('add-form').addEventListener('submit', async event => {
     metadata.seed(id, video);
     if (!favorites.includes(id)) { favorites.unshift(id); save('fav_ids', favorites); }
     $('add-form').reset();
+    for (const field of customChoiceFields) syncCustomChoice(field);
     addValidationShown = false;
     showAddErrors({});
     message.textContent = '';
@@ -341,7 +371,7 @@ $('add-form').addEventListener('submit', async event => {
     message.classList.add('is-error');
   } finally {
     $('add-submit').disabled = false;
-    for (const field of addFields) $(`add-${field}`).disabled = false;
+    for (const control of addControls) control.disabled = false;
   }
 });
 
