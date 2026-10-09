@@ -546,7 +546,7 @@ function onPlayerReady(event) {
   if (libraryDialog.open) player.pauseVideo();
   $('play-toggle').disabled = false; $('mute-toggle').disabled = false;
   applyVideoVolume();
-  if (!playerFailed) { $('player-notice').hidden = true; setStatus('再生して、自由にタップ'); }
+  if (!playerFailed) { $('player-notice').hidden = true; setStatus(''); }
 }
 function onPlayerStateChange(event) {
   const state = event.data;
@@ -561,7 +561,7 @@ function onPlayerStateChange(event) {
   setIcon($('play-toggle'), state === 1 ? 'pause' : finished ? 'replay' : 'play');
   $('play-toggle').setAttribute('aria-label', state === 1 ? '一時停止' : finished ? 'もう一度再生' : '再生');
   if (playerFailed) return;
-  setStatus(state === 1 ? '再生中' : finished ? '楽曲の再生が終了しました' : state === 2 ? '一時停止中' : state === 3 ? '動画を読み込み中…' : '再生して、自由にタップ');
+  setStatus(state === 1 ? '再生中' : finished ? '楽曲の再生が終了しました' : state === 2 ? '一時停止中' : state === 3 ? '動画を読み込み中…' : '');
   if (state === 1) {
     const range = rangeFor(currentId);
     if (metadata.get(currentId)?.endSeconds && player.getCurrentTime() >= range.end) { finishClip(); return; }

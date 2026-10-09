@@ -26,6 +26,7 @@ input[type=range] { accent-color:var(--accent); cursor:pointer; }
 #current-title { font-weight:600; font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .secondary { font-size:12px; color:var(--muted); }
 #playback-status { margin-top:2px; }
+#playback-status:empty { display:none; }
 .song-details { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px 12px; margin:10px 0 0; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:12px; }
 .song-details > div { min-width:0; }
 .song-details dt { color:var(--muted); font-size:10px; }
