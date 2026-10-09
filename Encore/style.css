@@ -108,6 +108,7 @@ input::placeholder { color:var(--muted); opacity:1; }
 .add-form input,.add-form select { width:100%; min-width:0; border:1px solid var(--line); background:var(--raised); color:var(--text); border-radius:7px; padding:8px 10px; font-size:16px; min-height:40px; }
 .add-form small { color:var(--muted); font-size:11px; line-height:1.5; }
 .add-form [aria-invalid=true] { border-color:var(--red); }
+.add-form input[readonly] { color:var(--muted); }
 .field-error { color:var(--red); font-size:12px; overflow-wrap:anywhere; }
 .result-guide { display:flex; flex-direction:column; gap:2px; margin:0; font-size:11px; color:var(--muted); }
 .result-guide > div { display:flex; flex-wrap:wrap; gap:0 6px; }
@@ -205,6 +206,9 @@ body.library-open,.app-shell.library-open:fullscreen { overflow:hidden; }
 .video-subtitle { font-size:12px; color:var(--muted); overflow-wrap:anywhere; }
 .video-row .icon-button { position:static; align-self:start; width:44px; height:44px; padding:12px; }
 .video-row .icon-button svg { width:20px; height:20px; }
+.video-row-actions { display:flex; flex-direction:column; align-items:center; }
+.video-row .video-edit { width:44px; min-height:40px; padding:6px 2px; border:0; border-radius:6px; color:var(--muted); background:none; font-size:11px; }
+.video-edit:hover { background:var(--raised); color:var(--text); }
 .empty-state { text-align:center; font-size:15px; color:var(--muted); margin:64px 16px; }
 .library-dialog #add-panel { max-width:720px; }
 .library-dialog .add-form { padding:4px 4px 16px; }

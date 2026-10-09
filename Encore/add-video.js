@@ -5,6 +5,19 @@ export const VIDEO_DIFFICULTIES = Object.freeze(['-', 'かんたん', 'ふつう
 export const VIDEO_RESULTS = Object.freeze(['クリア', 'フルコンボ', 'オールパーフェクト']);
 export const VIDEO_INPUT_LIMITS = Object.freeze({ url: 2048, title: 200, mode: 100, difficulty: 40, idol: 100 });
 
+export function videoToInput(video) {
+  const time = seconds => {
+    if (!Number.isSafeInteger(seconds) || seconds < 0) return '';
+    const parts = [Math.floor(seconds / 60) % 60, seconds % 60].map(value => String(value).padStart(2, '0'));
+    return seconds >= 3600 ? `${Math.floor(seconds / 3600)}:${parts.join(':')}` : `${Math.floor(seconds / 60)}:${parts[1]}`;
+  };
+  return {
+    url: `https://www.youtube.com/watch?v=${video.id}`,
+    ...Object.fromEntries(['title', 'mode', 'difficulty', 'idol', 'result'].map(field => [field, video[field] || ''])),
+    start: time(video.startSeconds), end: time(video.endSeconds),
+  };
+}
+
 const labels = { url: 'YouTube URL', title: '楽曲名', start: '開始時刻', end: '終了時刻', mode: 'モード', difficulty: '難易度', idol: 'アイドル', result: '成績' };
 
 function readText(source, field, errors) {

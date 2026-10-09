@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { isIP } from 'node:net';
 import { validateVideoInput, withVideoAuthor } from '../add-video.js';
 import { readYouTubeAuthor } from '../youtube-author.js';
+import { isVideoId } from '../model.js';
 
 export const MAX_JSON_BYTES = 16 * 1024;
 const databaseMessage = '共有データを利用できません。時間をおいて、もう一度お試しください。';
@@ -14,6 +15,10 @@ function json(status, body, headers = {}) {
 function duplicate() {
   const message = 'この動画は登録済みです。選曲一覧から選んでください。';
   return json(409, { error: message, errors: { url: message } });
+}
+
+function conflict() {
+  return json(409, { error: 'ほかの方が情報を更新しました。最新の情報を読み込み、内容を確認してから保存してください。', code: 'conflict' });
 }
 
 function acceptsOrigin(request) {
@@ -91,13 +96,30 @@ export function createSharedVideosHandler({ store, fetchImpl = globalThis.fetch,
       try { return json(200, { videos: await store.listVideos() }); }
       catch { return json(503, { error: databaseMessage }); }
     }
-    if (request.method !== 'POST') return json(405, { error: 'この操作には対応していません。' }, { Allow: 'GET, POST' });
-    if (!acceptsOrigin(request)) return json(403, { error: 'このアプリの画面から追加してください。' });
+    const editing = request.method === 'PATCH';
+    if (request.method !== 'POST' && !editing) return json(405, { error: 'この操作には対応していません。' }, { Allow: 'GET, POST, PATCH' });
+    if (!acceptsOrigin(request)) return json(403, { error: `このアプリの画面から${editing ? '編集' : '追加'}してください。` });
     if (request.headers.get('content-type')?.split(';')[0].trim().toLowerCase() !== 'application/json') return json(415, { error: '送信形式はapplication/jsonを指定してください。' });
     const parsed = await readJson(request);
     if (parsed.response) return parsed.response;
     const { video, errors } = validateVideoInput(parsed.input);
     if (!video) return json(400, { error: '未入力・入力内容を確認してください。', errors });
+    if (editing) {
+      if (!isVideoId(parsed.input.id) || parsed.input.id !== video.id) return json(400, { error: '編集する動画のYouTube URLは変更できません。', errors: { url: '編集する動画のYouTube URLは変更できません。' } });
+      if (typeof parsed.input.revision !== 'string' || !/^[0-9a-f]{32}$/.test(parsed.input.revision)) return json(400, { error: '編集情報を確認できませんでした。一覧を再読み込みしてください。' });
+      if (reserved.has(video.id)) return json(404, { error: 'この動画は共有一覧から編集できません。' });
+      try {
+        const existing = await store.getVideo(video.id);
+        if (!existing) return json(404, { error: '編集する動画が見つかりません。一覧を再読み込みしてください。' });
+        if (existing.revision !== parsed.input.revision) return conflict();
+        const hash = clientHash(request, getClientAddress, rateLimitSalt);
+        const rate = await store.consumeRateLimit(hash, rateLimit, rateWindowSeconds);
+        if (!rate.allowed) return json(429, { error: '短時間に編集が集中しています。少し待ってから再度お試しください。' }, { 'Retry-After': String(Math.max(1, Math.ceil(rate.retryAfter || rateWindowSeconds))) });
+        const savedVideo = withVideoAuthor(video, existing);
+        const updated = await store.updateVideo(savedVideo, parsed.input.revision);
+        return updated ? json(200, { video: updated }) : conflict();
+      } catch { return json(503, { error: databaseMessage }); }
+    }
     if (reserved.has(video.id)) return duplicate();
     try {
       if (await store.hasVideo(video.id)) return duplicate();

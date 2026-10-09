@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { validateVideoInput, withVideoAuthor, VIDEO_INPUT_LIMITS, VIDEO_RESULTS, VIDEO_MODES, VIDEO_DIFFICULTIES } from '../../Encore/add-video.js';
+import { validateVideoInput, videoToInput, withVideoAuthor, VIDEO_INPUT_LIMITS, VIDEO_RESULTS, VIDEO_MODES, VIDEO_DIFFICULTIES } from '../../Encore/add-video.js';
 import { normalizeCustomVideos } from '../../Encore/model.js';
 import { VIDEO_IDOLS, VIDEO_SONGS } from '../../Encore/registration-options.js';
 
@@ -14,6 +14,20 @@ const input = {
   idol: 'マイキャラ',
   result: 'フルコンボ',
 };
+
+test('編集用の入力は保存された区間・自由入力を復元し、時間形式も再検証できる', () => {
+  for (const [start, end] of [['0:00', '1:36'], ['7:31', '9:57'], ['1:02:03', '1:04:05'], ['98:59:59', '99:59:59']]) {
+    const original = validateVideoInput({ ...input, start, end, title: '新しい曲', idol: '新しいアイドル' }).video;
+    const restored = videoToInput(original);
+    assert.deepEqual(validateVideoInput(restored).video, original);
+    assert.equal(restored.title, '新しい曲');
+    assert.equal(restored.idol, '新しいアイドル');
+  }
+  const legacy = videoToInput({ id: 'tJAcDG-eS-Q', title: '旧形式' });
+  assert.equal(legacy.start, '');
+  assert.equal(legacy.end, '');
+  assert.equal(legacy.difficulty, '');
+});
 
 test('楽曲区間と必須情報を保存形式に変換する', () => {
   const result = validateVideoInput(input);

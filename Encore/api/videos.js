@@ -21,3 +21,4 @@ function handle(request) {
 
 export const GET = handle;
 export const POST = handle;
+export const PATCH = handle;

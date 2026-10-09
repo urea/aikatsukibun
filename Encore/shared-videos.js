@@ -10,6 +10,7 @@ export function createSharedVideosClient(fetchImpl = fetch) {
       if (!response.ok) {
         const error = new Error(typeof data?.error === 'string' ? data.error : '共有データに接続できませんでした。もう一度お試しください。');
         error.errors = data?.errors;
+        error.code = data?.code;
         throw error;
       }
       return data;
@@ -30,6 +31,12 @@ export function createSharedVideosClient(fetchImpl = fetch) {
       const data = await request({ method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input) });
       const [video] = normalizeCustomVideos([data?.video]);
       if (!video?.author || !Number.isSafeInteger(video.endSeconds)) throw new Error('登録結果を確認できませんでした。一覧を再読み込みしてください。');
+      return video;
+    },
+    async update(id, revision, input) {
+      const data = await request({ method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...input, id, revision }) });
+      const [video] = normalizeCustomVideos([data?.video]);
+      if (video?.id !== id || !video.author || !Number.isSafeInteger(video.endSeconds) || !video.revision) throw new Error('更新結果を確認できませんでした。一覧を再読み込みしてください。');
       return video;
     },
   };

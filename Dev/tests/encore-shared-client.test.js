@@ -64,6 +64,32 @@ test('公開登録はフォーム情報をPOSTし、自動取得された投稿�
   assert.deepEqual(await client.add(input), video);
 });
 
+test('編集はIDと読込時revisionをPATCHし、更新後のrevisionを再読み込みでも保持する', async () => {
+  const revision = 'a'.repeat(32);
+  const edited = { ...video, title: '編集した曲', revision: 'b'.repeat(32) };
+  const client = createSharedVideosClient(async (url, options) => {
+    if (options.method === 'PATCH') {
+      assert.equal(url, '/api/videos');
+      assert.deepEqual(JSON.parse(options.body), { ...input, title: edited.title, id: video.id, revision });
+      return response({ video: edited });
+    }
+    return response({ videos: [edited] });
+  });
+  const saved = await client.update(video.id, revision, { ...input, title: edited.title });
+  assert.deepEqual(saved, edited);
+  assert.deepEqual(await client.list(), [edited]);
+});
+
+test('同時編集の競合を判別でき、ID・区間・投稿者・revisionの壊れた更新結果を成功扱いしない', async () => {
+  const revision = 'a'.repeat(32);
+  const conflict = createSharedVideosClient(async () => response({ error: '別の利用者が更新しました。', code: 'conflict' }, 409));
+  await assert.rejects(conflict.update(video.id, revision, input), error => error.code === 'conflict');
+  for (const invalid of [{ ...video }, { ...video, revision: 'invalid' }, { ...video, revision, id: 'abcdefghijk' }, { ...video, revision, author: '' }, { ...video, revision, endSeconds: video.startSeconds }]) {
+    const client = createSharedVideosClient(async () => response({ video: invalid }));
+    await assert.rejects(client.update(video.id, revision, input), /更新結果を確認できませんでした/);
+  }
+});
+
 test('APIの項目別検証エラーを失わずフォームに返す', async () => {
   const errors = { end: '終了時刻は開始時刻より後にしてください。' };
   const client = createSharedVideosClient(async () => response({ error: '入力内容を確認してください。', errors }, 400));

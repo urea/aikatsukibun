@@ -13,6 +13,8 @@ const paths = {
   close: '<path d="m6 6 12 12M6 18 18 6"/>',
   search: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>',
   plus: '<path d="M12 4v16M4 12h16"/>',
+  edit: '<path d="m16 3 5 5-12 12-6 1 1-6ZM13 6l5 5"/>',
+  save: '<path d="m5 12 4 4L19 6"/>',
   replay: '<path d="M3 10a9 9 0 1 1 0 6M3 3v7h7"/>',
   help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 4 2l-1.5 1v1m0 3v.1"/>',
   back: '<path d="m10 5-7 7 7 7M3 12h18"/>'

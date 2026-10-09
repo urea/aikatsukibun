@@ -31,7 +31,11 @@ export function readSaved(storage, key, fallback) {
 export function normalizeCustomVideos(value) {
   const seen = new Set();
   if (!Array.isArray(value)) return [];
-  return value.filter(item => item && isVideoId(item.id) && !seen.has(item.id) && seen.add(item.id)).map(item => ({ id: item.id, ...normalizeVideoMetadata(item), title: typeof item.title === 'string' ? item.title.slice(0, 500) : `追加した動画 (${item.id})` }));
+  return value.filter(item => item && isVideoId(item.id) && !seen.has(item.id) && seen.add(item.id)).map(item => ({
+    id: item.id, ...normalizeVideoMetadata(item),
+    title: typeof item.title === 'string' ? item.title.slice(0, 500) : `追加した動画 (${item.id})`,
+    ...(typeof item.revision === 'string' && /^[0-9a-f]{32}$/.test(item.revision) ? { revision: item.revision } : {}),
+  }));
 }
 
 export function normalizeVideoMetadata(value) {

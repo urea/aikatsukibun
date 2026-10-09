@@ -86,7 +86,8 @@
       <section id="add-panel" class="side-panel" aria-labelledby="add-heading" hidden>
         <header class="panel-header"><div class="panel-heading-group"><button type="button" class="icon-button" data-back="library-panel" aria-label="選曲に戻る"><span data-icon="back"></span></button><h2 id="add-heading">動画を追加</h2></div><button type="button" class="action-button" data-close aria-label="動画追加を閉じて再生画面に戻る"><span data-icon="close"></span>戻る</button></header>
         <form id="add-form" class="panel-content add-form" novalidate>
-          <p class="secondary">全項目必須です。追加した動画と楽曲情報は公開され、すべての利用者の一覧に表示されます。</p>
+          <p id="add-description" class="secondary">全項目必須です。追加した動画と楽曲情報は公開され、すべての利用者の一覧に表示されます。</p>
+          <p id="edit-author" class="secondary" hidden></p>
           <div class="add-fields">
             <div class="add-field field-wide"><label for="add-url">YouTube URL</label><input id="add-url" name="url" type="text" inputmode="url" placeholder="https://www.youtube.com/watch?v=…" maxlength="2048" autocomplete="off" aria-describedby="add-url-hint add-url-error" required /><small id="add-url-hint">共有URL・Shortsにも対応。投稿者は追加時に自動取得します。</small><p id="add-url-error" class="field-error" hidden></p></div>
             <div class="add-field field-title field-wide"><label for="add-title">楽曲名</label><select id="add-title" name="title" aria-describedby="add-title-hint add-title-error" required><option value="">選択してください</option></select><input id="add-title-custom" name="titleCustom" type="text" placeholder="楽曲名を入力" maxlength="200" aria-label="楽曲名（自由入力）" aria-describedby="add-title-hint add-title-error" hidden /><small id="add-title-hint">プレイしている曲名を選択。一覧にない曲は「自由入力」。</small><p id="add-title-error" class="field-error" hidden></p></div>
@@ -98,7 +99,8 @@
             <div class="add-field field-result"><label for="add-result">成績</label><select id="add-result" name="result" aria-describedby="add-result-hint add-result-error" required><option value="">選択してください</option><option value="クリア">クリア</option><option value="フルコンボ">フルコンボ</option><option value="オールパーフェクト">オールパーフェクト</option></select><dl id="add-result-hint" class="result-guide"><div><dt>クリア</dt><dd>フルコンボせずにクリア</dd></div><div><dt>フルコンボ</dt><dd>フルコンボでクリア</dd></div><div><dt>オールパーフェクト</dt><dd>すべてパーフェクトでクリア</dd></div></dl><p id="add-result-error" class="field-error" hidden></p></div>
           </div>
           <p id="add-message" class="form-message" role="status"></p>
-          <button id="add-submit" class="action-button primary" type="submit"><span data-icon="plus"></span>追加して再生</button>
+          <button id="reload-edit" class="text-button" type="button" hidden>最新の情報を読み直す</button>
+          <button id="add-submit" class="action-button primary" type="submit"><span id="add-submit-icon" data-icon="plus"></span><span id="add-submit-label">追加して再生</span></button>
         </form>
       </section>
     </dialog>
