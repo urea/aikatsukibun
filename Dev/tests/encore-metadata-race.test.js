@@ -15,6 +15,7 @@ const sharedVideo = {
   title: '共有された楽曲名', startSeconds: 10, endSeconds: 50,
   mode: 'アイカツ！オールスターモード', difficulty: '-',
   idol: 'マイキャラ', result: 'フルコンボ', author: '新しい投稿者',
+  revision: 'a'.repeat(32),
 };
 const deferred = () => {
   let resolve;
@@ -99,12 +100,58 @@ test('共有情報で救済されていない取得失敗は呼び出し元へ�
   assert.equal(metadata.get(id), undefined);
 });
 
-test('静的カタログは共有情報や旧キャッシュで上書きせず、再取得もしない', async t => {
-  const staticId = Object.keys(catalog)[0];
-  const metadata = fixture(t, async () => { throw new Error('unexpected network request'); }, {
-    [staticId]: { title: '古いキャッシュ' },
-  });
-  metadata.seed(staticId, sharedVideo, { replace: true });
-  assert.deepEqual(metadata.get(staticId), catalog[staticId]);
-  assert.deepEqual(await metadata.fetch(staticId, { refresh: true }), catalog[staticId]);
+test('共有情報がない時は初期カタログを使い、旧YouTubeキャッシュや端末の追加曲名で上書きしない', async t => {
+  for (const staticId of Object.keys(catalog)) {
+    const metadata = fixture(t, async () => { throw new Error('unexpected network request'); }, {
+      [staticId]: { title: '古いキャッシュ', startSeconds: 0, endSeconds: 100, revision: 'b'.repeat(32) },
+    });
+    metadata.seed(staticId, { title: '端末に残った動画全体のタイトル' });
+    assert.deepEqual(metadata.get(staticId), catalog[staticId]);
+    assert.deepEqual(await metadata.fetch(staticId, { refresh: true }), catalog[staticId]);
+  }
+});
+
+test('初期カタログの2動画も共有キャッシュと後続共有更新の曲名・区間・revisionを採用する', async t => {
+  for (const staticId of Object.keys(catalog)) {
+    const metadata = fixture(t, async () => { throw new Error('unexpected network request'); }, {
+      [staticId]: { title: '古いYouTube曲名キャッシュ', authorHandle: '@stale' },
+    });
+    metadata.seed(staticId, sharedVideo, { replace: true });
+    assert.deepEqual(metadata.get(staticId), sharedVideo);
+    assert.deepEqual(await metadata.fetch(staticId, { refresh: true }), sharedVideo);
+    const updated = { ...sharedVideo, title: '共有で編集した楽曲名', startSeconds: 20, endSeconds: 80, idol: '編集後のアイドル', revision: 'b'.repeat(32) };
+    metadata.seed(staticId, updated, { replace: true });
+    assert.deepEqual(metadata.get(staticId), updated);
+    assert.deepEqual(await metadata.fetch(staticId, { refresh: true }), updated);
+    metadata.seed(staticId, { title: '端末に残った古い動画名' });
+    assert.deepEqual(metadata.get(staticId), updated);
+    assert.equal(Object.hasOwn(metadata.get(staticId), 'authorHandle'), false);
+  }
+});
+
+test('初期カタログ以外の共有動画もYouTubeの再取得や後から届く端末情報で曲名と区間を失わない', async t => {
+  const metadata = fixture(t, async () => { throw new Error('unexpected network request'); });
+  metadata.seed(id, sharedVideo, { replace: true });
+  assert.deepEqual(await metadata.fetch(id, { refresh: true }), sharedVideo);
+  metadata.seed(id, { title: '端末の古い動画名', startSeconds: 1, endSeconds: 100 });
+  assert.deepEqual(metadata.get(id), sharedVideo);
+});
+
+test('共有の後続更新がYouTube取得中に重なっても最後の共有内容とrevisionを保つ', async t => {
+  const pending = deferred();
+  const metadata = fixture(t, () => pending.promise);
+  const task = metadata.fetch(id, { refresh: true });
+  metadata.seed(id, sharedVideo, { replace: true });
+  const updated = { ...sharedVideo, title: '後から届いた共有編集', startSeconds: 15, endSeconds: 55, revision: 'c'.repeat(32) };
+  metadata.seed(id, updated, { replace: true });
+  pending.resolve(oembedResponse());
+  assert.deepEqual(await task, updated);
+  assert.deepEqual(metadata.get(id), updated);
+});
+
+test('共有ではない追加動画は必要に応じてYouTube情報を再取得できる', async t => {
+  const metadata = fixture(t, async () => oembedResponse(), { [id]: { title: '古いキャッシュ' } });
+  const result = await metadata.fetch(id, { refresh: true });
+  assert.equal(result.title, '動画全体のタイトル');
+  assert.equal(result.authorHandle, '@original');
 });

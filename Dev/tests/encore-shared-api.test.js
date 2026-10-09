@@ -286,7 +286,7 @@ test('PATCHはURLとIDの不一致、revision欠落、入力不備を保存前�
   assert.equal(requests.length, 0);
 });
 
-test('PATCHはcatalog動画・未登録動画を追加せず404、古い情報は409を返す', async () => {
+test('PATCHはDB未登録動画を追加せず404、古い情報は409を返す', async () => {
   const { handler, store, requests } = fixture({ reservedIds: ['tJAcDG-eS-Q'] });
   assert.equal((await handler(patch(editInput(apiVideo, { id: 'tJAcDG-eS-Q', url: 'https://youtu.be/tJAcDG-eS-Q' })))).status, 404);
   assert.equal((await handler(patch(editInput()))).status, 404);
@@ -299,7 +299,30 @@ test('PATCHはcatalog動画・未登録動画を追加せず404、古い情報�
   assert.equal(requests.length, 0);
 });
 
-test('同じrevisionの並行編集は原子的なCASで一方だけ保存し上書きを防ぐ', async () => {
+test('DB登録済みの初期2動画はPATCHで編集でき、投稿者を保全して古いrevisionを拒否する', async () => {
+  const ids = ['lTLqkpcqWs8', 'tJAcDG-eS-Q'];
+  const { handler, store, requests } = fixture({ reservedIds: ids });
+  for (const [index, id] of ids.entries()) {
+    const existing = { ...apiVideo, id, title: index === 0 ? 'アイドル活動！' : '君のEntrance', author: index === 0 ? 'けやき通りCh.' : 'cubewano', authorHandle: index === 0 ? '@Keyaki_st' : '@cubewano4' };
+    store.videos.set(id, existing);
+    const body = editInput(existing, { url: `https://youtu.be/${id}`, difficulty: 'とてもむずかしい', author: '改ざん者', authorHandle: '@Fake', authorUrl: 'https://www.youtube.com/user/fake' });
+    const response = await handler(patch(body));
+    assert.equal(response.status, 200);
+    const expected = { ...existing, title: input.title, difficulty: 'とてもむずかしい' };
+    assert.deepEqual(store.videos.get(id), expected);
+    assert.deepEqual((await response.json()).video, { ...expected, revision: revisionFor(expected) });
+    const stale = await handler(patch({ ...body, title: '古い情報による上書き' }));
+    assert.equal(stale.status, 409);
+    assert.equal((await stale.json()).code, 'conflict');
+    assert.deepEqual(store.videos.get(id), expected);
+    assert.equal((await handler(post({ ...input, url: `https://youtu.be/${id}` }))).status, 409);
+  }
+  assert.equal(store.videos.size, 2);
+  assert.equal(store.hashes.length, 2);
+  assert.equal(requests.length, 0);
+});
+
+test('予約リストの動画でも同じrevisionの並行編集は原子的なCASで一方だけ保存する', async () => {
   const store = memoryStore();
   store.videos.set(apiVideo.id, apiVideo);
   const getVideo = store.getVideo.bind(store);
@@ -315,7 +338,7 @@ test('同じrevisionの並行編集は原子的なCASで一方だけ保存し上
   const updateVideo = store.updateVideo.bind(store);
   let writes = 0;
   store.updateVideo = async (...args) => { writes++; return updateVideo(...args); };
-  const { handler } = fixture({ store });
+  const { handler } = fixture({ store, reservedIds: [apiVideo.id] });
   const responses = await Promise.all([handler(patch(editInput(apiVideo, { title: '並行編集A' }))), handler(patch(editInput(apiVideo, { title: '並行編集B' })))]);
   assert.deepEqual(responses.map(response => response.status).sort(), [200, 409]);
   assert.equal(writes, 2);

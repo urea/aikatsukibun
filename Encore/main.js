@@ -243,7 +243,7 @@ function renderLibrary() {
     entry.subtitle.hidden = !entry.subtitle.textContent;
     entry.row.classList.toggle('is-current', id === currentId);
     updateFavorite(entry.favorite, id);
-    entry.edit.hidden = videoIds.includes(id) || ![...sharedVideos, ...customVideos].some(video => video.id === id);
+    entry.edit.hidden = ![...sharedVideos, ...customVideos].some(video => video.id === id);
     entry.edit.setAttribute('aria-label', `${displayTitle(titleFor(id))}の情報を編集`);
     // メタデータの更新時も、フォーカスとスクロール位置を保つ。
     const expected = $('video-list').children[index];
@@ -420,7 +420,6 @@ function openAddForm() {
 }
 async function openEditForm(id) {
   if (formSaving || editOpening) { toast('処理が終わるまでお待ちください'); return; }
-  if (videoIds.includes(id)) return;
   editOpening = true;
   try {
     let shared = sharedVideos.find(video => video.id === id);

@@ -14,20 +14,24 @@ export function createMetadata(storage, save) {
   }
   const pending = new Map();
   const seedRevisions = new Map();
+  const sharedIds = new Set();
   const failed = new Set();
   let saveTimer;
   function seed(id, data, { replace = false } = {}) {
-    if (!isVideoId(id) || catalog[id]) return;
+    if (!isVideoId(id) || (!replace && (catalog[id] || sharedIds.has(id)))) return;
     const supplied = normalizeVideoMetadata(data);
+    if (replace && typeof data?.revision === 'string' && /^[0-9a-f]{32}$/.test(data.revision)) supplied.revision = data.revision;
     if (supplied.title) {
       cache[id] = replace ? supplied : { ...cache[id], ...supplied };
+      if (replace) sharedIds.add(id);
       seedRevisions.set(id, (seedRevisions.get(id) || 0) + 1);
       failed.delete(id);
     }
   }
   async function fetchVideo(id, { refresh = false } = {}) {
     if (!isVideoId(id)) throw new Error('YouTubeのURLを確認してください。');
-    if (cache[id] && (!refresh || catalog[id])) return cache[id];
+    // 静的カタログは初期値。共有で更新された楽曲もYouTubeの動画全体情報へ戻さない。
+    if (cache[id] && (!refresh || catalog[id] || sharedIds.has(id))) return cache[id];
     if (pending.has(id)) return pending.get(id);
     const revision = seedRevisions.get(id);
     const task = (async () => {

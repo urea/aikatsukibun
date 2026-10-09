@@ -107,7 +107,6 @@ export function createSharedVideosHandler({ store, fetchImpl = globalThis.fetch,
     if (editing) {
       if (!isVideoId(parsed.input.id) || parsed.input.id !== video.id) return json(400, { error: '編集する動画のYouTube URLは変更できません。', errors: { url: '編集する動画のYouTube URLは変更できません。' } });
       if (typeof parsed.input.revision !== 'string' || !/^[0-9a-f]{32}$/.test(parsed.input.revision)) return json(400, { error: '編集情報を確認できませんでした。一覧を再読み込みしてください。' });
-      if (reserved.has(video.id)) return json(404, { error: 'この動画は共有一覧から編集できません。' });
       try {
         const existing = await store.getVideo(video.id);
         if (!existing) return json(404, { error: '編集する動画が見つかりません。一覧を再読み込みしてください。' });
