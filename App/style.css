@@ -100,8 +100,7 @@ kbd { font:inherit; border:1px solid var(--line); background:var(--raised); padd
 .sheet-grip { display:none; }
 .toast { position:fixed; z-index:10; left:50%; bottom:max(22px,env(safe-area-inset-bottom)); transform:translateX(-50%); padding:11px 18px; border:1px solid var(--line); border-radius:12px; background:var(--panel); color:var(--text); box-shadow:0 8px 25px #0004; font-size:13px; max-width:calc(100vw - 32px); text-align:center; pointer-events:none; }
 .sr-only { position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
-.related-site { display:block; width:fit-content; margin:0 0 8px; color:var(--muted); font-size:12px; text-underline-offset:3px; }
-@media(max-width:899px) and (max-aspect-ratio:1/1) { .related-site { margin:8px 12px; } }
+.related-site { display:flex; align-items:center; width:fit-content; min-height:40px; margin:0; color:var(--text); font-size:13px; text-underline-offset:3px; }
 .app-shell:fullscreen { overflow:auto; }
 @media(max-width:899px) and (min-aspect-ratio:1/1) { .studio { grid-template-columns:minmax(0,1fr) 248px; } }
 @media(max-width:899px) and (max-aspect-ratio:1/1) {
