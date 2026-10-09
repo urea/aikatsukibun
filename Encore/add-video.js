@@ -82,10 +82,12 @@ export function validateVideoInput(input) {
 }
 
 export function withVideoAuthor(video, metadata) {
-  const { author, authorHandle } = normalizeVideoMetadata(metadata);
+  const { author, authorHandle, authorUrl } = normalizeVideoMetadata(metadata);
   if (!author?.trim()) throw new Error('投稿者情報を取得できませんでした。時間をおいて、もう一度お試しください。');
   const saved = { ...video, author: author.trim() };
   delete saved.authorHandle;
+  delete saved.authorUrl;
   if (authorHandle?.trim()) saved.authorHandle = authorHandle.trim();
+  if (authorUrl) saved.authorUrl = authorUrl;
   return saved;
 }

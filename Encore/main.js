@@ -9,6 +9,7 @@ import { getPlaybackRange, getClipPosition, seekTimeForPercent, youtubeVideoOpti
 import { validateVideoInput, videoToInput, difficultyLabel, VIDEO_MODES, VIDEO_DIFFICULTIES } from './add-video.js';
 import { VIDEO_IDOLS, VIDEO_SONGS } from './registration-options.js';
 import { createSharedVideosClient } from './shared-videos.js';
+import { getYouTubeAuthorVideosUrl } from './youtube-author.js';
 
 const $ = id => document.getElementById(id);
 mountIcons();
@@ -68,15 +69,24 @@ function detailsFor(id) {
   }
   return fields.filter(([, value]) => typeof value === 'string' && value.length > 0);
 }
-function renderDetails(container, id) {
-  const fields = detailsFor(id);
+function renderDetails(container, id, { authorOnly = false, excludeAuthor = false } = {}) {
+  const fields = detailsFor(id).filter(([label]) => authorOnly ? label === '投稿者' : !excludeAuthor || label !== '投稿者');
   container.replaceChildren();
   container.hidden = fields.length === 0;
   for (const [label, value] of fields) {
     const item = document.createElement('div');
     item.dataset.field = label;
     const term = document.createElement('dt'); term.textContent = label;
-    const description = document.createElement('dd'); description.textContent = value;
+    const description = document.createElement('dd');
+    const authorUrl = label === '投稿者' ? getYouTubeAuthorVideosUrl(metadata.get(id)) : null;
+    if (authorUrl) {
+      const link = document.createElement('a');
+      link.className = 'author-link'; link.href = authorUrl;
+      link.target = '_blank'; link.rel = 'noopener noreferrer';
+      link.textContent = `${value} ↗`;
+      link.setAttribute('aria-label', `${value}のYouTube動画一覧（新しいタブで開く）`);
+      description.append(link);
+    } else description.textContent = value;
     item.append(term, description); container.append(item);
   }
 }
@@ -194,7 +204,9 @@ function rowFor(id) {
   const subtitle = document.createElement('span'); subtitle.className = 'video-subtitle';
   const details = document.createElement('dl'); details.className = 'song-details video-details';
   details.id = `song-details-${id}`;
-  select.setAttribute('aria-describedby', details.id);
+  const author = document.createElement('dl'); author.className = 'song-details video-details video-author';
+  author.id = `song-author-${id}`;
+  select.setAttribute('aria-describedby', `${details.id} ${author.id}`);
   heading.append(title, state); words.append(heading, details, subtitle); select.append(image, words);
   select.addEventListener('click', () => selectVideo(id));
   const favorite = document.createElement('button');
@@ -205,8 +217,9 @@ function rowFor(id) {
   edit.addEventListener('click', () => openEditForm(id));
   const actions = document.createElement('div'); actions.className = 'video-row-actions';
   actions.append(favorite, edit);
-  row.append(select, actions);
-  const entry = { row, select, title, state, details, subtitle, favorite, edit };
+  // 投稿者リンクは再生ボタンの外に置き、リンク操作で選曲されないようにする。
+  row.append(select, actions, author);
+  const entry = { row, select, title, state, details, author, subtitle, favorite, edit };
   rows.set(id, entry);
   return entry;
 }
@@ -221,7 +234,9 @@ function renderLibrary() {
     entry.title.textContent = displayTitle(titleFor(id));
     entry.select.title = titleFor(id);
     entry.select.setAttribute('aria-label', `${displayTitle(titleFor(id))}を再生`);
-    renderDetails(entry.details, id);
+    renderDetails(entry.details, id, { excludeAuthor: true });
+    renderDetails(entry.author, id, { authorOnly: true });
+    entry.row.classList.toggle('has-author', !entry.author.hidden);
     entry.state.hidden = id !== currentId;
     entry.select.setAttribute('aria-current', id === currentId ? 'true' : 'false');
     entry.subtitle.textContent = metadata.failed.has(id) ? '動画情報を取得できません' : metadata.get(id) ? '' : 'YouTube';
@@ -494,7 +509,7 @@ $('add-form').addEventListener('submit', async event => {
     if (sharedLoading) await sharedLoading;
     let savedVideo;
     if (editing?.local) {
-      savedVideo = { ...video, ...(editing.author ? { author: editing.author } : {}), ...(editing.authorHandle ? { authorHandle: editing.authorHandle } : {}) };
+      savedVideo = { ...video, ...(editing.author ? { author: editing.author } : {}), ...(editing.authorHandle ? { authorHandle: editing.authorHandle } : {}), ...(editing.authorUrl ? { authorUrl: editing.authorUrl } : {}) };
       customVideos = customVideos.map(item => item.id === id ? savedVideo : item);
       save('custom_videos', customVideos);
     } else {

@@ -1,3 +1,5 @@
+import { normalizeAuthorUrl } from './youtube-author.js';
+
 // 保存データとURLの境界処理。保存領域はstorage.jsで通常版と分離する。
 export const DEFAULT_VIDEO_ID = null;
 export const SETTINGS_KEY = 'aikatsu_settings_v2';
@@ -45,6 +47,8 @@ export function normalizeVideoMetadata(value) {
   for (const [key, limit] of Object.entries(limits)) {
     if (typeof value[key] === 'string') data[key] = value[key].slice(0, limit);
   }
+  const authorUrl = normalizeAuthorUrl(value.authorUrl);
+  if (authorUrl) data.authorUrl = authorUrl;
   if (['クリア', 'フルコンボ', 'オールパーフェクト'].includes(value.result)) data.result = value.result;
   if (Number.isSafeInteger(value.startSeconds) && value.startSeconds >= 0 && Number.isSafeInteger(value.endSeconds) && value.endSeconds > value.startSeconds) {
     data.startSeconds = value.startSeconds;

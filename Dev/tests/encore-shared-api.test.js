@@ -138,15 +138,29 @@ test('noembedの取得が終了しなくても設定した時間で打ち切っ�
   assert.equal(store.videos.size, 0);
 });
 
-test('旧user・channel URLは投稿者名だけ保存しハンドルを推測しない', async () => {
+test('旧user・channel URLは投稿者URLを保存しハンドルを推測しない', async () => {
   for (const author_url of ['https://www.youtube.com/user/oldname', 'https://www.youtube.com/channel/UC123']) {
     const { handler } = fixture({ fetchImpl: async () => Response.json({ title: '動画', author_name: '実際の投稿者', author_url }) });
     const response = await handler(post());
     assert.equal(response.status, 201);
     const body = await response.json();
     assert.equal(body.video.author, '実際の投稿者');
+    assert.equal(body.video.authorUrl, author_url);
     assert.equal(Object.hasOwn(body.video, 'authorHandle'), false);
   }
+});
+
+test('PATCHは保存済みの投稿者URLを保持し、入力からの差し替えを無視する', async () => {
+  const existing = { ...apiVideo, authorUrl: 'https://www.youtube.com/channel/UC123' };
+  delete existing.authorHandle;
+  const { handler, store, requests } = fixture();
+  store.videos.set(existing.id, existing);
+  const response = await handler(patch(editInput(existing, { title: '修正した曲', authorUrl: 'https://www.youtube.com/user/fake', authorHandle: '@Fake' })));
+  assert.equal(response.status, 200);
+  const expected = { ...existing, title: '修正した曲' };
+  assert.deepEqual(store.videos.get(existing.id), expected);
+  assert.deepEqual((await response.json()).video, { ...expected, revision: revisionFor(expected) });
+  assert.equal(requests.length, 0);
 });
 
 test('DB取得・重複確認・レート制限・保存の障害は詳細を漏らさず503にする', async () => {

@@ -85,13 +85,23 @@ test('テキストは上限ちょうどを許容し、超過時は切り捨て�
 });
 
 test('投稿者は入力から受け取らず、取得した情報だけを保存する', () => {
-  const { video, errors } = validateVideoInput({ ...input, author: '手入力の投稿者', authorHandle: '@manual' });
+  const { video, errors } = validateVideoInput({ ...input, author: '手入力の投稿者', authorHandle: '@manual', authorUrl: 'https://youtube.com/user/manual' });
   assert.deepEqual(errors, {});
   assert.equal(Object.hasOwn(video, 'author'), false);
   assert.equal(Object.hasOwn(video, 'authorHandle'), false);
+  assert.equal(Object.hasOwn(video, 'authorUrl'), false);
   const saved = withVideoAuthor(video, { author: 'cubewano', authorHandle: '@cubewano4', title: 'YouTubeの動画タイトル' });
   assert.deepEqual(saved, { ...video, author: 'cubewano', authorHandle: '@cubewano4' });
   assert.deepEqual(normalizeCustomVideos(JSON.parse(JSON.stringify([saved]))), [saved]);
+});
+
+test('取得された旧投稿者URLを保存し、更新時は古いURLや不正URLを引き継がない', () => {
+  const video = validateVideoInput(input).video;
+  const saved = withVideoAuthor(video, { author: '投稿者', authorUrl: 'http://m.youtube.com/user/oldname/videos' });
+  assert.deepEqual(saved, { ...video, author: '投稿者', authorUrl: 'https://www.youtube.com/user/oldname' });
+  assert.deepEqual(normalizeCustomVideos([saved]), [saved]);
+  assert.deepEqual(withVideoAuthor({ ...saved, authorHandle: '@old' }, { author: '更新した投稿者', authorHandle: '@new' }), { ...video, author: '更新した投稿者', authorHandle: '@new' });
+  assert.deepEqual(withVideoAuthor(saved, { author: '投稿者', authorUrl: 'javascript:alert(1)' }), { ...video, author: '投稿者' });
 });
 
 test('ハンドルがない場合は投稿者名だけを保存し、名前の取得失敗では保存用データを作らない', () => {
