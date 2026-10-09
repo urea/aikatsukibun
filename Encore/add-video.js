@@ -1,7 +1,12 @@
 import { extractVideoId, normalizeVideoMetadata } from './model.js';
 
 export const VIDEO_MODES = Object.freeze(['テレビアニメアイカツ！モード', 'アイカツ！オールスターモード', 'じゆうにアイカツ！モード', 'きかんげんていライブ！モード']);
-export const VIDEO_DIFFICULTIES = Object.freeze(['-', 'かんたん', 'ふつう', 'むずかしい']);
+export const VIDEO_DIFFICULTIES = Object.freeze(['-', 'かんたん', 'ふつう', 'むずかしい', 'すごくむずかしい', 'とてもむずかしい']);
+export function difficultyLabel(value) {
+  const level = VIDEO_DIFFICULTIES.indexOf(value);
+  if (level === 0) return '‐';
+  return level > 0 ? `☆${['１', '２', '３', '４', '５'][level - 1]}　${value}` : value;
+}
 export const VIDEO_RESULTS = Object.freeze(['クリア', 'フルコンボ', 'オールパーフェクト']);
 export const VIDEO_INPUT_LIMITS = Object.freeze({ url: 2048, title: 200, mode: 100, difficulty: 40, idol: 100 });
 
@@ -60,7 +65,7 @@ export function validateVideoInput(input) {
   const id = errors.url ? null : readVideoId(values.url);
   if (!errors.url && !id) errors.url = '有効なYouTube動画のURLを入力してください。';
   if (!errors.mode && !VIDEO_MODES.includes(values.mode)) errors.mode = 'モードはリストの4種類から選択してください。';
-  if (!errors.difficulty && !VIDEO_DIFFICULTIES.includes(values.difficulty)) errors.difficulty = '難易度はリストの4種類から選択してください。';
+  if (!errors.difficulty && !VIDEO_DIFFICULTIES.includes(values.difficulty)) errors.difficulty = '難易度は☆１〜☆５、または判別できない場合は「‐」を選択してください。';
   if (!errors.result && !VIDEO_RESULTS.includes(values.result)) errors.result = '成績はクリア・フルコンボ・オールパーフェクトから選択してください。';
   if (startSeconds !== null && endSeconds !== null && endSeconds <= startSeconds) errors.end = '終了時刻は開始時刻より後にしてください。';
   const video = Object.keys(errors).length ? null : {

@@ -6,7 +6,7 @@ import { createPadInput, PAD_KEYS } from './pad-input.js';
 import { createMetadata } from './metadata.js';
 import { createEncoreStorage } from './storage.js';
 import { getPlaybackRange, getClipPosition, seekTimeForPercent, youtubeVideoOptions } from './clip.js';
-import { validateVideoInput, videoToInput, VIDEO_MODES, VIDEO_DIFFICULTIES } from './add-video.js';
+import { validateVideoInput, videoToInput, difficultyLabel, VIDEO_MODES, VIDEO_DIFFICULTIES } from './add-video.js';
 import { VIDEO_IDOLS, VIDEO_SONGS } from './registration-options.js';
 import { createSharedVideosClient } from './shared-videos.js';
 
@@ -62,7 +62,7 @@ const authorFor = data => [data?.author, data?.authorHandle].filter(Boolean).joi
 function detailsFor(id) {
   const data = metadata.get(id);
   if (!data) return [];
-  const fields = [['モード', data.mode], ['難易度', data.difficulty], ['アイドル', data.idol], ['成績', data.result], ['投稿者', authorFor(data)]];
+  const fields = [['モード', data.mode], ['難易度', difficultyLabel(data.difficulty)], ['アイドル', data.idol], ['成績', data.result], ['投稿者', authorFor(data)]];
   if (Number.isFinite(data.startSeconds) && Number.isFinite(data.endSeconds) && data.endSeconds > data.startSeconds) {
     fields.push(['楽曲位置', `${formatTime(data.startSeconds)}〜${formatTime(data.endSeconds)}`]);
   }
@@ -324,7 +324,7 @@ for (const [field, choices] of Object.entries({ mode: VIDEO_MODES, difficulty: V
   for (const value of choices) {
     const option = document.createElement('option');
     option.value = value;
-    option.textContent = value;
+    option.textContent = field === 'difficulty' ? difficultyLabel(value) : value;
     $(`add-${field}`).append(option);
   }
   if (customChoiceFields.includes(field)) {

@@ -246,10 +246,10 @@ test('Neon storeは専用schemaと一致し、パラメータ化したINSERTで�
 test('PATCHは共有動画の情報と区間を更新し、URLと自動取得された投稿者を保持する', async () => {
   const { handler, store, requests } = fixture();
   store.videos.set(apiVideo.id, apiVideo);
-  const response = await handler(patch(editInput(apiVideo, { title: '修正した楽曲名', start: '0:03', end: '1:35', mode: 'アイカツ！オールスターモード', difficulty: 'むずかしい', idol: '自由入力アイドル', result: 'オールパーフェクト', author: '改ざん者', authorHandle: '@Fake', startSeconds: 999, endSeconds: 1000 })));
+  const response = await handler(patch(editInput(apiVideo, { title: '修正した楽曲名', start: '0:03', end: '1:35', mode: 'アイカツ！オールスターモード', difficulty: 'とてもむずかしい', idol: '自由入力アイドル', result: 'オールパーフェクト', author: '改ざん者', authorHandle: '@Fake', startSeconds: 999, endSeconds: 1000 })));
   assert.equal(response.status, 200);
   const body = await response.json();
-  const expected = { ...apiVideo, title: '修正した楽曲名', startSeconds: 3, endSeconds: 95, mode: 'アイカツ！オールスターモード', difficulty: 'むずかしい', idol: '自由入力アイドル', result: 'オールパーフェクト' };
+  const expected = { ...apiVideo, title: '修正した楽曲名', startSeconds: 3, endSeconds: 95, mode: 'アイカツ！オールスターモード', difficulty: 'とてもむずかしい', idol: '自由入力アイドル', result: 'オールパーフェクト' };
   assert.deepEqual(store.videos.get(apiVideo.id), expected);
   assert.deepEqual(body.video, { ...expected, revision: revisionFor(expected) });
   assert.notEqual(body.video.revision, revisionFor(apiVideo));

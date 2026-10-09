@@ -156,12 +156,14 @@ test('モードは指定された4種類だけを許容し、表記をそのま�
   }
 });
 
-test('難易度は指定された4種類だけを許容し、未選択をエラーにする', () => {
-  assert.deepEqual(VIDEO_DIFFICULTIES, ['-', 'かんたん', 'ふつう', 'むずかしい']);
+test('難易度は不明と5段階を許容し、保存・編集用入力への復元で保持する', () => {
+  assert.deepEqual(VIDEO_DIFFICULTIES, ['-', 'かんたん', 'ふつう', 'むずかしい', 'すごくむずかしい', 'とてもむずかしい']);
   for (const difficulty of VIDEO_DIFFICULTIES) {
     const result = validateVideoInput({ ...input, difficulty });
     assert.deepEqual(result.errors, {});
     assert.equal(result.video.difficulty, difficulty);
+    const [saved] = normalizeCustomVideos(JSON.parse(JSON.stringify([result.video])));
+    assert.equal(validateVideoInput(videoToInput(saved)).video.difficulty, difficulty);
   }
   for (const difficulty of ['★5', '簡単', '普通', '難しい', '未設定']) {
     const result = validateVideoInput({ ...input, difficulty });
