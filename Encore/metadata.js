@@ -1,5 +1,6 @@
 import catalog from './catalog.json';
 import { isVideoId, readSaved, normalizeVideoMetadata } from './model.js';
+import { readYouTubeAuthor } from './youtube-author.js';
 
 export function createMetadata(storage, save) {
   const key = 'aikatsu_video_cache_v2';
@@ -19,9 +20,9 @@ export function createMetadata(storage, save) {
     const supplied = normalizeVideoMetadata(data);
     if (supplied.title) cache[id] = { ...cache[id], ...supplied };
   }
-  async function fetchVideo(id) {
+  async function fetchVideo(id, { refresh = false } = {}) {
     if (!isVideoId(id)) throw new Error('YouTubeのURLを確認してください。');
-    if (cache[id]) return cache[id];
+    if (cache[id] && (!refresh || catalog[id])) return cache[id];
     if (pending.has(id)) return pending.get(id);
     const task = (async () => {
       const controller = new AbortController();
@@ -31,7 +32,7 @@ export function createMetadata(storage, save) {
         if (!response.ok) throw new Error('動画情報を取得できませんでした。時間をおいて試してください。');
         const data = await response.json();
         if (typeof data.title !== 'string') throw new Error('動画を確認できませんでした。公開状態とURLを確認してください。');
-        cache[id] = { title: data.title.slice(0, 500), author: typeof data.author_name === 'string' ? data.author_name.slice(0, 200) : '' };
+        cache[id] = { title: data.title.slice(0, 500), ...readYouTubeAuthor(data) };
         failed.delete(id);
         clearTimeout(saveTimer);
         saveTimer = setTimeout(() => save(key, cache, false), 300);

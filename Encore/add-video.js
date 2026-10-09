@@ -1,11 +1,11 @@
-import { extractVideoId } from './model.js';
+import { extractVideoId, normalizeVideoMetadata } from './model.js';
 
 export const VIDEO_MODES = Object.freeze(['テレビアニメアイカツ！モード', 'アイカツ！オールスターモード', 'じゆうにアイカツ！モード', 'きかんげんていライブ！モード']);
 export const VIDEO_DIFFICULTIES = Object.freeze(['-', 'かんたん', 'ふつう', 'むずかしい']);
 export const VIDEO_RESULTS = Object.freeze(['クリア', 'フルコンボ', 'オールパーフェクト']);
-export const VIDEO_INPUT_LIMITS = Object.freeze({ url: 2048, title: 200, mode: 100, difficulty: 40, idol: 100, author: 200 });
+export const VIDEO_INPUT_LIMITS = Object.freeze({ url: 2048, title: 200, mode: 100, difficulty: 40, idol: 100 });
 
-const labels = { url: 'YouTube URL', title: '楽曲名', start: '開始時刻', end: '終了時刻', mode: 'モード', difficulty: '難易度', idol: 'アイドル', result: '成績', author: '投稿者' };
+const labels = { url: 'YouTube URL', title: '楽曲名', start: '開始時刻', end: '終了時刻', mode: 'モード', difficulty: '難易度', idol: 'アイドル', result: '成績' };
 
 function readText(source, field, errors) {
   const value = typeof source[field] === 'string' ? source[field].trim() : '';
@@ -41,7 +41,7 @@ export function validateVideoInput(input) {
   const source = input && typeof input === 'object' && !Array.isArray(input) ? input : {};
   const errors = {};
   const values = {};
-  for (const field of ['url', 'title', 'mode', 'difficulty', 'idol', 'result', 'author']) values[field] = readText(source, field, errors);
+  for (const field of ['url', 'title', 'mode', 'difficulty', 'idol', 'result']) values[field] = readText(source, field, errors);
   const startSeconds = readTime(source, 'start', errors);
   const endSeconds = readTime(source, 'end', errors);
   const id = errors.url ? null : readVideoId(values.url);
@@ -59,7 +59,15 @@ export function validateVideoInput(input) {
     difficulty: values.difficulty,
     idol: values.idol,
     result: values.result,
-    author: values.author,
   };
   return { video, errors };
+}
+
+export function withVideoAuthor(video, metadata) {
+  const { author, authorHandle } = normalizeVideoMetadata(metadata);
+  if (!author?.trim()) throw new Error('投稿者情報を取得できませんでした。時間をおいて、もう一度お試しください。');
+  const saved = { ...video, author: author.trim() };
+  delete saved.authorHandle;
+  if (authorHandle?.trim()) saved.authorHandle = authorHandle.trim();
+  return saved;
 }

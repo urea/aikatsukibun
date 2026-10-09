@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { validateVideoInput, VIDEO_INPUT_LIMITS, VIDEO_RESULTS, VIDEO_MODES, VIDEO_DIFFICULTIES } from '../../Encore/add-video.js';
+import { validateVideoInput, withVideoAuthor, VIDEO_INPUT_LIMITS, VIDEO_RESULTS, VIDEO_MODES, VIDEO_DIFFICULTIES } from '../../Encore/add-video.js';
 import { normalizeCustomVideos } from '../../Encore/model.js';
 import { VIDEO_IDOLS, VIDEO_SONGS } from '../../Encore/registration-options.js';
 
@@ -13,7 +13,6 @@ const input = {
   difficulty: '-',
   idol: 'マイキャラ',
   result: 'フルコンボ',
-  author: 'cubewano@cubewano4',
 };
 
 test('楽曲区間と必須情報を保存形式に変換する', () => {
@@ -21,7 +20,7 @@ test('楽曲区間と必須情報を保存形式に変換する', () => {
   assert.deepEqual(result.errors, {});
   assert.deepEqual(result.video, {
     id: 'tJAcDG-eS-Q', title: '君のEntrance', startSeconds: 451, endSeconds: 597,
-    mode: 'アイカツ！オールスターモード', difficulty: '-', idol: 'マイキャラ', result: 'フルコンボ', author: 'cubewano@cubewano4',
+    mode: 'アイカツ！オールスターモード', difficulty: '-', idol: 'マイキャラ', result: 'フルコンボ',
   });
 });
 
@@ -60,7 +59,7 @@ test('候補にない楽曲名・アイドル名も保存と再読み込みで�
 });
 
 test('テキストは上限ちょうどを許容し、超過時は切り捨てずエラーにする', () => {
-  for (const field of ['title', 'idol', 'author']) {
+  for (const field of ['title', 'idol']) {
     assert.ok(validateVideoInput({ ...input, [field]: 'あ'.repeat(VIDEO_INPUT_LIMITS[field]) }).video);
     const result = validateVideoInput({ ...input, [field]: 'あ'.repeat(VIDEO_INPUT_LIMITS[field] + 1) });
     assert.equal(result.video, null);
@@ -69,6 +68,24 @@ test('テキストは上限ちょうどを許容し、超過時は切り捨て�
   const longUrl = `${input.url}&ignored=${'a'.repeat(VIDEO_INPUT_LIMITS.url)}`;
   assert.equal(validateVideoInput({ ...input, url: longUrl }).video, null);
   assert.ok(validateVideoInput({ ...input, url: longUrl }).errors.url);
+});
+
+test('投稿者は入力から受け取らず、取得した情報だけを保存する', () => {
+  const { video, errors } = validateVideoInput({ ...input, author: '手入力の投稿者', authorHandle: '@manual' });
+  assert.deepEqual(errors, {});
+  assert.equal(Object.hasOwn(video, 'author'), false);
+  assert.equal(Object.hasOwn(video, 'authorHandle'), false);
+  const saved = withVideoAuthor(video, { author: 'cubewano', authorHandle: '@cubewano4', title: 'YouTubeの動画タイトル' });
+  assert.deepEqual(saved, { ...video, author: 'cubewano', authorHandle: '@cubewano4' });
+  assert.deepEqual(normalizeCustomVideos(JSON.parse(JSON.stringify([saved]))), [saved]);
+});
+
+test('ハンドルがない場合は投稿者名だけを保存し、名前の取得失敗では保存用データを作らない', () => {
+  const video = validateVideoInput(input).video;
+  assert.deepEqual(withVideoAuthor({ ...video, author: '古い名前', authorHandle: '@old' }, { author: ' 新しい投稿者 ' }), { ...video, author: '新しい投稿者' });
+  for (const metadata of [undefined, null, {}, { author: '' }, { author: ' \n ' }, { author: 42 }, { authorHandle: '@handle' }]) {
+    assert.throws(() => withVideoAuthor(video, metadata), /投稿者情報を取得できません/);
+  }
 });
 
 test('0分0秒、時間形式、桁上限の時刻を正しい秒数として扱う', () => {

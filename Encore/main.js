@@ -6,7 +6,7 @@ import { createPadInput, PAD_KEYS } from './pad-input.js';
 import { createMetadata } from './metadata.js';
 import { createEncoreStorage } from './storage.js';
 import { getPlaybackRange, getClipPosition, seekTimeForPercent, youtubeVideoOptions } from './clip.js';
-import { validateVideoInput, VIDEO_MODES, VIDEO_DIFFICULTIES } from './add-video.js';
+import { validateVideoInput, withVideoAuthor, VIDEO_MODES, VIDEO_DIFFICULTIES } from './add-video.js';
 import { VIDEO_IDOLS, VIDEO_SONGS } from './registration-options.js';
 
 const $ = id => document.getElementById(id);
@@ -270,7 +270,7 @@ document.querySelectorAll('[data-library]').forEach(button => {
 });
 $('video-search').addEventListener('input', () => { $('library-results').scrollTop = 0; renderLibrary(); });
 
-const addFields = ['url', 'title', 'author', 'start', 'end', 'mode', 'difficulty', 'idol', 'result'];
+const addFields = ['url', 'title', 'start', 'end', 'mode', 'difficulty', 'idol', 'result'];
 const customChoiceValue = '__custom__';
 const customChoiceFields = ['title', 'idol'];
 for (const [field, choices] of Object.entries({ mode: VIDEO_MODES, difficulty: VIDEO_DIFFICULTIES, title: VIDEO_SONGS, idol: VIDEO_IDOLS })) {
@@ -349,12 +349,13 @@ $('add-form').addEventListener('submit', async event => {
   }
   $('add-submit').disabled = true;
   for (const control of addControls) control.disabled = true;
-  message.textContent = '動画を確認中…';
+  message.textContent = '動画と投稿者を確認中…';
   try {
-    await metadata.fetch(id);
-    customVideos.unshift(video);
+    const fetched = await metadata.fetch(id, { refresh: true });
+    const savedVideo = withVideoAuthor(video, fetched);
+    customVideos.unshift(savedVideo);
     save('custom_videos', customVideos);
-    metadata.seed(id, video);
+    metadata.seed(id, savedVideo);
     if (!favorites.includes(id)) { favorites.unshift(id); save('fav_ids', favorites); }
     $('add-form').reset();
     for (const field of customChoiceFields) syncCustomChoice(field);

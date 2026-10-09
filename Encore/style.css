@@ -200,7 +200,7 @@ body.library-open,.app-shell.library-open:fullscreen { overflow:hidden; }
 .library-dialog #add-panel { max-width:720px; }
 .library-dialog .add-form { padding:4px 4px 16px; }
 .library-dialog .add-form .secondary { font-size:12px; }
-@media(max-width:599px) { .field-title,.field-author,.field-mode,.field-result { grid-column:1/-1; } .add-fields { gap:10px 12px; } }
+@media(max-width:599px) { .field-title,.field-mode,.field-result { grid-column:1/-1; } .add-fields { gap:10px 12px; } }
 @media(max-width:699px) {
   .library-dialog { padding-top:max(12px,env(safe-area-inset-top)); }
   .library-dialog .panel-header { padding-bottom:8px; }
