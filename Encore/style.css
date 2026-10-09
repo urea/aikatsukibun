@@ -188,6 +188,7 @@ body.library-open,.app-shell.library-open:fullscreen { overflow:hidden; }
 .library-tabs button { flex:1; min-height:40px; padding:8px 12px; color:var(--muted); font-size:13px; background:none; border:0; border-bottom:2px solid transparent; white-space:nowrap; }
 .library-tabs button[aria-selected=true] { border-bottom-color:var(--accent); color:var(--text); }
 .list-meta { display:flex; align-items:center; flex-wrap:wrap; padding:8px 2px 6px; gap:4px 8px; color:var(--muted); font-size:12px; flex-shrink:0; }
+.list-meta .affiliate-link { min-height:20px; margin:0 0 0 auto; }
 #shared-status { margin-left:auto; }
 .library-results { flex:1; overflow-y:auto; min-height:0; padding:2px 4px 8px 2px; overscroll-behavior:contain; scrollbar-width:thin; scrollbar-color:var(--line) transparent; }
 .video-list { display:grid; grid-template-columns:minmax(0,1fr); align-items:start; gap:8px; list-style:none; margin:0; padding:0; }
