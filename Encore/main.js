@@ -565,7 +565,7 @@ function onPlayerStateChange(event) {
   if (state === 1) {
     const range = rangeFor(currentId);
     if (metadata.get(currentId)?.endSeconds && player.getCurrentTime() >= range.end) { finishClip(); return; }
-    if (player.getCurrentTime() < range.start) player.loadVideoById(youtubeVideoOptions(currentId, metadata.get(currentId)));
+    // 開始はcue/loadで指定済み。キーフレームの時刻差で同じ動画を再ロードしない。
     $('player-notice').hidden = true;
     const playingId = player.getVideoData()?.video_id;
     if (playingId === currentId && lastRecordedId !== currentId) {
@@ -611,8 +611,7 @@ setInterval(() => {
   // seekToでYouTubeのendSecondsが解除されても、楽曲の終端で停止する。
   if (!playerFailed && player.getPlayerState() === 1 && metadata.get(currentId)?.endSeconds) {
     const time = player.getCurrentTime();
-    if (time < position.start) player.loadVideoById(youtubeVideoOptions(currentId, metadata.get(currentId)));
-    else if (time >= position.end) {
+    if (time >= position.end) {
       finishClip();
     }
   }
