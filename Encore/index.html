@@ -76,13 +76,13 @@
           <label class="search-box"><span data-icon="search"></span><input id="video-search" type="search" placeholder="曲名やキーワードで検索" aria-label="曲名やキーワードで検索" autocomplete="off" /></label>
           <div class="library-tabs" role="tablist" aria-label="動画の分類"><button id="tab-all" type="button" role="tab" aria-selected="true" aria-controls="library-results" data-library="all">すべて</button><button id="tab-favorites" type="button" role="tab" aria-selected="false" aria-controls="library-results" data-library="favorites">お気に入り</button><button id="tab-history" type="button" role="tab" aria-selected="false" aria-controls="library-results" data-library="history">履歴</button></div>
         </div>
-        <div class="list-meta"><span id="library-count">動画を準備中</span><span id="metadata-status"></span></div>
+        <div class="list-meta"><span id="library-count">動画を準備中</span><span id="metadata-status"></span><span id="shared-status" role="status"></span><button id="retry-shared" class="text-button" type="button" hidden>再読み込み</button></div>
         <div id="library-results" class="library-results" role="tabpanel" aria-labelledby="tab-all" tabindex="0"><ul id="video-list" class="video-list"></ul><p id="library-empty" class="empty-state" hidden>該当する動画がありません。</p></div>
       </section>
       <section id="add-panel" class="side-panel" aria-labelledby="add-heading" hidden>
         <header class="panel-header"><div class="panel-heading-group"><button type="button" class="icon-button" data-back="library-panel" aria-label="選曲に戻る"><span data-icon="back"></span></button><h2 id="add-heading">動画を追加</h2></div><button type="button" class="action-button" data-close aria-label="動画追加を閉じて再生画面に戻る"><span data-icon="close"></span>戻る</button></header>
         <form id="add-form" class="panel-content add-form" novalidate>
-          <p class="secondary">全項目必須です。追加した動画はこのブラウザーに保存されます。</p>
+          <p class="secondary">全項目必須です。追加した動画と楽曲情報は公開され、すべての利用者の一覧に表示されます。</p>
           <div class="add-fields">
             <div class="add-field field-wide"><label for="add-url">YouTube URL</label><input id="add-url" name="url" type="text" inputmode="url" placeholder="https://www.youtube.com/watch?v=…" maxlength="2048" autocomplete="off" aria-describedby="add-url-hint add-url-error" required /><small id="add-url-hint">共有URL・Shortsにも対応。投稿者は追加時に自動取得します。</small><p id="add-url-error" class="field-error" hidden></p></div>
             <div class="add-field field-title field-wide"><label for="add-title">楽曲名</label><select id="add-title" name="title" aria-describedby="add-title-hint add-title-error" required><option value="">選択してください</option></select><input id="add-title-custom" name="titleCustom" type="text" placeholder="楽曲名を入力" maxlength="200" aria-label="楽曲名（自由入力）" aria-describedby="add-title-hint add-title-error" hidden /><small id="add-title-hint">プレイしている曲名を選択。一覧にない曲は「自由入力」。</small><p id="add-title-error" class="field-error" hidden></p></div>

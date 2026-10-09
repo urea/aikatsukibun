@@ -6,8 +6,9 @@ import { createPadInput, PAD_KEYS } from './pad-input.js';
 import { createMetadata } from './metadata.js';
 import { createEncoreStorage } from './storage.js';
 import { getPlaybackRange, getClipPosition, seekTimeForPercent, youtubeVideoOptions } from './clip.js';
-import { validateVideoInput, withVideoAuthor, VIDEO_MODES, VIDEO_DIFFICULTIES } from './add-video.js';
+import { validateVideoInput, VIDEO_MODES, VIDEO_DIFFICULTIES } from './add-video.js';
 import { VIDEO_IDOLS, VIDEO_SONGS } from './registration-options.js';
+import { createSharedVideosClient } from './shared-videos.js';
 
 const $ = id => document.getElementById(id);
 mountIcons();
@@ -33,11 +34,14 @@ function save(key, value, warn = true) {
 let favorites = uniqueIds(readSaved(storage, 'fav_ids', []));
 let history = uniqueIds(readSaved(storage, 'hist_ids', [])).slice(0, 30);
 const customVideos = normalizeCustomVideos(readSaved(storage, 'custom_videos', []));
+let sharedVideos = normalizeCustomVideos(readSaved(storage, 'shared_videos', []));
+const sharedClient = createSharedVideosClient();
 const settings = normalizeSettings(readSaved(storage, SETTINGS_KEY, {}));
 const metadata = createMetadata(storage, save);
 customVideos.forEach(video => metadata.seed(video.id, video));
+sharedVideos.forEach(video => metadata.seed(video.id, video, { replace: true }));
 const lastVideo = readSaved(storage, 'aikatsu_last_video_v2', null);
-const initialIds = uniqueIds([...customVideos.map(video => video.id), ...videoIds, ...favorites, ...history]);
+const initialIds = uniqueIds([...sharedVideos.map(video => video.id), ...customVideos.map(video => video.id), ...videoIds, ...favorites, ...history]);
 let currentId = initialIds.includes(lastVideo) ? lastVideo : initialIds[0] ?? null;
 let panelId = null;
 let panelOpener;
@@ -51,7 +55,7 @@ let lastRecordedId;
 let clipEnded = false;
 let libraryRenderTimer;
 const unplayable = new Set();
-const allIds = () => uniqueIds([...customVideos.map(video => video.id), ...videoIds, ...favorites, ...history]);
+const allIds = () => uniqueIds([...sharedVideos.map(video => video.id), ...customVideos.map(video => video.id), ...videoIds, ...favorites, ...history]);
 const titleFor = id => metadata.get(id)?.title || `動画 (${id})`;
 const rangeFor = id => getPlaybackRange(metadata.get(id), playerReady ? player.getDuration() : 0);
 const authorFor = data => [data?.author, data?.authorHandle].filter(Boolean).join('');
@@ -141,7 +145,7 @@ function openPanel(id, opener) {
   $('control-slot').classList.add('panel-open');
   $('open-library').setAttribute('aria-expanded', String(['library-panel', 'add-panel'].includes(id)));
   $('open-settings').setAttribute('aria-expanded', String(['settings-panel', 'help-panel'].includes(id)));
-  if (id === 'library-panel') { renderLibrary(); hydrateMissingTitles(); }
+  if (id === 'library-panel') { renderLibrary(); hydrateMissingTitles(); refreshSharedVideos(); }
   if (id === 'settings-panel') syncSettings();
   const isLibrary = ['library-panel', 'add-panel'].includes(id);
   document.body.classList.toggle('library-open', isLibrary);
@@ -225,6 +229,31 @@ function scheduleLibraryRender() {
   clearTimeout(libraryRenderTimer);
   libraryRenderTimer = setTimeout(() => { if (panelId === 'library-panel') renderLibrary(); }, 100);
 }
+let sharedLoading;
+let sharedRevision = 0;
+async function refreshSharedVideos() {
+  if (sharedLoading) return sharedLoading;
+  $('shared-status').textContent = '共有一覧を更新中…';
+  $('retry-shared').hidden = true;
+  const revision = sharedRevision;
+  sharedLoading = (async () => {
+    try {
+      const videos = await sharedClient.list();
+      if (revision !== sharedRevision) { $('shared-status').textContent = ''; return; }
+      sharedVideos = videos;
+      sharedVideos.forEach(video => metadata.seed(video.id, video, { replace: true }));
+      save('shared_videos', sharedVideos, false);
+      updateCurrent();
+      if (panelId === 'library-panel') renderLibrary();
+      $('shared-status').textContent = '';
+    } catch {
+      $('shared-status').textContent = '共有一覧を取得できません';
+      $('retry-shared').hidden = false;
+    } finally { sharedLoading = null; }
+  })();
+  return sharedLoading;
+}
+$('retry-shared').addEventListener('click', refreshSharedVideos);
 let hydrating = false;
 async function hydrateMissingTitles() {
   if (hydrating) return;
@@ -330,7 +359,8 @@ $('add-form').addEventListener('submit', async event => {
   if ($('add-submit').disabled) return;
   const message = $('add-message');
   message.classList.remove('is-error');
-  const { video, errors } = validateVideoInput(readAddInput());
+  const input = readAddInput();
+  const { video, errors } = validateVideoInput(input);
   addValidationShown = true;
   showAddErrors(errors);
   if (!video) {
@@ -340,7 +370,7 @@ $('add-form').addEventListener('submit', async event => {
     return;
   }
   const { id } = video;
-  if (customVideos.some(item => item.id === id) || videoIds.includes(id)) {
+  if (sharedVideos.some(item => item.id === id) || videoIds.includes(id)) {
     showAddErrors({ url: 'この動画は登録済みです。選曲一覧から選んでください。' });
     message.textContent = '同じ動画を重複して追加することはできません。';
     message.classList.add('is-error');
@@ -349,13 +379,15 @@ $('add-form').addEventListener('submit', async event => {
   }
   $('add-submit').disabled = true;
   for (const control of addControls) control.disabled = true;
-  message.textContent = '動画と投稿者を確認中…';
+  message.textContent = '投稿者を確認し、共有一覧に登録中…';
   try {
-    const fetched = await metadata.fetch(id, { refresh: true });
-    const savedVideo = withVideoAuthor(video, fetched);
-    customVideos.unshift(savedVideo);
-    save('custom_videos', customVideos);
-    metadata.seed(id, savedVideo);
+    // 一覧取得中の結果で、登録直後の動画を消さない。
+    if (sharedLoading) await sharedLoading;
+    const savedVideo = await sharedClient.add(input);
+    sharedRevision++;
+    sharedVideos = [savedVideo, ...sharedVideos.filter(item => item.id !== id)];
+    save('shared_videos', sharedVideos, false);
+    metadata.seed(id, savedVideo, { replace: true });
     if (!favorites.includes(id)) { favorites.unshift(id); save('fav_ids', favorites); }
     $('add-form').reset();
     for (const field of customChoiceFields) syncCustomChoice(field);
@@ -366,8 +398,9 @@ $('add-form').addEventListener('submit', async event => {
     if (panelId === 'library-panel') renderLibrary();
     // 確認中に別画面へ移動した場合は、再生中の曲を切り替えない。
     if (panelId === 'add-panel') selectVideo(id);
-    toast('楽曲情報を保存し、お気に入りに追加しました');
+    toast('共有一覧と、この端末のお気に入りに追加しました');
   } catch (error) {
+    if (error.errors && typeof error.errors === 'object') showAddErrors(error.errors);
     message.textContent = error.name === 'AbortError' || error instanceof TypeError ? '動画情報を取得できませんでした。通信を確認して、もう一度お試しください。' : error.message;
     message.classList.add('is-error');
   } finally {
@@ -647,6 +680,7 @@ $('clear-favorites').addEventListener('click', () => {
 });
 reducedMotion.addEventListener('change', syncSettings);
 syncSettings(); syncMute();
+refreshSharedVideos();
 
 const playTap = createTapAudio();
 const padInput = createPadInput();

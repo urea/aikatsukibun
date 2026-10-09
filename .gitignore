@@ -17,3 +17,5 @@ Thumbs.db
 
 # Local browser verification artifacts
 output/playwright/
+output/encore-dev.log
+output/encore-dev-error.log
