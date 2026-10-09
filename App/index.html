@@ -37,11 +37,14 @@
             <button class="tap-pad pad-green" id="btn-green" data-pad="green" type="button" aria-label="緑・左ボタン A"><svg class="pad-symbol" viewBox="0 0 100 100" aria-hidden="true"><path d="M7 50 42 16V35H92V65H42V84Z"/><text class="pad-key" x="64" y="50">A</text></svg></button>
             <button class="tap-pad pad-yellow" id="btn-yellow" data-pad="yellow" type="button" aria-label="黄・右ボタン D"><svg class="pad-symbol" viewBox="0 0 100 100" aria-hidden="true"><path d="M93 50 58 16V35H8V65H58V84Z"/><text class="pad-key" x="36" y="50">D</text></svg></button>
           </div>
-          <nav class="main-actions" aria-label="選曲と設定">
-            <button id="shuffle" class="action-button primary" type="button"><span data-icon="shuffle"></span>おまかせ</button>
-            <button id="open-library" class="action-button" type="button" aria-controls="library-dialog" aria-haspopup="dialog" aria-expanded="false"><span data-icon="list"></span>選ぶ</button>
-            <button id="open-settings" class="icon-button more-button" type="button" aria-label="設定・遊び方" aria-controls="settings-panel" aria-expanded="false"><span data-icon="more"></span></button>
-          </nav>
+          <div class="controller-footer">
+            <a id="amazon-search" class="affiliate-link" href="https://www.amazon.co.jp/s?k=%E3%82%A2%E3%82%A4%E3%82%AB%E3%83%84%EF%BC%81&amp;__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A&amp;linkCode=ll2&amp;tag=mczd-22&amp;linkId=cbf8830a4d983e70ccb8fbb8d985ddb5&amp;ref_=as_li_ss_tl" target="_blank" rel="sponsored noopener noreferrer">PR｜Amazonでアイカツ！を探す <span aria-hidden="true">↗</span><span class="sr-only">（新しいタブで開く）</span></a>
+            <nav class="main-actions" aria-label="選曲と設定">
+              <button id="shuffle" class="action-button primary" type="button"><span data-icon="shuffle"></span>おまかせ</button>
+              <button id="open-library" class="action-button" type="button" aria-controls="library-dialog" aria-haspopup="dialog" aria-expanded="false"><span data-icon="list"></span>選ぶ</button>
+              <button id="open-settings" class="icon-button more-button" type="button" aria-label="設定・遊び方" aria-controls="settings-panel" aria-expanded="false"><span data-icon="more"></span></button>
+            </nav>
+          </div>
         </section>
         <section id="settings-panel" class="side-panel" aria-labelledby="settings-heading" hidden>
           <div class="sheet-grip" aria-hidden="true"></div>
@@ -64,6 +67,7 @@
         </section>
       </aside>
     </div>
+    <footer class="affiliate-disclosure">Amazonのアソシエイトとして、アイカツ！気分は適格販売により収入を得ています。</footer>
     <dialog id="library-dialog" class="library-dialog" aria-labelledby="library-heading">
       <section id="library-panel" class="side-panel" aria-labelledby="library-heading" hidden>
         <header class="panel-header">
@@ -77,7 +81,7 @@
           <label class="search-box"><span data-icon="search"></span><input id="video-search" type="search" placeholder="曲名やキーワードで検索" aria-label="曲名やキーワードで検索" autocomplete="off" /></label>
           <div class="library-tabs" role="tablist" aria-label="動画の分類"><button id="tab-all" type="button" role="tab" aria-selected="true" aria-controls="library-results" data-library="all">すべて</button><button id="tab-favorites" type="button" role="tab" aria-selected="false" aria-controls="library-results" data-library="favorites">お気に入り</button><button id="tab-history" type="button" role="tab" aria-selected="false" aria-controls="library-results" data-library="history">履歴</button></div>
         </div>
-        <div class="list-meta"><span id="library-count">動画を準備中</span><span id="metadata-status"></span></div>
+        <div class="list-meta"><span id="library-count">動画を準備中</span><span id="metadata-status"></span><a id="amazon-search-library" class="affiliate-link" href="https://www.amazon.co.jp/s?k=%E3%82%A2%E3%82%A4%E3%82%AB%E3%83%84%EF%BC%81&amp;__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A&amp;linkCode=ll2&amp;tag=mczd-22&amp;linkId=cbf8830a4d983e70ccb8fbb8d985ddb5&amp;ref_=as_li_ss_tl" target="_blank" rel="sponsored noopener noreferrer">PR｜Amazonでアイカツ！を探す <span aria-hidden="true">↗</span><span class="sr-only">（新しいタブで開く）</span></a></div>
         <div id="library-results" class="library-results" role="tabpanel" aria-labelledby="tab-all" tabindex="0"><ul id="video-list" class="video-list"></ul><p id="library-empty" class="empty-state" hidden>該当する動画がありません。</p></div>
       </section>
       <section id="add-panel" class="side-panel" aria-labelledby="add-heading" hidden>
