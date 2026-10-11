@@ -156,9 +156,13 @@ test('成績は指定された3種類だけを許容する', () => {
   }
 });
 
-test('モードは指定された4種類だけを許容し、表記をそのまま保存する', () => {
-  assert.deepEqual(VIDEO_MODES, ['テレビアニメアイカツ！モード', 'アイカツ！オールスターモード', 'じゆうにアイカツ！モード', 'きかんげんていライブ！モード']);
-  for (const mode of VIDEO_MODES) assert.equal(validateVideoInput({ ...input, mode }).video.mode, mode);
+test('モードは不明と指定された4種類を許容し、保存・編集用入力への復元で保持する', () => {
+  assert.deepEqual(VIDEO_MODES, ['-', 'テレビアニメアイカツ！モード', 'アイカツ！オールスターモード', 'じゆうにアイカツ！モード', 'きかんげんていライブ！モード']);
+  for (const mode of VIDEO_MODES) {
+    const { video } = validateVideoInput({ ...input, mode });
+    assert.equal(video.mode, mode);
+    assert.equal(videoToInput(video).mode, mode);
+  }
   for (const mode of ['追加モード', 'テレビアニメモード', '期間限定ライブ！モード']) {
     const result = validateVideoInput({ ...input, mode });
     assert.equal(result.video, null);

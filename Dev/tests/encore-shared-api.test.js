@@ -79,9 +79,38 @@ test('POSTはサーバー取得の投稿者だけを保存し、201で正規化�
   assert.equal(store.hashes[0].includes('203.0.113.4'), false);
 });
 
+test('不明モード「-」でPOST登録した動画を別の一覧取得でもそのまま保持する', async () => {
+  const { handler, store } = fixture();
+  const expected = { ...apiVideo, mode: '-' };
+  const added = await handler(post({ ...input, mode: '-' }));
+  assert.equal(added.status, 201);
+  assert.deepEqual(await added.json(), { video: expected });
+  assert.deepEqual(store.videos.get(apiVideo.id), expected);
+  const anotherHandler = fixture({ store }).handler;
+  const listed = await anotherHandler(new Request(endpoint));
+  assert.equal(listed.status, 200);
+  assert.deepEqual(await listed.json(), { videos: [expected] });
+});
+
+test('既存動画を不明モード「-」へPATCH編集し、投稿者と区間を保全してGETで保持する', async () => {
+  const { handler, store, requests } = fixture();
+  store.videos.set(apiVideo.id, apiVideo);
+  const expected = { ...apiVideo, mode: '-' };
+  const updated = await handler(patch(editInput(apiVideo, { mode: '-' })));
+  assert.equal(updated.status, 200);
+  assert.deepEqual(await updated.json(), { video: { ...expected, revision: revisionFor(expected) } });
+  assert.notEqual(revisionFor(expected), revisionFor(apiVideo));
+  assert.deepEqual(store.videos.get(apiVideo.id), expected);
+  const anotherHandler = fixture({ store }).handler;
+  const listed = await anotherHandler(new Request(endpoint));
+  assert.equal(listed.status, 200);
+  assert.deepEqual(await listed.json(), { videos: [expected] });
+  assert.equal(requests.length, 0);
+});
+
 test('必須入力・区間の順序・成績やモードの不正値は400で保存前に拒否する', async () => {
   const { handler, store, requests } = fixture();
-  for (const [body, field] of [[{ ...input, title: '' }, 'title'], [{ ...input, start: '1:36' }, 'end'], [{ ...input, end: '0:99' }, 'end'], [{ ...input, result: '架空成績' }, 'result'], [{ ...input, mode: '架空モード' }, 'mode'], [{ ...input, url: 'https://evil.test/watch?v=fYibOFCMpnE' }, 'url']]) {
+  for (const [body, field] of [[{ ...input, title: '' }, 'title'], [{ ...input, start: '1:36' }, 'end'], [{ ...input, end: '0:99' }, 'end'], [{ ...input, result: '架空成績' }, 'result'], [{ ...input, mode: '架空モード' }, 'mode'], [{ ...input, mode: '' }, 'mode'], [{ ...input, url: 'https://evil.test/watch?v=fYibOFCMpnE' }, 'url']]) {
     const response = await handler(post(body));
     assert.equal(response.status, 400);
     assert.ok((await response.json()).errors[field]);
@@ -275,7 +304,7 @@ test('PATCHは共有動画の情報と区間を更新し、URLと自動取得さ
 test('PATCHはURLとIDの不一致、revision欠落、入力不備を保存前に拒否する', async () => {
   const { handler, store, requests } = fixture();
   store.videos.set(apiVideo.id, apiVideo);
-  for (const [changes, field] of [[{ title: '' }, 'title'], [{ start: '1:36' }, 'end'], [{ mode: '架空モード' }, 'mode'], [{ result: '架空成績' }, 'result'], [{ id: 'invalid' }, 'url'], [{ url: 'https://youtu.be/tJAcDG-eS-Q' }, 'url']]) {
+  for (const [changes, field] of [[{ title: '' }, 'title'], [{ start: '1:36' }, 'end'], [{ mode: '架空モード' }, 'mode'], [{ mode: '' }, 'mode'], [{ result: '架空成績' }, 'result'], [{ id: 'invalid' }, 'url'], [{ url: 'https://youtu.be/tJAcDG-eS-Q' }, 'url']]) {
     const response = await handler(patch(editInput(apiVideo, changes)));
     assert.equal(response.status, 400);
     assert.ok((await response.json()).errors[field]);
