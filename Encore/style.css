@@ -21,6 +21,9 @@ input[type=range] { accent-color:var(--accent); cursor:pointer; }
 .transport { display:flex; align-items:center; gap:8px; }
 .icon-button { width:40px; height:40px; flex-shrink:0; border:0; border-radius:10px; color:var(--text); background:transparent; display:inline-flex; align-items:center; justify-content:center; padding:8px; }
 .icon-button:hover:not(:disabled) { background:var(--raised); }
+#share-current { color:#fff; }
+.app-shell[data-appearance=light] #share-current { color:#000; }
+@media(prefers-color-scheme:light) { .app-shell[data-appearance=system] #share-current { color:#000; } }
 .transport-play { width:44px; height:44px; }
 .now-playing { flex:1; min-width:0; padding:0 3px; }
 #current-title { font-weight:600; font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }

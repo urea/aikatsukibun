@@ -6,7 +6,8 @@ const paths = {
   maximize: '<path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/>',
   minimize: '<path d="M3 8h5V3m13 5h-5V3M8 21v-5H3m13 5v-5h5"/>',
   external: '<path d="M14 3h7v7m0-7L10 14M10 3H4a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-6"/>',
-  share: '<path d="M12 16V3m-5 5 5-5 5 5M5 13H3v8h18v-8h-2"/>',
+  // X公式配布SVG: https://about.x.com/content/dam/about-twitter/x/brand-toolkit/x-logo.zip
+  x: '<path d="M714.163 519.284L1160.89 0H1055.03L667.137 450.887L357.328 0H0L468.492 681.821L0 1226.37H105.866L515.491 750.218L842.672 1226.37H1200L714.137 519.284H714.163ZM569.165 687.828L521.697 619.934L144.011 79.6944H306.615L611.412 515.685L658.88 583.579L1055.08 1150.3H892.476L569.165 687.854V687.828Z" fill="currentColor" stroke="none"/>',
   sparkle: '<path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5Z"/>',
   shuffle: '<path d="M3 6h3c4 0 8 12 12 12h3m-4-4 4 4-4 4M3 18h3c1 0 2-1 3-2m6-8 3-2h3m-4-4 4 4-4 4"/>',
   list: '<path d="M9 6h12M9 12h12M9 18h12M3 6h1M3 12h1M3 18h1"/>',
@@ -20,6 +21,6 @@ const paths = {
   help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 4 2l-1.5 1v1m0 3v.1"/>',
   back: '<path d="m10 5-7 7 7 7M3 12h18"/>'
 };
-export function icon(name) { return `<svg viewBox="0 0 24 24" aria-hidden="true">${paths[name] || paths.play}</svg>`; }
+export function icon(name) { return `<svg viewBox="${name === 'x' ? '0 0 1200 1227' : '0 0 24 24'}" aria-hidden="true">${paths[name] || paths.play}</svg>`; }
 export function setIcon(button, name) { button.innerHTML = icon(name); }
 export function mountIcons() { document.querySelectorAll('[data-icon]').forEach(element => { element.innerHTML = icon(element.dataset.icon); }); }
