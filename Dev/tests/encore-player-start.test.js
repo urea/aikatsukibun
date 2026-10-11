@@ -113,6 +113,54 @@ test('バッファリング中は開始直前や終了位置でもロード・�
   assert.equal(harness.$('status').textContent, '動画を読み込み中…');
 });
 
+test('標準操作バーで楽曲開始より前へ移動した再生だけ、区間指定で先頭へ戻す', () => {
+  for (const method of ['state', 'tick']) {
+    const harness = playerHarness();
+    harness[method](120, 1);
+    assert.deepEqual(harness.commands, [{ type: 'load', options: { videoId: id, startSeconds: 435, endSeconds: 531 } }]);
+    harness.tick(120, 3);
+    harness.state(434.8, 1);
+    harness.tick(435.2, 1);
+    assert.equal(harness.commands.length, 1, 'バッファリングと開始直前の時刻差で再ロードを繰り返さない');
+  }
+});
+
+test('選曲中の旧動画の時刻では、新しい動画の開始前補正を行わない', () => {
+  const harness = playerHarness();
+  harness.player.getVideoData = () => ({ video_id: 'tJAcDG-eS-Q' });
+  harness.state(120, 1);
+  harness.tick(120, 1);
+  assert.deepEqual(harness.commands, []);
+});
+
+test('終了後に標準操作バーで停止したまま区間内へ戻したら終了表示を解除する', () => {
+  for (const method of ['state', 'tick']) {
+    const harness = playerHarness();
+    harness.state(531, 1);
+    assert.equal(harness.context.clipEnded, true);
+    harness[method](480, 2);
+    harness.tick(480, 2);
+    assert.equal(harness.context.clipEnded, false);
+    assert.equal(harness.$('current-time').textContent, '0:45');
+    assert.notEqual(harness.$('seek').value, '100');
+    assert.equal(harness.$('play-toggle').attributes.get('aria-label'), '再生');
+    harness.click();
+    assert.deepEqual(harness.commands, [{ type: 'pause' }, { type: 'play' }]);
+  }
+});
+
+test('100%シークの終端直前cueに続くPAUSED通知でも終了状態を維持する', () => {
+  const harness = playerHarness();
+  harness.seek(100, 2);
+  harness.state(530.99, 2);
+  harness.tick(530.99, 2);
+  assert.equal(harness.context.clipEnded, true);
+  assert.equal(harness.$('current-time').textContent, '1:36');
+  assert.equal(harness.$('seek').value, '100');
+  harness.click();
+  assert.deepEqual(harness.commands.at(-1), { type: 'load', options: { videoId: id, startSeconds: 435, endSeconds: 531 } });
+});
+
 test('準備時のcue、選曲時のload、自動再生のloadは開始435秒・終了531秒を渡す', () => {
   const expected = { videoId: id, startSeconds: 435, endSeconds: 531 };
   const cue = playerHarness();

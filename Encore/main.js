@@ -561,12 +561,12 @@ $('add-form').addEventListener('submit', async event => {
 });
 
 function iframeUrl(id) {
-  const parameters = new URLSearchParams({ enablejsapi: '1', playsinline: '1', rel: '0', origin: location.origin });
+  const parameters = new URLSearchParams({ enablejsapi: '1', playsinline: '1', rel: '0', controls: '1', origin: location.origin });
   const options = youtubeVideoOptions(id, metadata.get(id));
   parameters.set('start', String(options.startSeconds));
   if (options.endSeconds !== undefined) parameters.set('end', String(options.endSeconds));
-  // シークはアプリ側の楽曲区間に限定する。
-  if (options.endSeconds !== undefined) { parameters.set('controls', '0'); parameters.set('disablekb', '1'); }
+  // 字幕などの標準設定を使えるようにし、キー操作はアプリ側で受ける。
+  if (options.endSeconds !== undefined) parameters.set('disablekb', '1');
   return `https://www.youtube.com/embed/${id}?${parameters}`;
 }
 function setStatus(message) { $('playback-status').textContent = message; }
@@ -578,6 +578,13 @@ function finishClip() {
   setStatus('楽曲の再生が終了しました');
   $('current-time').textContent = formatTime(rangeFor(currentId).duration);
   $('seek').value = '100';
+}
+function restoreClipStart(time) {
+  // 標準シークで曲の前へ移動した場合だけ戻す。開始直前の微小な時刻差は許容する。
+  const data = metadata.get(currentId);
+  if (!data?.endSeconds || time >= rangeFor(currentId).start - 1 || player.getVideoData()?.video_id !== currentId) return false;
+  player.loadVideoById(youtubeVideoOptions(currentId, data));
+  return true;
 }
 function notice(message, retry = false) {
   $('player-notice-text').textContent = message;
@@ -713,6 +720,7 @@ function onPlayerStateChange(event) {
   const state = event.data;
   if (state === 0) clipEnded = true;
   if (state === 1) clipEnded = false;
+  if (state === 2 && clipEnded && player.getCurrentTime() < rangeFor(currentId).end - 0.1) clipEnded = false;
   // 読み込み完了が画面を開いた後になった場合も、裏で再生させない。
   if (libraryDialog.open && (state === 1 || state === 3)) {
     event.target.pauseVideo();
@@ -726,6 +734,7 @@ function onPlayerStateChange(event) {
   if (state === 1) {
     const range = rangeFor(currentId);
     if (metadata.get(currentId)?.endSeconds && player.getCurrentTime() >= range.end) { finishClip(); return; }
+    if (restoreClipStart(player.getCurrentTime())) return;
     // 開始はcue/loadで指定済み。キーフレームの時刻差で同じ動画を再ロードしない。
     $('player-notice').hidden = true;
     const playingId = player.getVideoData()?.video_id;
@@ -740,7 +749,7 @@ function onPlayerStateChange(event) {
 function createPlayer() {
   if (!isVideoId(currentId) || player || !window.YT?.Player) return;
   player = new window.YT.Player('youtube-player', {
-    playerVars: { controls: metadata.get(currentId)?.endSeconds ? 0 : 1, disablekb: metadata.get(currentId)?.endSeconds ? 1 : 0 },
+    playerVars: { controls: 1, disablekb: metadata.get(currentId)?.endSeconds ? 1 : 0 },
     events: {
       onReady: onPlayerReady, onStateChange: onPlayerStateChange,
       onError: event => {
@@ -763,6 +772,8 @@ if (currentId) {
 setInterval(() => {
   if (!playerReady) return;
   const position = getClipPosition(metadata.get(currentId), player.getCurrentTime(), player.getDuration());
+  // 停止中の標準シークは状態変更通知が来ない場合もある。
+  if (clipEnded && player.getPlayerState() === 2 && player.getCurrentTime() < position.end - 0.1) onPlayerStateChange({ data: 2, target: player });
   $('seek').disabled = !(position.duration > 0) || playerFailed;
   $('duration').textContent = formatTime(position.duration);
   if (!seeking) {
@@ -774,7 +785,7 @@ setInterval(() => {
     const time = player.getCurrentTime();
     if (time >= position.end) {
       finishClip();
-    }
+    } else restoreClipStart(time);
   }
   // YouTube本体で変更した音量も、アプリ側の設定に反映する。
   if (!playerFailed) {
