@@ -10,6 +10,7 @@ import { validateVideoInput, videoToInput, difficultyLabel, VIDEO_MODES, VIDEO_D
 import { VIDEO_IDOLS, VIDEO_SONGS } from './registration-options.js';
 import { createSharedVideosClient } from './shared-videos.js';
 import { getYouTubeAuthorVideosUrl } from './youtube-author.js';
+import { readSharedVideoId, buildXShareUrl } from './share.js';
 
 const $ = id => document.getElementById(id);
 mountIcons();
@@ -43,7 +44,10 @@ customVideos.forEach(video => metadata.seed(video.id, video));
 sharedVideos.forEach(video => metadata.seed(video.id, video, { replace: true }));
 const lastVideo = readSaved(storage, 'aikatsu_last_video_v2', null);
 const initialIds = uniqueIds([...sharedVideos.map(video => video.id), ...customVideos.map(video => video.id), ...videoIds, ...favorites, ...history]);
-let currentId = initialIds.includes(lastVideo) ? lastVideo : initialIds[0] ?? null;
+const initialSharedIds = [...videoIds, ...sharedVideos.map(video => video.id)];
+const requestedVideoId = readSharedVideoId(location.href);
+let pendingSharedVideoId = requestedVideoId && !initialSharedIds.includes(requestedVideoId) ? requestedVideoId : null;
+let currentId = initialSharedIds.includes(requestedVideoId) ? requestedVideoId : pendingSharedVideoId ? null : initialIds.includes(lastVideo) ? lastVideo : initialIds[0] ?? null;
 let panelId = null;
 let panelOpener;
 let libraryTab = 'all';
@@ -105,9 +109,10 @@ function updateCurrent() {
   $('shuffle').disabled = allIds().length === 0;
   $('replay').disabled = !hasVideo;
   $('youtube-link').hidden = !hasVideo;
+  $('share-current').disabled = !hasVideo || !metadata.get(currentId)?.title || ![...videoIds, ...sharedVideos.map(video => video.id)].includes(currentId);
   if (!hasVideo) {
     $('current-details').hidden = true;
-    $('current-title').textContent = 'アンコールの楽曲は準備中';
+    $('current-title').textContent = pendingSharedVideoId ? '共有された曲を読み込み中…' : 'アンコールの楽曲は準備中';
     $('current-title').removeAttribute('title');
     $('youtube-link').removeAttribute('href');
     return;
@@ -272,15 +277,23 @@ async function refreshSharedVideos() {
       sharedVideos = videos;
       sharedVideos.forEach(video => metadata.seed(video.id, video, { replace: true }));
       save('shared_videos', sharedVideos, false);
+      if (pendingSharedVideoId) {
+        const requested = pendingSharedVideoId;
+        pendingSharedVideoId = null;
+        currentId = [...videoIds, ...sharedVideos.map(video => video.id)].includes(requested) ? requested : allIds().includes(lastVideo) ? lastVideo : allIds()[0] ?? null;
+        if (currentId !== requested) toast('共有された曲が見つかりませんでした。「選ぶ」から曲を選んでください。');
+      }
       updateCurrent();
       const currentVideo = videos.find(video => video.id === currentId);
       if (currentVideo) syncEditedRange(currentId, previous, currentVideo);
+      if (currentId && !player) preparePlayer();
       if (panelId === 'library-panel') renderLibrary();
       $('shared-status').textContent = '';
       return true;
     } catch {
       $('shared-status').textContent = '共有一覧を取得できません';
       $('retry-shared').hidden = false;
+      if (pendingSharedVideoId) setStatus('共有された曲を取得できません。「選ぶ」から再試行してください。');
       return false;
     } finally { sharedLoading = null; }
   })();
@@ -573,11 +586,17 @@ function notice(message, retry = false) {
 }
 function selectVideo(id) {
   if (!isVideoId(id)) return;
+  pendingSharedVideoId = null;
   currentId = id;
   lastRecordedId = null;
   clipEnded = false;
   playerFailed = false;
   save('aikatsu_last_video_v2', id);
+  try {
+    const url = new URL(location.href);
+    url.searchParams.set('v', id);
+    window.history.replaceState(window.history.state, '', url);
+  } catch { /* 選曲はURLの更新ができない環境でも使える。 */ }
   $('player-notice').hidden = true;
   $('seek').value = '0'; $('current-time').textContent = '0:00'; $('duration').textContent = '0:00';
   setStatus('動画を読み込み中…');
@@ -599,6 +618,10 @@ $('shuffle').addEventListener('click', () => {
   const id = chooseRandom(candidates, currentId, history.slice(0, 8));
   if (id) selectVideo(id);
   else toast('再生できる候補がありません。「選ぶ」から動画を追加してください。');
+});
+$('share-current').addEventListener('click', () => {
+  const url = buildXShareUrl(location.href, { ...metadata.get(currentId), id: currentId });
+  if (url) window.open(url, '_blank', 'noopener,noreferrer');
 });
 $('play-toggle').addEventListener('click', () => {
   if (!playerReady) return;
