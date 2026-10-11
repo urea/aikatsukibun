@@ -1,5 +1,7 @@
 import { normalizeCustomVideos } from './model.js';
 
+const hasPlaybackBounds = video => video && Object.hasOwn(video, 'startSeconds') && Object.hasOwn(video, 'endSeconds');
+
 export function createSharedVideosClient(fetchImpl = fetch) {
   async function request(options = {}) {
     const controller = new AbortController();
@@ -30,13 +32,13 @@ export function createSharedVideosClient(fetchImpl = fetch) {
     async add(input) {
       const data = await request({ method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input) });
       const [video] = normalizeCustomVideos([data?.video]);
-      if (!video?.author || !Number.isSafeInteger(video.endSeconds)) throw new Error('登録結果を確認できませんでした。一覧を再読み込みしてください。');
+      if (!video?.author || !hasPlaybackBounds(video)) throw new Error('登録結果を確認できませんでした。一覧を再読み込みしてください。');
       return video;
     },
     async update(id, revision, input) {
       const data = await request({ method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...input, id, revision }) });
       const [video] = normalizeCustomVideos([data?.video]);
-      if (video?.id !== id || !video.author || !Number.isSafeInteger(video.endSeconds) || !video.revision) throw new Error('更新結果を確認できませんでした。一覧を再読み込みしてください。');
+      if (video?.id !== id || !video.author || !hasPlaybackBounds(video) || !video.revision) throw new Error('更新結果を確認できませんでした。一覧を再読み込みしてください。');
       return video;
     },
   };

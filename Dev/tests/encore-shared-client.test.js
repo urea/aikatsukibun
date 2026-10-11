@@ -64,6 +64,28 @@ test('公開登録はフォーム情報をPOSTし、自動取得された投稿�
   assert.deepEqual(await client.add(input), video);
 });
 
+test('全体再生・片方省略の明示null境界は登録・編集の成功結果として一覧でも保持する', async () => {
+  const revision = 'a'.repeat(32);
+  for (const [startSeconds, endSeconds] of [[null, null], [null, 597], [451, null]]) {
+    const saved = { ...video, startSeconds, endSeconds, revision: 'b'.repeat(32) };
+    const submitted = { ...input, start: startSeconds === null ? '' : input.start, end: endSeconds === null ? '' : input.end };
+    const client = createSharedVideosClient(async (_, options) => {
+      if (options.method === 'POST') {
+        assert.deepEqual(JSON.parse(options.body), submitted);
+        return response({ video: saved }, 201);
+      }
+      if (options.method === 'PATCH') {
+        assert.deepEqual(JSON.parse(options.body), { ...submitted, id: video.id, revision });
+        return response({ video: saved });
+      }
+      return response({ videos: [saved] });
+    });
+    assert.deepEqual(await client.add(submitted), saved);
+    assert.deepEqual(await client.update(video.id, revision, submitted), saved);
+    assert.deepEqual(await client.list(), [saved]);
+  }
+});
+
 test('編集はIDと読込時revisionをPATCHし、更新後のrevisionを再読み込みでも保持する', async () => {
   const revision = 'a'.repeat(32);
   const edited = { ...video, title: '編集した曲', revision: 'b'.repeat(32) };
@@ -84,7 +106,7 @@ test('同時編集の競合を判別でき、ID・区間・投稿者・revision�
   const revision = 'a'.repeat(32);
   const conflict = createSharedVideosClient(async () => response({ error: '別の利用者が更新しました。', code: 'conflict' }, 409));
   await assert.rejects(conflict.update(video.id, revision, input), error => error.code === 'conflict');
-  for (const invalid of [{ ...video }, { ...video, revision: 'invalid' }, { ...video, revision, id: 'abcdefghijk' }, { ...video, revision, author: '' }, { ...video, revision, endSeconds: video.startSeconds }]) {
+  for (const invalid of [{ ...video }, { ...video, revision: 'invalid' }, { ...video, revision, id: 'abcdefghijk' }, { ...video, revision, author: '' }, { ...video, revision, endSeconds: video.startSeconds }, { ...video, revision, startSeconds: undefined, endSeconds: null }, { ...video, revision, startSeconds: null, endSeconds: undefined }, { ...video, revision, startSeconds: null, endSeconds: 0 }, { ...video, revision, startSeconds: -1, endSeconds: null }, { ...video, revision, startSeconds: '0', endSeconds: null }]) {
     const client = createSharedVideosClient(async () => response({ video: invalid }));
     await assert.rejects(client.update(video.id, revision, input), /更新結果を確認できませんでした/);
   }
@@ -139,6 +161,11 @@ test('HTTP成功でも投稿者や有効な楽曲区間がない登録結果を�
     { video: { ...video, author: '' } },
     { video: { ...video, endSeconds: video.startSeconds } },
     { video: { ...video, startSeconds: undefined } },
+    { video: { ...video, startSeconds: null, endSeconds: undefined } },
+    { video: { ...video, startSeconds: undefined, endSeconds: null } },
+    { video: { ...video, startSeconds: null, endSeconds: 0 } },
+    { video: { ...video, startSeconds: -1, endSeconds: null } },
+    { video: { ...video, startSeconds: '0', endSeconds: null } },
   ];
   for (const body of bodies) {
     const client = createSharedVideosClient(async () => response(body, 201));

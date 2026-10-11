@@ -1,5 +1,6 @@
 function validStart(data) {
   const start = data?.startSeconds;
+  if (start === null) return 0;
   return Number.isFinite(start) && start >= 0 ? start : null;
 }
 
@@ -18,6 +19,11 @@ export function getPlaybackRange(data, videoDuration = 0) {
   const end = validEnd(data, start);
   if (end !== null) return { start, end, duration: end - start };
   const duration = Number.isFinite(videoDuration) && videoDuration >= 0 ? videoDuration : 0;
+  // 明示的なnullは動画終端。終了値の欠落・不正は従来の全動画扱いを維持する。
+  if (start !== null && data?.endSeconds === null) {
+    const end = Math.max(start, duration);
+    return { start, end, duration: end - start };
+  }
   return { start: 0, end: duration, duration };
 }
 

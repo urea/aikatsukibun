@@ -6,8 +6,13 @@ CREATE TABLE IF NOT EXISTS public.encore_shared_videos (
   CHECK (data ?& ARRAY['id', 'title', 'startSeconds', 'endSeconds', 'mode', 'difficulty', 'idol', 'result', 'author']),
   CHECK (data->>'id' = video_id),
   CHECK (length(btrim(data->>'title')) > 0 AND length(btrim(data->>'author')) > 0),
-  CHECK (jsonb_typeof(data->'startSeconds') = 'number' AND jsonb_typeof(data->'endSeconds') = 'number'),
-  CHECK ((data->>'startSeconds')::numeric >= 0 AND (data->>'endSeconds')::numeric > (data->>'startSeconds')::numeric)
+  CONSTRAINT encore_shared_videos_bounds_type_check CHECK (
+    jsonb_typeof(data->'startSeconds') IN ('number', 'null') AND jsonb_typeof(data->'endSeconds') IN ('number', 'null')
+  ),
+  CONSTRAINT encore_shared_videos_bounds_order_check CHECK (
+    ((data->>'startSeconds') IS NULL OR (data->>'startSeconds')::numeric >= 0) AND
+    ((data->>'endSeconds') IS NULL OR (data->>'endSeconds')::numeric > COALESCE((data->>'startSeconds')::numeric, 0))
+  )
 );
 
 CREATE INDEX IF NOT EXISTS encore_shared_videos_created_at_idx ON public.encore_shared_videos (created_at DESC);

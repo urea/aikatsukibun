@@ -36,6 +36,7 @@ function readText(source, field, errors) {
 }
 
 function readTime(source, field, errors) {
+  if (source[field] == null || (typeof source[field] === 'string' && !source[field].trim())) return null;
   const value = readText(source, field, errors);
   if (errors[field]) return null;
   const minutes = /^(\d{1,3}):([0-5]\d)$/.exec(value);
@@ -67,7 +68,7 @@ export function validateVideoInput(input) {
   if (!errors.mode && !VIDEO_MODES.includes(values.mode)) errors.mode = 'モードはリストから選択してください。不明な場合は「-」を選択してください。';
   if (!errors.difficulty && !VIDEO_DIFFICULTIES.includes(values.difficulty)) errors.difficulty = '難易度は☆１〜☆５、または判別できない場合は「‐」を選択してください。';
   if (!errors.result && !VIDEO_RESULTS.includes(values.result)) errors.result = '成績はクリア・フルコンボ・オールパーフェクトから選択してください。';
-  if (startSeconds !== null && endSeconds !== null && endSeconds <= startSeconds) errors.end = '終了時刻は開始時刻より後にしてください。';
+  if (!errors.start && !errors.end && endSeconds !== null && endSeconds <= (startSeconds ?? 0)) errors.end = '終了時刻は開始時刻より後にしてください。';
   const video = Object.keys(errors).length ? null : {
     id,
     title: values.title,

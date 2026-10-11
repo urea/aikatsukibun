@@ -68,8 +68,8 @@ function detailsFor(id) {
   const data = metadata.get(id);
   if (!data) return [];
   const fields = [['モード', data.mode], ['難易度', difficultyLabel(data.difficulty)], ['アイドル', data.idol], ['成績', data.result], ['投稿者', authorFor(data)]];
-  if (Number.isFinite(data.startSeconds) && Number.isFinite(data.endSeconds) && data.endSeconds > data.startSeconds) {
-    fields.push(['楽曲位置', `${formatTime(data.startSeconds)}〜${formatTime(data.endSeconds)}`]);
+  if (data.startSeconds !== undefined && data.endSeconds !== undefined) {
+    fields.push(['楽曲位置', `${data.startSeconds === null ? '先頭' : formatTime(data.startSeconds)}〜${data.endSeconds === null ? '最後' : formatTime(data.endSeconds)}`]);
   }
   return fields.filter(([, value]) => typeof value === 'string' && value.length > 0);
 }
@@ -405,9 +405,9 @@ function syncFormMode() {
   const local = editingVideo?.local;
   $('add-heading').textContent = editing ? '動画情報を編集' : '動画を追加';
   $('add-description').textContent = editing
-    ? local ? '全項目必須です。この動画は端末内に保存されており、変更はこのブラウザーだけに反映されます。'
-      : '全項目必須です。変更は共有一覧に保存され、すべての利用者に反映されます。'
-    : '全項目必須です。追加した動画と楽曲情報は公開され、すべての利用者の一覧に表示されます。';
+    ? local ? '開始・終了時刻は任意です。その他の項目は必須です。変更はこのブラウザーだけに反映されます。'
+      : '開始・終了時刻は任意です。その他の項目は必須です。変更は共有一覧に保存され、すべての利用者に反映されます。'
+    : '開始・終了時刻は任意です。その他の項目は必須です。追加した動画と楽曲情報は公開され、すべての利用者の一覧に表示されます。';
   $('add-url').readOnly = editing;
   $('add-url-hint').textContent = editing ? 'YouTube URLと投稿者は変更できません。' : '共有URL・Shortsにも対応。投稿者は追加時に自動取得します。';
   $('edit-author').hidden = !editingVideo?.author;
@@ -582,7 +582,7 @@ function finishClip() {
 function restoreClipStart(time) {
   // 標準シークで曲の前へ移動した場合だけ戻す。開始直前の微小な時刻差は許容する。
   const data = metadata.get(currentId);
-  if (!data?.endSeconds || time >= rangeFor(currentId).start - 1 || player.getVideoData()?.video_id !== currentId) return false;
+  if (!(data?.startSeconds > 0) || time >= rangeFor(currentId).start - 1 || player.getVideoData()?.video_id !== currentId) return false;
   player.loadVideoById(youtubeVideoOptions(currentId, data));
   return true;
 }
@@ -781,9 +781,9 @@ setInterval(() => {
     $('seek').value = clipEnded ? '100' : String(position.percent);
   }
   // seekToでYouTubeのendSecondsが解除されても、楽曲の終端で停止する。
-  if (!playerFailed && player.getPlayerState() === 1 && metadata.get(currentId)?.endSeconds) {
+  if (!playerFailed && player.getPlayerState() === 1) {
     const time = player.getCurrentTime();
-    if (time >= position.end) {
+    if (metadata.get(currentId)?.endSeconds && time >= position.end) {
       finishClip();
     } else restoreClipStart(time);
   }

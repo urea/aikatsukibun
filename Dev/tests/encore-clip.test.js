@@ -40,8 +40,51 @@ test('区間指定のない追加動画は動画全体の時間とシークを�
   assert.deepEqual(youtubeVideoOptions(videoId), { videoId, startSeconds: 0 });
 });
 
+test('開始と終了が空欄なら動画の先頭から終端までを使う', () => {
+  const data = { startSeconds: null, endSeconds: null };
+  assert.deepEqual(getPlaybackRange(data, 240), { start: 0, end: 240, duration: 240 });
+  assert.deepEqual(getClipPosition(data, 60, 240), { start: 0, end: 240, duration: 240, elapsed: 60, percent: 25 });
+  assert.equal(seekTimeForPercent(data, -20, 240), 0);
+  assert.equal(seekTimeForPercent(data, 50, 240), 120);
+  assert.equal(seekTimeForPercent(data, 120, 240), 240);
+  assert.deepEqual(youtubeVideoOptions(videoId, data), { videoId, startSeconds: 0 });
+});
+
+test('開始だけ空欄なら先頭から指定終了までを動画の長さを待たずに使う', () => {
+  const data = { startSeconds: null, endSeconds: 96.5 };
+  assert.deepEqual(getPlaybackRange(data), { start: 0, end: 96.5, duration: 96.5 });
+  assert.deepEqual(getClipPosition(data, 48.25), { start: 0, end: 96.5, duration: 96.5, elapsed: 48.25, percent: 50 });
+  assert.equal(seekTimeForPercent(data, 100), 96.5);
+  assert.deepEqual(youtubeVideoOptions(videoId, data), { videoId, startSeconds: 0, endSeconds: 96.5 });
+});
+
+test('終了だけ空欄なら指定開始から動画終端までの経過とシークを使う', () => {
+  const data = { startSeconds: 435.25, endSeconds: null };
+  assert.deepEqual(getPlaybackRange(data, 531.75), { start: 435.25, end: 531.75, duration: 96.5 });
+  assert.deepEqual(getClipPosition(data, 483.5, 531.75), { start: 435.25, end: 531.75, duration: 96.5, elapsed: 48.25, percent: 50 });
+  assert.equal(getClipPosition(data, 0, 531.75).elapsed, 0);
+  assert.equal(getClipPosition(data, 600, 531.75).percent, 100);
+  assert.equal(seekTimeForPercent(data, -20, 531.75), 435.25);
+  assert.equal(seekTimeForPercent(data, 50, 531.75), 483.5);
+  assert.equal(seekTimeForPercent(data, 120, 531.75), 531.75);
+  assert.deepEqual(youtubeVideoOptions(videoId, data), { videoId, startSeconds: 435.25 });
+});
+
+test('終端が空欄で動画の長さが未取得・不正・開始前でも長さを0に収める', () => {
+  for (const start of [null, 435.25]) {
+    const data = { startSeconds: start, endSeconds: null };
+    const resolvedStart = start ?? 0;
+    for (const duration of [undefined, 0, -10, NaN, Infinity, '720', null]) {
+      assert.deepEqual(getPlaybackRange(data, duration), { start: resolvedStart, end: resolvedStart, duration: 0 });
+      assert.deepEqual(getClipPosition(data, Infinity, duration), { start: resolvedStart, end: resolvedStart, duration: 0, elapsed: 0, percent: 0 });
+      assert.equal(seekTimeForPercent(data, Infinity, duration), resolvedStart);
+    }
+  }
+  assert.deepEqual(getPlaybackRange({ startSeconds: 435.25, endSeconds: null }, 300), { start: 435.25, end: 435.25, duration: 0 });
+});
+
 test('不正または未完成の区間は動画全体に戻し、無効な終了時刻をYouTubeに渡さない', () => {
-  const malformed = [null, {}, { startSeconds: -1, endSeconds: 531 }, { startSeconds: '435', endSeconds: 531 }, { startSeconds: NaN, endSeconds: 531 }, { startSeconds: Infinity, endSeconds: 531 }, { startSeconds: 435 }, { startSeconds: 435, endSeconds: 435 }, { startSeconds: 435, endSeconds: 400 }, { startSeconds: 435, endSeconds: '531' }, { startSeconds: 435, endSeconds: NaN }, { startSeconds: 435, endSeconds: Infinity }];
+  const malformed = [null, {}, { startSeconds: -1, endSeconds: 531 }, { startSeconds: '435', endSeconds: 531 }, { startSeconds: NaN, endSeconds: 531 }, { startSeconds: Infinity, endSeconds: 531 }, { startSeconds: 435 }, { startSeconds: 435, endSeconds: 435 }, { startSeconds: 435, endSeconds: 400 }, { startSeconds: 435, endSeconds: '531' }, { startSeconds: 435, endSeconds: NaN }, { startSeconds: 435, endSeconds: Infinity }, { startSeconds: null }, { endSeconds: null }, { endSeconds: 531 }, { startSeconds: 435, endSeconds: undefined }, { startSeconds: -1, endSeconds: null }, { startSeconds: '435', endSeconds: null }, { startSeconds: null, endSeconds: 0 }, { startSeconds: null, endSeconds: '531' }];
   for (const data of malformed) {
     assert.deepEqual(getPlaybackRange(data, 720), { start: 0, end: 720, duration: 720 });
     assert.equal(Object.hasOwn(youtubeVideoOptions(videoId, data), 'endSeconds'), false);

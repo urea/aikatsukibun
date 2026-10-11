@@ -50,7 +50,9 @@ export function normalizeVideoMetadata(value) {
   const authorUrl = normalizeAuthorUrl(value.authorUrl);
   if (authorUrl) data.authorUrl = authorUrl;
   if (['クリア', 'フルコンボ', 'オールパーフェクト'].includes(value.result)) data.result = value.result;
-  if (Number.isSafeInteger(value.startSeconds) && value.startSeconds >= 0 && Number.isSafeInteger(value.endSeconds) && value.endSeconds > value.startSeconds) {
+  const validStart = value.startSeconds === null || (Number.isSafeInteger(value.startSeconds) && value.startSeconds >= 0);
+  const validEnd = value.endSeconds === null || (Number.isSafeInteger(value.endSeconds) && value.endSeconds > (value.startSeconds ?? 0));
+  if (validStart && validEnd) {
     data.startSeconds = value.startSeconds;
     data.endSeconds = value.endSeconds;
   }

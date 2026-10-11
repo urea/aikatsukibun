@@ -39,7 +39,8 @@ test('楽曲区間と必須情報を保存形式に変換する', () => {
 });
 
 test('すべての必須項目で空白や非文字列を拒否し、未完成の動画を返さない', () => {
-  for (const field of Object.keys(input)) {
+  const requiredFields = Object.keys(input).filter(field => !['start', 'end'].includes(field));
+  for (const field of requiredFields) {
     for (const value of ['', ' \t\n ', null, 0, undefined]) {
       const result = validateVideoInput({ ...input, [field]: value });
       assert.equal(result.video, null, `${field}: ${String(value)}`);
@@ -49,7 +50,29 @@ test('すべての必須項目で空白や非文字列を拒否し、未完成�
   for (const value of [undefined, null, [], 'invalid']) {
     const result = validateVideoInput(value);
     assert.equal(result.video, null);
-    assert.equal(Object.keys(result.errors).length, Object.keys(input).length);
+    assert.equal(Object.keys(result.errors).length, requiredFields.length);
+  }
+});
+
+test('時刻の空欄は先頭・動画終端として保存し、編集時も空欄を復元する', () => {
+  for (const [start, end, startSeconds, endSeconds] of [
+    ['', '', null, null], ['', '1:36', null, 96], ['0:10', '', 10, null],
+    [' \t ', ' \n ', null, null], [undefined, undefined, null, null], [null, null, null, null],
+  ]) {
+    const { video, errors } = validateVideoInput({ ...input, start, end });
+    assert.deepEqual(errors, {});
+    assert.equal(video.startSeconds, startSeconds);
+    assert.equal(video.endSeconds, endSeconds);
+    const [saved] = normalizeCustomVideos(JSON.parse(JSON.stringify([video])));
+    assert.deepEqual(saved, video);
+    const restored = videoToInput(saved);
+    assert.equal(restored.start, startSeconds === null ? '' : start);
+    assert.equal(restored.end, endSeconds === null ? '' : end);
+    assert.deepEqual(validateVideoInput(restored).video, video);
+  }
+  assert.equal(validateVideoInput({ ...input, start: '', end: '0:00' }).video, null);
+  for (const field of ['start', 'end']) {
+    for (const value of [0, {}, false, []]) assert.ok(validateVideoInput({ ...input, [field]: value }).errors[field]);
   }
 });
 

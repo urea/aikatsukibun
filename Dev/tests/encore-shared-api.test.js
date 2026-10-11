@@ -108,6 +108,36 @@ test('既存動画を不明モード「-」へPATCH編集し、投稿者と区�
   assert.equal(requests.length, 0);
 });
 
+test('POSTは全体再生と片方省略を明示nullで保存しGETでも保持する', async () => {
+  for (const [times, startSeconds, endSeconds] of [[{ start: '', end: '' }, null, null], [{ start: undefined, end: '1:36' }, null, 96], [{ start: '0:05', end: undefined }, 5, null]]) {
+    const { handler, store, requests } = fixture();
+    const expected = { ...apiVideo, startSeconds, endSeconds };
+    const added = await handler(post({ ...input, ...times }));
+    assert.equal(added.status, 201);
+    assert.deepEqual(await added.json(), { video: expected });
+    const listed = await fixture({ store }).handler(new Request(endpoint));
+    assert.equal(listed.status, 200);
+    assert.deepEqual(await listed.json(), { videos: [expected] });
+    assert.equal(requests.length, 1);
+  }
+});
+
+test('PATCHは既存数値区間を全体再生や片方省略へ変更し旧数値を残さない', async () => {
+  for (const [times, startSeconds, endSeconds] of [[{ start: '', end: '' }, null, null], [{ start: '', end: '1:36' }, null, 96], [{ start: '0:05', end: '' }, 5, null]]) {
+    const { handler, store, requests } = fixture();
+    store.videos.set(apiVideo.id, apiVideo);
+    const expected = { ...apiVideo, startSeconds, endSeconds };
+    const updated = await handler(patch(editInput(apiVideo, times)));
+    assert.equal(updated.status, 200);
+    assert.deepEqual(await updated.json(), { video: { ...expected, revision: revisionFor(expected) } });
+    assert.deepEqual(store.videos.get(apiVideo.id), expected);
+    const listed = await fixture({ store }).handler(new Request(endpoint));
+    assert.equal(listed.status, 200);
+    assert.deepEqual(await listed.json(), { videos: [expected] });
+    assert.equal(requests.length, 0);
+  }
+});
+
 test('必須入力・区間の順序・成績やモードの不正値は400で保存前に拒否する', async () => {
   const { handler, store, requests } = fixture();
   for (const [body, field] of [[{ ...input, title: '' }, 'title'], [{ ...input, start: '1:36' }, 'end'], [{ ...input, end: '0:99' }, 'end'], [{ ...input, result: '架空成績' }, 'result'], [{ ...input, mode: '架空モード' }, 'mode'], [{ ...input, mode: '' }, 'mode'], [{ ...input, url: 'https://evil.test/watch?v=fYibOFCMpnE' }, 'url']]) {
@@ -434,4 +464,28 @@ test('Neon storeは読み込み時にrevisionを付け、JSONのrevisionを保�
   const emptyStore = createNeonStore(undefined, { sql: { async query() { return []; } } });
   assert.equal(await emptyStore.getVideo(apiVideo.id), null);
   assert.equal(await emptyStore.updateVideo(apiVideo, revision), null);
+});
+
+test('Neon storeは明示nullの境界を正規化して保持しUPDATE JSONで旧数値を置き換える', async () => {
+  const revision = 'a'.repeat(32);
+  for (const [startSeconds, endSeconds] of [[null, null], [null, 96], [5, null]]) {
+    let data = { ...apiVideo };
+    const queries = [];
+    const sql = { async query(text, values) {
+      queries.push({ text, values });
+      if (text.startsWith('UPDATE')) data = { ...data, ...JSON.parse(values[1]) };
+      return [{ video_id: apiVideo.id, data, revision }];
+    } };
+    const store = createNeonStore(undefined, { sql });
+    const expected = { ...apiVideo, startSeconds, endSeconds };
+    assert.deepEqual(await store.updateVideo(expected, revision), { ...expected, revision });
+    assert.deepEqual(JSON.parse(queries[0].values[1]), expected);
+    assert.deepEqual(await store.getVideo(apiVideo.id), { ...expected, revision });
+    assert.deepEqual(await store.listVideos(), [{ ...expected, revision }]);
+  }
+  for (const [startSeconds, endSeconds] of [[undefined, null], [null, undefined], [null, 0], [-1, null], ['0', null]]) {
+    const store = createNeonStore(undefined, { sql: { async query() { return [{ video_id: apiVideo.id, data: { ...apiVideo, startSeconds, endSeconds }, revision }]; } } });
+    assert.equal(await store.getVideo(apiVideo.id), null);
+    assert.deepEqual(await store.listVideos(), []);
+  }
 });

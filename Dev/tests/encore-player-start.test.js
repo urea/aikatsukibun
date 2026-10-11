@@ -18,7 +18,7 @@ function section(start, end) {
 
 // 実main.jsのイベント処理・周期処理を、時刻を制御できるYouTube代替とDOM代替で実行する。
 // ロードが開始位置の直前を返す状況でも、再生を自分でリセットしないことを確認する。
-function playerHarness() {
+function playerHarness(data = clip) {
   const commands = [];
   const saved = [];
   const controls = new Map();
@@ -38,13 +38,14 @@ function playerHarness() {
     cueVideoById(options) { commands.push({ type: 'cue', options: { ...options } }); this.state = 5; },
     pauseVideo() { commands.push({ type: 'pause' }); this.state = 2; },
     playVideo() { commands.push({ type: 'play' }); this.state = 1; },
+    seekTo(time, allowSeekAhead) { commands.push({ type: 'seek', time, allowSeekAhead }); this.time = time; },
   };
   let timer;
   const context = vm.createContext({
     $, player, currentId: id, playerReady: true, playerFailed: false, queuedAutoplay: false, playerTimeout: undefined,
     clipEnded: false, seeking: false, lastRecordedId: undefined, history: [], panelId: null, libraryTab: 'all', libraryDialog: { open: false },
-    metadata: { get: () => clip }, settings: { muted: false, videoVolume: 70 }, SETTINGS_KEY: 'test-settings',
-    rangeFor: () => getPlaybackRange(clip), getClipPosition, seekTimeForPercent, youtubeVideoOptions, isVideoId, formatTime,
+    metadata: { get: () => data }, settings: { muted: false, videoVolume: 70 }, SETTINGS_KEY: 'test-settings',
+    rangeFor: () => getPlaybackRange(data, 900), getClipPosition, seekTimeForPercent, youtubeVideoOptions, isVideoId, formatTime,
     setIcon: (control, value) => { control.icon = value; }, setStatus: value => { $('status').textContent = value; },
     save: (key, value) => saved.push({ key, value: structuredClone(value) }), syncMute: () => {}, syncSettings: () => {}, renderLibrary: () => {}, updateCurrent: () => {}, closePanel: () => {}, applyVideoVolume: () => {}, clearTimeout: () => {},
     setInterval(callback, milliseconds) { assert.equal(milliseconds, 300); timer = callback; },
@@ -69,6 +70,40 @@ function playerHarness() {
     seek(percent, state) { $('seek').value = String(percent); player.state = state; $('seek').listeners.get('change')(); },
   };
 }
+
+test('時刻両空欄は先頭から全体をcueし、実動画の長さでシークする', () => {
+  const harness = playerHarness({ startSeconds: null, endSeconds: null });
+  harness.context.onPlayerReady({ target: harness.player });
+  assert.deepEqual(harness.commands, [{ type: 'cue', options: { videoId: id, startSeconds: 0 } }]);
+  harness.seek(50, 2);
+  assert.deepEqual(harness.commands.at(-1), { type: 'seek', time: 450, allowSeekAhead: true });
+  harness.tick(450, 2);
+  assert.equal(harness.$('current-time').textContent, '7:30');
+  assert.equal(harness.$('duration').textContent, '15:00');
+});
+
+test('終了だけ空欄でも開始位置・相対時刻・開始前シークの補正を保つ', () => {
+  const harness = playerHarness({ startSeconds: 435, endSeconds: null });
+  harness.context.onPlayerReady({ target: harness.player });
+  assert.deepEqual(harness.commands[0], { type: 'cue', options: { videoId: id, startSeconds: 435 } });
+  harness.tick(480, 1);
+  assert.equal(harness.$('current-time').textContent, '0:45');
+  assert.equal(harness.$('duration').textContent, '7:45');
+  harness.seek(50, 2);
+  assert.deepEqual(harness.commands.at(-1), { type: 'seek', time: 667.5, allowSeekAhead: true });
+  harness.state(120, 1);
+  assert.deepEqual(harness.commands.at(-1), { type: 'load', options: { videoId: id, startSeconds: 435 } });
+});
+
+test('開始だけ空欄は0秒開始し、指定された終了時刻で停止する', () => {
+  const harness = playerHarness({ startSeconds: null, endSeconds: 96 });
+  harness.context.onPlayerReady({ target: harness.player });
+  assert.deepEqual(harness.commands[0], { type: 'cue', options: { videoId: id, startSeconds: 0, endSeconds: 96 } });
+  harness.state(96, 1);
+  assert.deepEqual(harness.commands.at(-1), { type: 'pause' });
+  assert.equal(harness.context.clipEnded, true);
+  assert.equal(harness.$('current-time').textContent, '1:36');
+});
 
 test('435秒の開始直前を返すキーフレームでも再ロードせず通常の再生進行と履歴を保つ', () => {
   for (const start of [434.8, 434.999, 435]) {
