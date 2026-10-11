@@ -1,4 +1,4 @@
-export const PAD_KEYS = Object.freeze({ w: 'red', a: 'green', d: 'yellow' });
+export const PAD_KEYS = Object.freeze({ w: 'red', a: 'green', d: 'yellow', arrowup: 'red', arrowleft: 'green', arrowright: 'yellow' });
 
 // 指ごとに保持することで、指を離しても別の指やキーの入力を消さない。
 export function createPadInput() {
