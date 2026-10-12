@@ -11,6 +11,7 @@ import { VIDEO_IDOLS, VIDEO_SONGS } from './registration-options.js';
 import { createSharedVideosClient } from './shared-videos.js';
 import { getYouTubeAuthorVideosUrl } from './youtube-author.js';
 import { readSharedVideoId, buildXShareUrl } from './share.js';
+import { normalizeLibrarySort, sortVideoIds } from './library-sort.js';
 
 const $ = id => document.getElementById(id);
 mountIcons();
@@ -51,6 +52,8 @@ let currentId = initialSharedIds.includes(requestedVideoId) ? requestedVideoId :
 let panelId = null;
 let panelOpener;
 let libraryTab = 'all';
+let librarySort = normalizeLibrarySort(readSaved(storage, 'library_sort', 'posted'));
+$('video-sort').value = librarySort;
 let player;
 let playerReady = false;
 let queuedAutoplay = false;
@@ -231,7 +234,9 @@ function rowFor(id) {
 function renderLibrary() {
   const ids = libraryTab === 'favorites' ? favorites : libraryTab === 'history' ? history : allIds();
   const query = $('video-search').value.normalize('NFKC').toLocaleLowerCase().trim();
-  const matching = ids.filter(id => `${titleFor(id)} ${detailsFor(id).map(([, value]) => value).join(' ')} ${id}`.normalize('NFKC').toLocaleLowerCase().includes(query));
+  const filtered = ids.filter(id => `${titleFor(id)} ${detailsFor(id).map(([, value]) => value).join(' ')} ${id}`.normalize('NFKC').toLocaleLowerCase().includes(query));
+  const matching = sortVideoIds(filtered, librarySort, id => metadata.get(id));
+  $('video-sort-default').textContent = libraryTab === 'favorites' ? 'お気に入り登録順' : libraryTab === 'history' ? '再生順' : '投稿順';
   const visibleIds = new Set(matching);
   for (const [id, entry] of rows) if (!visibleIds.has(id)) entry.row.remove();
   matching.forEach((id, index) => {
@@ -344,6 +349,12 @@ document.querySelectorAll('[data-library]').forEach(button => {
   });
 });
 $('video-search').addEventListener('input', () => { $('library-results').scrollTop = 0; renderLibrary(); });
+$('video-sort').addEventListener('change', () => {
+  librarySort = normalizeLibrarySort($('video-sort').value);
+  save('library_sort', librarySort);
+  $('library-results').scrollTop = 0;
+  renderLibrary();
+});
 
 const addFields = ['url', 'title', 'start', 'end', 'mode', 'difficulty', 'idol', 'result'];
 const customChoiceValue = '__custom__';

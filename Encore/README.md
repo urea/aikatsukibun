@@ -27,6 +27,8 @@
 
 ## 楽曲追加と公開
 
+「選ぶ」の曲数横で「投稿順」と「曲名・難易度順」を切り替えられます。初期表示は新しく投稿された順です。曲名・難易度順は表示中の曲名を使って並べ、同じ曲では☆１から☆５、不明の「‐」は最後に表示します。自由入力の曲名にも対応し、同じ曲・難易度の動画は元の順序を保ちます。検索結果・お気に入り・履歴にも適用し、並び順はこのブラウザーに保存します。通常の並び順では、お気に入りは登録順、履歴は再生順を保ちます。
+
 1. アンコールの動画を確認し、`videos.json` に動画IDを、`catalog.json` に対応する楽曲情報を登録します。開始・終了秒は動画全体の先頭から数えます。旧形式で追加済みの、区間指定がない動画は動画全体を再生します。
 2. Vercelの `aikatsu-encore-kibun` プロジェクトは、Root Directory=`Encore`、Framework=Vite、Install Command=`npm ci`、Build Command=`npm run build`、Output Directory=`dist` で公開します。GitHubの `urea/aikatsukibun` と接続し、通常版とは別のプロジェクトで管理します。
 3. 各Vercelプロジェクトの環境変数 `VITE_RELATED_SITE_URL` に相手の公開URLを設定します。アンコール版では `https://aikatsukibun.vercel.app/`、通常版では `https://aikatsu-encore-kibun.vercel.app/` を使います。未設定の間はリンクを表示しません。ローカル設定の例は `.env.example` にあります。
