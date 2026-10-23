@@ -29,6 +29,19 @@ const response = (body, status = 200) => new Response(JSON.stringify(body), {
   headers: { 'Content-Type': 'application/json' },
 });
 
+test('同じYouTube動画の別の曲は別IDと元動画情報を保って取得・追加・編集できる', async () => {
+  const first = { ...video, videoId: video.id };
+  const next = { ...video, id: `clip_${'a'.repeat(32)}`, videoId: video.id, startSeconds: 597, endSeconds: 700, title: '別の曲', revision: 'b'.repeat(32) };
+  const client = createSharedVideosClient(async (_url, options) => {
+    if (!options.method) return response({ videos: [first, next] });
+    if (options.method === 'PATCH') assert.equal(JSON.parse(options.body).id, next.id);
+    return response({ video: next });
+  });
+  assert.deepEqual(await client.list(), [first, next]);
+  assert.deepEqual(await client.add(input), next);
+  assert.deepEqual(await client.update(next.id, next.revision, input), next);
+});
+
 test('共有一覧はGETで取得し、再生に必要な区間と投稿者を保持する', async () => {
   let calls = 0;
   const client = createSharedVideosClient(async (url, options) => {

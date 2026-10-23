@@ -1,7 +1,5 @@
-import { displayTitle, isVideoId } from './model.js';
+import { displayTitle, isEntryId } from './model.js';
 import { VIDEO_DIFFICULTIES } from './add-video.js';
-
-const validVideoId = value => typeof value === 'string' && value.length === 11 && isVideoId(value);
 
 function readUrl(value) {
   if (!(value instanceof URL) && typeof value !== 'string') return null;
@@ -11,12 +9,12 @@ function readUrl(value) {
 
 export function readSharedVideoId(value) {
   const id = readUrl(value)?.searchParams.get('v');
-  return validVideoId(id) ? id : null;
+  return isEntryId(id) ? id : null;
 }
 
 export function buildVideoShareUrl(baseUrl, id) {
   const url = readUrl(baseUrl);
-  if (!url || !['https:', 'http:'].includes(url.protocol) || url.username || url.password || !validVideoId(id)) return null;
+  if (!url || !['https:', 'http:'].includes(url.protocol) || url.username || url.password || !isEntryId(id)) return null;
   url.search = '';
   url.hash = '';
   url.searchParams.set('v', id);

@@ -11,6 +11,8 @@ const source = fs.readFileSync(new URL('../../Encore/metadata.js', import.meta.u
   .replace('export function createMetadata', 'function createMetadata');
 const catalog = JSON.parse(fs.readFileSync(new URL('../../Encore/catalog.json', import.meta.url), 'utf8'));
 const id = 'abcdefghijk';
+const firstId = `clip_${'a'.repeat(32)}`;
+const secondId = `clip_${'b'.repeat(32)}`;
 const sharedVideo = {
   title: '共有された楽曲名', startSeconds: 10, endSeconds: 50,
   mode: 'アイカツ！オールスターモード', difficulty: '-',
@@ -154,4 +156,85 @@ test('共有ではない追加動画は必要に応じてYouTube情報を再取�
   const result = await metadata.fetch(id, { refresh: true });
   assert.equal(result.title, '動画全体のタイトル');
   assert.equal(result.authorHandle, '@original');
+});
+
+test('同じ元動画の曲を別のキーで復元し、不正な元動画のキャッシュを使わない', async t => {
+  const first = { videoId: id, title: '1曲目', startSeconds: null, endSeconds: 50 };
+  const second = { videoId: id, title: '2曲目', startSeconds: 60, endSeconds: null };
+  const invalidId = `clip_${'c'.repeat(32)}`;
+  const metadata = fixture(t, async () => { throw new Error('unexpected network request'); }, {
+    [firstId]: first, [secondId]: second,
+    [invalidId]: { title: '元動画不明' },
+    [id]: { videoId: 'jihgfedcbaz', title: '旧IDと元動画が不一致' },
+  });
+  assert.deepEqual(metadata.get(firstId), first);
+  assert.deepEqual(metadata.get(secondId), second);
+  assert.deepEqual(await metadata.fetch(firstId), first);
+  assert.deepEqual(await metadata.fetch(secondId), second);
+  assert.equal(metadata.get(invalidId), undefined);
+  assert.equal(metadata.get(id), undefined);
+});
+
+test('clipのYouTube情報取得は元動画のURLを使い、再取得後も元動画を保持する', async t => {
+  const urls = [];
+  const metadata = fixture(t, async url => { urls.push(url); return oembedResponse(); }, {
+    [firstId]: { videoId: id, title: '以前の情報' },
+  });
+  for (let index = 0; index < 2; index++) {
+    const result = await metadata.fetch(firstId, { refresh: true });
+    assert.equal(result.videoId, id);
+    assert.equal(result.title, '動画全体のタイトル');
+    assert.equal(result.authorHandle, '@original');
+  }
+  assert.equal(urls.length, 2);
+  for (const url of urls) assert.equal(new URL(url).searchParams.get('url'), `https://www.youtube.com/watch?v=${id}`);
+});
+
+test('元動画不明のclipと不正な曲IDは外部取得も不正seedの保存もしない', async t => {
+  let calls = 0;
+  const metadata = fixture(t, async () => { calls++; return oembedResponse(); });
+  for (const data of [{ title: '元動画なし' }, { title: '不正な元動画', videoId: firstId }, { title: '不正な元動画', videoId: `${id}\n` }]) metadata.seed(firstId, data, { replace: true });
+  metadata.seed(id, { title: '旧ID不一致', videoId: 'jihgfedcbaz' }, { replace: true });
+  assert.equal(metadata.get(firstId), undefined);
+  assert.equal(metadata.get(id), undefined);
+  for (const entryId of [firstId, `${firstId}\n`, `clip_${'A'.repeat(32)}`, `${id}\n`]) await assert.rejects(metadata.fetch(entryId));
+  assert.equal(calls, 0);
+});
+
+test('同じ元動画でも取得中レースは曲ごとに独立し、共有の最新曲名と区間を保持する', async t => {
+  const firstPending = deferred();
+  const secondPending = deferred();
+  const pending = [firstPending, secondPending];
+  const urls = [];
+  const metadata = fixture(t, url => { urls.push(url); return pending[urls.length - 1].promise; });
+  metadata.seed(firstId, { videoId: id, title: '古い1曲目' });
+  metadata.seed(secondId, { videoId: id, title: '古い2曲目' });
+  const firstTask = metadata.fetch(firstId, { refresh: true });
+  const secondTask = metadata.fetch(secondId, { refresh: true });
+  const shared = { ...sharedVideo, videoId: id };
+  const updated = { ...shared, title: '共有で編集した1曲目', startSeconds: 20, endSeconds: null, revision: 'd'.repeat(32) };
+  metadata.seed(firstId, shared, { replace: true });
+  metadata.seed(firstId, updated, { replace: true });
+  firstPending.resolve(oembedResponse());
+  secondPending.resolve(oembedResponse());
+  assert.deepEqual(await firstTask, updated);
+  const second = await secondTask;
+  assert.equal(second.videoId, id);
+  assert.equal(second.title, '動画全体のタイトル');
+  assert.equal(metadata.get(secondId), second);
+  assert.deepEqual(await metadata.fetch(firstId, { refresh: true }), updated);
+  metadata.seed(firstId, { videoId: id, title: '端末の古い曲名' });
+  assert.deepEqual(metadata.get(firstId), updated);
+  assert.equal(urls.length, 2);
+});
+
+test('clipの取得中に共有更新が届けば外部取得が失敗しても元動画と最新の区間を保つ', async t => {
+  const pending = deferred();
+  const metadata = fixture(t, () => pending.promise, { [firstId]: { videoId: id, title: '古い曲' } });
+  const task = metadata.fetch(firstId, { refresh: true });
+  const updated = { ...sharedVideo, videoId: id, startSeconds: null, endSeconds: 96 };
+  metadata.seed(firstId, updated, { replace: true });
+  pending.reject(new TypeError('Failed to fetch'));
+  assert.deepEqual(await task, updated);
+  assert.deepEqual(metadata.get(firstId), updated);
 });

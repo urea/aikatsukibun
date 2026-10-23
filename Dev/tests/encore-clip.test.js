@@ -104,3 +104,7 @@ test('0秒開始の有効区間と小数秒の区間を保持する', () => {
   assert.deepEqual(getPlaybackRange({ startSeconds: 0.25, endSeconds: 1.75 }), { start: 0.25, end: 1.75, duration: 1.5 });
   assert.equal(seekTimeForPercent({ startSeconds: 0.25, endSeconds: 1.75 }, 50), 1);
 });
+test('曲IDと元動画IDを分けてもYouTubeには元動画とその曲の区間だけを渡す', () => {
+  assert.deepEqual(youtubeVideoOptions(`clip_${'a'.repeat(32)}`, { videoId: 'XTAE6nTGf3w', startSeconds: 111, endSeconds: 195 }), { videoId: 'XTAE6nTGf3w', startSeconds: 111, endSeconds: 195 });
+  assert.equal(youtubeVideoOptions(`clip_${'a'.repeat(32)}`, {}).videoId, null);
+});

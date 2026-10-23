@@ -1,5 +1,5 @@
 import videoIds from './videos.json';
-import { SETTINGS_KEY, isVideoId, uniqueIds, readSaved, normalizeCustomVideos, normalizeSettings, chooseRandom, formatTime, displayTitle } from './model.js';
+import { SETTINGS_KEY, isVideoId, isEntryId, videoIdFor, uniqueIds, readSaved, normalizeCustomVideos, normalizeSettings, chooseRandom, formatTime, displayTitle } from './model.js';
 import { icon, setIcon, mountIcons } from './icons.js';
 import { createTapAudio } from './tap-audio.js';
 import { createPadInput, PAD_KEYS } from './pad-input.js';
@@ -12,6 +12,7 @@ import { createSharedVideosClient } from './shared-videos.js';
 import { getYouTubeAuthorVideosUrl } from './youtube-author.js';
 import { readSharedVideoId, buildXShareUrl } from './share.js';
 import { normalizeLibrarySort, sortVideoIds } from './library-sort.js';
+import { createPlaybackSession } from './playback-session.js';
 
 const $ = id => document.getElementById(id);
 mountIcons();
@@ -62,9 +63,11 @@ let seeking = false;
 let lastRecordedId;
 let clipEnded = false;
 let libraryRenderTimer;
+const playbackSession = createPlaybackSession();
 const unplayable = new Set();
 const allIds = () => uniqueIds([...sharedVideos.map(video => video.id), ...customVideos.map(video => video.id), ...videoIds, ...favorites, ...history]);
 const titleFor = id => metadata.get(id)?.title || `動画 (${id})`;
+const youtubeIdFor = id => videoIdFor(id, metadata.get(id));
 const rangeFor = id => getPlaybackRange(metadata.get(id), playerReady ? player.getDuration() : 0);
 const authorFor = data => [data?.author, data?.authorHandle].filter(Boolean).join('');
 function detailsFor(id) {
@@ -105,7 +108,8 @@ function updateFavorite(button, id) {
   button.setAttribute('aria-label', `${active ? 'お気に入りから外す' : 'お気に入りに追加'}${button.id ? '' : `：${displayTitle(titleFor(id))}`}`);
 }
 function updateCurrent() {
-  const hasVideo = isVideoId(currentId);
+  const hasVideo = Boolean(youtubeIdFor(currentId));
+  $('play-toggle').disabled = !hasVideo || !playerReady;
   $('youtube-player').hidden = !hasVideo;
   $('video-empty').hidden = hasVideo;
   $('favorite-current').disabled = !hasVideo;
@@ -114,8 +118,9 @@ function updateCurrent() {
   $('youtube-link').hidden = !hasVideo;
   $('share-current').disabled = !hasVideo || !metadata.get(currentId)?.title || ![...videoIds, ...sharedVideos.map(video => video.id)].includes(currentId);
   if (!hasVideo) {
+    $('seek').disabled = true;
     $('current-details').hidden = true;
-    $('current-title').textContent = pendingSharedVideoId ? '共有された曲を読み込み中…' : 'アンコールの楽曲は準備中';
+    $('current-title').textContent = pendingSharedVideoId || currentId ? '楽曲情報を読み込み中…' : 'アンコールの楽曲は準備中';
     $('current-title').removeAttribute('title');
     $('youtube-link').removeAttribute('href');
     return;
@@ -124,7 +129,7 @@ function updateCurrent() {
   $('current-title').textContent = title;
   $('current-title').title = titleFor(currentId);
   $('youtube-player').title = title;
-  $('youtube-link').href = `https://www.youtube.com/watch?v=${currentId}&t=${rangeFor(currentId).start}s`;
+  $('youtube-link').href = `https://www.youtube.com/watch?v=${youtubeIdFor(currentId)}&t=${rangeFor(currentId).start}s`;
   renderDetails($('current-details'), currentId);
   $('duration').textContent = formatTime(rangeFor(currentId).duration);
   updateFavorite($('favorite-current'), currentId);
@@ -133,10 +138,10 @@ function syncEditedRange(id, previous, video) {
   if (id !== currentId || !previous || (previous.startSeconds === video.startSeconds && previous.endSeconds === video.endSeconds)) return;
   clipEnded = false;
   $('seek').value = '0'; $('current-time').textContent = '0:00';
-  if (playerReady) player.cueVideoById(youtubeVideoOptions(id, video));
+  if (playerReady) requestPlayback(youtubeVideoOptions(id, video));
 }
 function toggleFavorite(id) {
-  if (!isVideoId(id)) return;
+  if (!isEntryId(id)) return;
   const removing = favorites.includes(id);
   favorites = removing ? favorites.filter(value => value !== id) : [id, ...favorites];
   save('fav_ids', favorites);
@@ -204,7 +209,7 @@ function rowFor(id) {
   select.type = 'button'; select.className = 'video-select';
   const image = document.createElement('img');
   image.className = 'video-thumbnail'; image.alt = ''; image.loading = 'lazy'; image.decoding = 'async';
-  image.src = `https://i.ytimg.com/vi/${id}/mqdefault.jpg`;
+  if (youtubeIdFor(id)) image.src = `https://i.ytimg.com/vi/${youtubeIdFor(id)}/mqdefault.jpg`;
   const words = document.createElement('span'); words.className = 'video-words';
   const heading = document.createElement('span'); heading.className = 'video-heading';
   const title = document.createElement('span'); title.className = 'video-title';
@@ -227,7 +232,7 @@ function rowFor(id) {
   actions.append(favorite, edit);
   // 投稿者リンクは再生ボタンの外に置き、リンク操作で選曲されないようにする。
   row.append(select, actions, author);
-  const entry = { row, select, title, state, details, author, subtitle, favorite, edit };
+  const entry = { row, select, image, title, state, details, author, subtitle, favorite, edit };
   rows.set(id, entry);
   return entry;
 }
@@ -241,6 +246,8 @@ function renderLibrary() {
   for (const [id, entry] of rows) if (!visibleIds.has(id)) entry.row.remove();
   matching.forEach((id, index) => {
     const entry = rowFor(id);
+    const sourceId = youtubeIdFor(id);
+    if (sourceId) entry.image.src = `https://i.ytimg.com/vi/${sourceId}/mqdefault.jpg`;
     entry.title.textContent = displayTitle(titleFor(id));
     entry.select.title = titleFor(id);
     entry.select.setAttribute('aria-label', `${displayTitle(titleFor(id))}を再生`);
@@ -516,9 +523,9 @@ $('add-form').addEventListener('submit', async event => {
   }
   const { id } = video;
   const editing = editingVideo;
-  if (!editing && (sharedVideos.some(item => item.id === id) || videoIds.includes(id))) {
-    showAddErrors({ url: 'この動画は登録済みです。選曲一覧から選んでください。' });
-    message.textContent = '同じ動画を重複して追加することはできません。';
+  if (!editing && [...sharedVideos, ...videoIds.map(id => ({ ...metadata.get(id), id }))].some(item => videoIdFor(item.id, item) === id && (item.startSeconds ?? 0) === (video.startSeconds ?? 0) && item.endSeconds === video.endSeconds)) {
+    showAddErrors({ url: 'この動画の同じ区間は登録済みです。選曲一覧から選んでください。' });
+    message.textContent = '同じ動画・同じ区間を重複して追加することはできません。';
     message.classList.add('is-error');
     $('add-url').focus();
     return;
@@ -532,28 +539,29 @@ $('add-form').addEventListener('submit', async event => {
     if (sharedLoading) await sharedLoading;
     let savedVideo;
     if (editing?.local) {
-      savedVideo = { ...video, ...(editing.author ? { author: editing.author } : {}), ...(editing.authorHandle ? { authorHandle: editing.authorHandle } : {}), ...(editing.authorUrl ? { authorUrl: editing.authorUrl } : {}) };
-      customVideos = customVideos.map(item => item.id === id ? savedVideo : item);
+      savedVideo = { ...video, id: editing.id, ...(editing.videoId ? { videoId: editing.videoId } : {}), ...(editing.author ? { author: editing.author } : {}), ...(editing.authorHandle ? { authorHandle: editing.authorHandle } : {}), ...(editing.authorUrl ? { authorUrl: editing.authorUrl } : {}) };
+      customVideos = customVideos.map(item => item.id === editing.id ? savedVideo : item);
       save('custom_videos', customVideos);
     } else {
       savedVideo = editing ? await sharedClient.update(editing.id, editing.revision, input) : await sharedClient.add(input);
       sharedRevision++;
-      sharedVideos = editing ? sharedVideos.map(item => item.id === id ? savedVideo : item) : [savedVideo, ...sharedVideos.filter(item => item.id !== id)];
+      sharedVideos = editing ? sharedVideos.map(item => item.id === editing.id ? savedVideo : item) : [savedVideo, ...sharedVideos.filter(item => item.id !== savedVideo.id)];
       save('shared_videos', sharedVideos, false);
     }
-    metadata.seed(id, savedVideo, { replace: true });
-    if (!editing && !favorites.includes(id)) { favorites.unshift(id); save('fav_ids', favorites); }
+    const savedId = savedVideo.id;
+    metadata.seed(savedId, savedVideo, { replace: true });
+    if (!editing && !favorites.includes(savedId)) { favorites.unshift(savedId); save('fav_ids', favorites); }
     editingVideo = null;
     setAddInput(editing ? addDraft || {} : {});
     addDraft = null;
     syncFormMode();
     updateCurrent();
-    if (editing) syncEditedRange(id, editing, savedVideo);
+    if (editing) syncEditedRange(savedId, editing, savedVideo);
     if (panelId === 'library-panel') renderLibrary();
     // 確認中に別画面へ移動した場合は、再生中の曲を切り替えない。
     if (panelId === 'add-panel') {
       if (editing) openPanel('library-panel');
-      else selectVideo(id);
+      else selectVideo(savedId);
     }
     toast(editing ? editing.local ? 'このブラウザーの動画情報を更新しました' : '共有一覧の動画情報を更新しました' : '共有一覧と、この端末のお気に入りに追加しました');
   } catch (error) {
@@ -578,7 +586,7 @@ function iframeUrl(id) {
   if (options.endSeconds !== undefined) parameters.set('end', String(options.endSeconds));
   // 字幕などの標準設定を使えるようにし、キー操作はアプリ側で受ける。
   if (options.endSeconds !== undefined) parameters.set('disablekb', '1');
-  return `https://www.youtube.com/embed/${id}?${parameters}`;
+  return `https://www.youtube.com/embed/${options.videoId}?${parameters}`;
 }
 function setStatus(message) { $('playback-status').textContent = message; }
 function finishClip() {
@@ -590,11 +598,17 @@ function finishClip() {
   $('current-time').textContent = formatTime(rangeFor(currentId).duration);
   $('seek').value = '100';
 }
+function requestPlayback(options, playing = false) {
+  if (!isVideoId(options.videoId)) return;
+  playbackSession.begin(currentId, options.videoId, options.startSeconds, player.getCurrentTime());
+  if (playing) player.loadVideoById(options);
+  else player.cueVideoById(options);
+}
 function restoreClipStart(time) {
   // 標準シークで曲の前へ移動した場合だけ戻す。開始直前の微小な時刻差は許容する。
   const data = metadata.get(currentId);
-  if (!(data?.startSeconds > 0) || time >= rangeFor(currentId).start - 1 || player.getVideoData()?.video_id !== currentId) return false;
-  player.loadVideoById(youtubeVideoOptions(currentId, data));
+  if (!(data?.startSeconds > 0) || time >= rangeFor(currentId).start - 1 || player.getVideoData()?.video_id !== youtubeIdFor(currentId)) return false;
+  requestPlayback(youtubeVideoOptions(currentId, data), true);
   return true;
 }
 function notice(message, retry = false) {
@@ -603,7 +617,7 @@ function notice(message, retry = false) {
   $('retry-player').hidden = !retry;
 }
 function selectVideo(id) {
-  if (!isVideoId(id)) return;
+  if (!isEntryId(id)) return;
   pendingSharedVideoId = null;
   currentId = id;
   lastRecordedId = null;
@@ -620,7 +634,8 @@ function selectVideo(id) {
   setStatus('動画を読み込み中…');
   updateCurrent();
   if (panelId) closePanel();
-  if (playerReady) player.loadVideoById(youtubeVideoOptions(id, metadata.get(id)));
+  if (!youtubeIdFor(id)) { notice('楽曲情報を取得できません。「選ぶ」から一覧を再読み込みしてください。', true); return; }
+  if (playerReady) requestPlayback(youtubeVideoOptions(id, metadata.get(id)), true);
   else {
     // APIの準備が終わった際に、最後に選択された動画を再生する。
     queuedAutoplay = true;
@@ -642,37 +657,36 @@ $('share-current').addEventListener('click', () => {
   if (url) window.open(url, '_blank', 'noopener,noreferrer');
 });
 $('play-toggle').addEventListener('click', () => {
-  if (!playerReady) return;
+  if (!playerReady || !youtubeIdFor(currentId)) return;
   if (player.getPlayerState() === 1) player.pauseVideo();
   else if (clipEnded || player.getPlayerState() === 0) {
     clipEnded = false;
-    player.loadVideoById(youtubeVideoOptions(currentId, metadata.get(currentId)));
+    requestPlayback(youtubeVideoOptions(currentId, metadata.get(currentId)), true);
   } else player.playVideo();
 });
 $('seek').addEventListener('input', () => {
+  if (!playerReady || !youtubeIdFor(currentId)) return;
   seeking = true;
   $('current-time').textContent = formatTime(Number($('seek').value) / 100 * rangeFor(currentId).duration);
 });
 $('seek').addEventListener('change', () => {
-  if (playerReady) {
+  if (playerReady && youtubeIdFor(currentId)) {
     const target = seekTimeForPercent(metadata.get(currentId), Number($('seek').value), player.getDuration());
     const options = youtubeVideoOptions(currentId, metadata.get(currentId));
-    if (options.endSeconds !== undefined) {
-      if (target >= options.endSeconds) {
-        // 同じ開始・終了秒を渡さず、終端を選んだ時は終了状態にする。
-        const range = rangeFor(currentId);
-        player.cueVideoById({ ...options, startSeconds: range.end - Math.min(0.01, range.duration / 2) });
-        finishClip();
-      } else {
-        const playing = player.getPlayerState() === 1;
-        clipEnded = false;
-        const selection = { ...options, startSeconds: target };
-        // seekToはendSecondsを解除するため、終了位置も合わせて指定する。
-        if (playing) player.loadVideoById(selection);
-        else player.cueVideoById(selection);
-      }
+    const range = rangeFor(currentId);
+    if (range.duration > 0 && target >= range.end) {
+      // 動画終端も直前へcueして終了扱いにし、ENDEDだけを待つpendingを残さない。
+      requestPlayback({ ...options, startSeconds: range.end - Math.min(0.01, range.duration / 2) });
+      finishClip();
+    } else if (options.endSeconds !== undefined) {
+      const playing = player.getPlayerState() === 1;
+      clipEnded = false;
+      const selection = { ...options, startSeconds: target };
+      // seekToはendSecondsを解除するため、終了位置も合わせて指定する。
+      requestPlayback(selection, playing);
     } else {
       clipEnded = false;
+      playbackSession.begin(currentId, options.videoId, target, player.getCurrentTime());
       player.seekTo(target, true);
     }
   }
@@ -682,7 +696,7 @@ $('seek').addEventListener('blur', () => { seeking = false; });
 $('retry-player').addEventListener('click', () => location.reload());
 $('replay').addEventListener('click', () => {
   clipEnded = false;
-  if (playerReady) player.loadVideoById(youtubeVideoOptions(currentId, metadata.get(currentId)));
+  if (playerReady) requestPlayback(youtubeVideoOptions(currentId, metadata.get(currentId)), true);
   else selectVideo(currentId);
   closePanel();
 });
@@ -702,7 +716,7 @@ updateCurrent();
 let playerTimeout;
 let playerScriptRequested = false;
 function preparePlayer() {
-  if (!isVideoId(currentId) || player || playerTimeout) return;
+  if (!youtubeIdFor(currentId) || player || playerTimeout) return;
   setStatus('プレーヤーを準備中…');
   $('youtube-player').src = iframeUrl(currentId);
   playerTimeout = setTimeout(() => {
@@ -720,23 +734,26 @@ function onPlayerReady(event) {
   player = event.target;
   playerReady = true;
   clearTimeout(playerTimeout);
-  if (queuedAutoplay) { queuedAutoplay = false; player.loadVideoById(youtubeVideoOptions(currentId, metadata.get(currentId))); }
-  else player.cueVideoById(youtubeVideoOptions(currentId, metadata.get(currentId)));
+  const autoplay = queuedAutoplay;
+  queuedAutoplay = false;
+  requestPlayback(youtubeVideoOptions(currentId, metadata.get(currentId)), autoplay);
   if (libraryDialog.open) player.pauseVideo();
-  $('play-toggle').disabled = false; $('mute-toggle').disabled = false;
+  $('play-toggle').disabled = !youtubeIdFor(currentId); $('mute-toggle').disabled = false;
   applyVideoVolume();
   if (!playerFailed) { $('player-notice').hidden = true; setStatus(''); }
 }
 function onPlayerStateChange(event) {
   const state = event.data;
-  if (state === 0) clipEnded = true;
-  if (state === 1) clipEnded = false;
-  if (state === 2 && clipEnded && player.getCurrentTime() < rangeFor(currentId).end - 0.1) clipEnded = false;
   // 読み込み完了が画面を開いた後になった場合も、裏で再生させない。
   if (libraryDialog.open && (state === 1 || state === 3)) {
     event.target.pauseVideo();
     return;
   }
+  if (!playbackSession.accept(currentId, event.target.getVideoData()?.video_id, state, event.target.getCurrentTime(), { native: true })) return;
+  if (state === 0 && player.getCurrentTime() < Math.min(rangeFor(currentId).end, player.getDuration() || Infinity) - 1) return;
+  if (state === 0) clipEnded = true;
+  if (state === 1) clipEnded = false;
+  if (state === 2 && clipEnded && player.getCurrentTime() < rangeFor(currentId).end - 0.1) clipEnded = false;
   const finished = clipEnded || state === 0;
   setIcon($('play-toggle'), state === 1 ? 'pause' : finished ? 'replay' : 'play');
   $('play-toggle').setAttribute('aria-label', state === 1 ? '一時停止' : finished ? 'もう一度再生' : '再生');
@@ -749,7 +766,7 @@ function onPlayerStateChange(event) {
     // 開始はcue/loadで指定済み。キーフレームの時刻差で同じ動画を再ロードしない。
     $('player-notice').hidden = true;
     const playingId = player.getVideoData()?.video_id;
-    if (playingId === currentId && lastRecordedId !== currentId) {
+    if (playingId === youtubeIdFor(currentId) && lastRecordedId !== currentId) {
       lastRecordedId = currentId;
       history = [currentId, ...history.filter(id => id !== currentId)].slice(0, 30);
       save('hist_ids', history);
@@ -758,7 +775,7 @@ function onPlayerStateChange(event) {
   }
 }
 function createPlayer() {
-  if (!isVideoId(currentId) || player || !window.YT?.Player) return;
+  if (!youtubeIdFor(currentId) || player || !window.YT?.Player) return;
   player = new window.YT.Player('youtube-player', {
     playerVars: { controls: 1, disablekb: metadata.get(currentId)?.endSeconds ? 1 : 0 },
     events: {
@@ -782,6 +799,7 @@ if (currentId) {
 }
 setInterval(() => {
   if (!playerReady) return;
+  if (!playbackSession.accept(currentId, player.getVideoData()?.video_id, player.getPlayerState(), player.getCurrentTime())) return;
   const position = getClipPosition(metadata.get(currentId), player.getCurrentTime(), player.getDuration());
   // 停止中の標準シークは状態変更通知が来ない場合もある。
   if (clipEnded && player.getPlayerState() === 2 && player.getCurrentTime() < position.end - 0.1) onPlayerStateChange({ data: 2, target: player });

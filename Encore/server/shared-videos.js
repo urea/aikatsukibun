@@ -1,8 +1,8 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { isIP } from 'node:net';
 import { validateVideoInput, withVideoAuthor } from '../add-video.js';
 import { readYouTubeAuthor } from '../youtube-author.js';
-import { isVideoId } from '../model.js';
+import { isEntryId, videoIdFor } from '../model.js';
 
 export const MAX_JSON_BYTES = 16 * 1024;
 const databaseMessage = '共有データを利用できません。時間をおいて、もう一度お試しください。';
@@ -13,8 +13,8 @@ function json(status, body, headers = {}) {
 }
 
 function duplicate() {
-  const message = 'この動画は登録済みです。選曲一覧から選んでください。';
-  return json(409, { error: message, errors: { url: message } });
+  const message = 'この動画の同じ楽曲位置は登録済みです。選曲一覧から選んでください。';
+  return json(409, { error: message, errors: { url: message }, code: 'duplicate_clip' });
 }
 
 function conflict() {
@@ -105,33 +105,47 @@ export function createSharedVideosHandler({ store, fetchImpl = globalThis.fetch,
     const { video, errors } = validateVideoInput(parsed.input);
     if (!video) return json(400, { error: '未入力・入力内容を確認してください。', errors });
     if (editing) {
-      if (!isVideoId(parsed.input.id) || parsed.input.id !== video.id) return json(400, { error: '編集する動画のYouTube URLは変更できません。', errors: { url: '編集する動画のYouTube URLは変更できません。' } });
+      if (!isEntryId(parsed.input.id)) return json(400, { error: '編集する動画のYouTube URLは変更できません。', errors: { url: '編集する動画のYouTube URLは変更できません。' } });
       if (typeof parsed.input.revision !== 'string' || !/^[0-9a-f]{32}$/.test(parsed.input.revision)) return json(400, { error: '編集情報を確認できませんでした。一覧を再読み込みしてください。' });
       try {
-        const existing = await store.getVideo(video.id);
+        const existing = await store.getVideo(parsed.input.id);
         if (!existing) return json(404, { error: '編集する動画が見つかりません。一覧を再読み込みしてください。' });
+        const sourceId = videoIdFor(existing.id, existing);
+        if (sourceId !== video.id) return json(400, { error: '編集する動画のYouTube URLは変更できません。', errors: { url: '編集する動画のYouTube URLは変更できません。' } });
         if (existing.revision !== parsed.input.revision) return conflict();
+        const identity = { ...video, id: existing.id };
+        if (existing.videoId || existing.id !== sourceId) identity.videoId = sourceId;
+        if (await store.hasClip(identity, existing.id)) return duplicate();
         const hash = clientHash(request, getClientAddress, rateLimitSalt);
         const rate = await store.consumeRateLimit(hash, rateLimit, rateWindowSeconds);
         if (!rate.allowed) return json(429, { error: '短時間に編集が集中しています。少し待ってから再度お試しください。' }, { 'Retry-After': String(Math.max(1, Math.ceil(rate.retryAfter || rateWindowSeconds))) });
-        const savedVideo = withVideoAuthor(video, existing);
+        const savedVideo = withVideoAuthor(identity, existing);
         const updated = await store.updateVideo(savedVideo, parsed.input.revision);
         return updated ? json(200, { video: updated }) : conflict();
-      } catch { return json(503, { error: databaseMessage }); }
+      } catch (error) { return error?.code === 'duplicate_clip' ? duplicate() : json(503, { error: databaseMessage }); }
     }
-    if (reserved.has(video.id)) return duplicate();
+    let sourceExists;
     try {
-      if (await store.hasVideo(video.id)) return duplicate();
+      sourceExists = await store.hasVideo(video.id);
+      if (reserved.has(video.id) && !sourceExists) return duplicate();
+      if (await store.hasClip(video)) return duplicate();
       const hash = clientHash(request, getClientAddress, rateLimitSalt);
       const rate = await store.consumeRateLimit(hash, rateLimit, rateWindowSeconds);
       if (!rate.allowed) return json(429, { error: '短時間に追加が集中しています。少し待ってから再度お試しください。' }, { 'Retry-After': String(Math.max(1, Math.ceil(rate.retryAfter || rateWindowSeconds))) });
     } catch { return json(503, { error: databaseMessage }); }
     let savedVideo;
-    try { savedVideo = withVideoAuthor(video, await fetchAuthor(video.id, fetchImpl, timeoutMs)); }
+    try { savedVideo = withVideoAuthor({ ...video, videoId: video.id }, await fetchAuthor(video.id, fetchImpl, timeoutMs)); }
     catch { return json(502, { error: upstreamMessage }); }
     try {
-      const inserted = await store.insertVideo(savedVideo);
-      return inserted ? json(201, { video: inserted }) : duplicate();
+      let candidate = sourceExists ? { ...savedVideo, id: `clip_${randomBytes(16).toString('hex')}` } : savedVideo;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const inserted = await store.insertVideo(candidate);
+        if (inserted) return json(201, { video: inserted });
+        if (await store.hasClip(savedVideo)) return duplicate();
+        // 別区間の同時登録で旧IDを先に使われても、曲ごとのIDで保存し直す。
+        candidate = { ...savedVideo, id: `clip_${randomBytes(16).toString('hex')}` };
+      }
+      return json(503, { error: databaseMessage });
     } catch { return json(503, { error: databaseMessage }); }
   };
 }

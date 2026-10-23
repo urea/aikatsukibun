@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { readSharedVideoId, buildVideoShareUrl, buildVideoShareText, buildXShareUrl } from '../../Encore/share.js';
 
 const id = 'tJAcDG-eS-Q';
+const firstId = `clip_${'a'.repeat(32)}`;
+const secondId = `clip_${'b'.repeat(32)}`;
 const baseUrl = 'https://aikatsu-encore-kibun.vercel.app/';
 const video = { id, title: 'MY STARWAY', difficulty: 'むずかしい' };
 
@@ -63,4 +65,27 @@ test('曲名・ID・共有元URLが使えない場合はXリンクを生成し�
   for (const value of [undefined, null, {}, { ...video, title: '' }, { ...video, id: 'invalid' }, { ...video, id: `${id}\n` }]) assert.equal(buildXShareUrl(baseUrl, value), null);
   assert.equal(buildXShareUrl('https://user:password@example.test/', video), null);
   assert.equal(buildXShareUrl('javascript:alert(1)', video), null);
+});
+
+test('同じ元動画の別々の曲を曲IDの共有URLで読み込み、Xリンクにも保持する', () => {
+  const urls = [];
+  for (const entryId of [firstId, secondId]) {
+    const shared = buildVideoShareUrl(`${baseUrl}?v=${id}&tracking=1#settings`, entryId);
+    assert.equal(shared, `${baseUrl}?v=${entryId}`);
+    assert.equal(readSharedVideoId(shared), entryId);
+    assert.equal(readSharedVideoId(new URL(shared)), entryId);
+    const intent = new URL(buildXShareUrl(baseUrl, { ...video, id: entryId, videoId: id }));
+    assert.equal(intent.searchParams.get('url'), shared);
+    assert.equal(intent.searchParams.get('text'), buildVideoShareText(video));
+    urls.push(shared);
+  }
+  assert.notEqual(urls[0], urls[1]);
+});
+
+test('clip共有でも不正hex・余分な文字・空白や改行の曲IDを拒否する', () => {
+  for (const entryId of [`clip_${'a'.repeat(31)}`, `clip_${'a'.repeat(33)}`, `clip_${'A'.repeat(32)}`, `clip_${'g'.repeat(32)}`, `${firstId}\n`, `${firstId} `, ` ${firstId}`]) {
+    assert.equal(readSharedVideoId(`${baseUrl}?v=${encodeURIComponent(entryId)}`), null);
+    assert.equal(buildVideoShareUrl(baseUrl, entryId), null);
+    assert.equal(buildXShareUrl(baseUrl, { ...video, id: entryId }), null);
+  }
 });

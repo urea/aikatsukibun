@@ -8,11 +8,13 @@ import { createNeonStore } from '../../Encore/server/neon-store.js';
 const endpoint = 'https://encore.example/api/videos';
 const input = { url: 'https://youtu.be/fYibOFCMpnE', title: 'テスト用の曲', start: '0:00', end: '1:36', mode: 'じゆうにアイカツ！モード', difficulty: '-', idol: 'マイキャラ', result: 'フルコンボ' };
 const apiVideo = { id: 'fYibOFCMpnE', title: input.title, startSeconds: 0, endSeconds: 96, mode: input.mode, difficulty: '-', idol: 'マイキャラ', result: 'フルコンボ', author: '実際の投稿者', authorHandle: '@Actual' };
+const postedVideo = { ...apiVideo, videoId: apiVideo.id };
 const originHeaders = { 'Content-Type': 'application/json', Origin: 'https://encore.example', Host: 'encore.example', 'x-vercel-forwarded-for': '203.0.113.4' };
 const post = (body = input, headers = {}) => new Request(endpoint, { method: 'POST', headers: { ...originHeaders, ...headers }, body: JSON.stringify(body) });
-const revisionFor = video => createHash('md5').update(JSON.stringify(video)).digest('hex');
+const revisionFor = video => createHash('md5').update(JSON.stringify(video, Object.keys(video).sort())).digest('hex');
 const patch = (body, headers = {}) => new Request(endpoint, { method: 'PATCH', headers: { ...originHeaders, ...headers }, body: JSON.stringify(body) });
 const editInput = (video = apiVideo, changes = {}) => ({ ...input, id: video.id, revision: revisionFor(video), ...changes });
+const clipKey = video => JSON.stringify([video.videoId || video.id, video.startSeconds ?? 0, video.endSeconds ?? -1]);
 
 function memoryStore() {
   const videos = new Map();
@@ -20,13 +22,14 @@ function memoryStore() {
   return {
     videos, rates, hashes: [],
     async listVideos() { return [...videos.values()]; },
-    async hasVideo(id) { return videos.has(id); },
+    async hasVideo(id) { return [...videos.values()].some(video => (video.videoId || video.id) === id); },
+    async hasClip(video, excludeId = null) { return [...videos.values()].some(existing => existing.id !== excludeId && clipKey(existing) === clipKey(video)); },
     async getVideo(id) {
       const video = videos.get(id);
       return video ? { ...structuredClone(video), revision: revisionFor(video) } : null;
     },
     async insertVideo(video) {
-      if (videos.has(video.id)) return null;
+      if (videos.has(video.id) || [...videos.values()].some(existing => clipKey(existing) === clipKey(video))) return null;
       videos.set(video.id, structuredClone(video));
       return structuredClone(video);
     },
@@ -35,6 +38,9 @@ function memoryStore() {
       if (!existing || revisionFor(existing) !== revision) return null;
       const data = { ...existing, ...structuredClone(video) };
       delete data.revision;
+      if ([...videos.values()].some(item => item.id !== data.id && clipKey(item) === clipKey(data))) {
+        const error = new Error('duplicate'); error.code = 'duplicate_clip'; throw error;
+      }
       videos.set(video.id, data);
       return { ...structuredClone(data), revision: revisionFor(data) };
     },
@@ -70,8 +76,8 @@ test('POSTはサーバー取得の投稿者だけを保存し、201で正規化�
   const { handler, store, requests } = fixture();
   const response = await handler(post({ ...input, author: '改ざん者', authorHandle: '@Fake', startSeconds: 999, endSeconds: 1000 }));
   assert.equal(response.status, 201);
-  assert.deepEqual(await response.json(), { video: apiVideo });
-  assert.deepEqual(store.videos.get(apiVideo.id), apiVideo);
+  assert.deepEqual(await response.json(), { video: postedVideo });
+  assert.deepEqual(store.videos.get(apiVideo.id), postedVideo);
   assert.equal(requests.length, 1);
   assert.equal(requests[0].url, 'https://noembed.com/embed?url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3DfYibOFCMpnE');
   assert.ok(requests[0].init.signal instanceof AbortSignal);
@@ -81,7 +87,7 @@ test('POSTはサーバー取得の投稿者だけを保存し、201で正規化�
 
 test('不明モード「-」でPOST登録した動画を別の一覧取得でもそのまま保持する', async () => {
   const { handler, store } = fixture();
-  const expected = { ...apiVideo, mode: '-' };
+  const expected = { ...postedVideo, mode: '-' };
   const added = await handler(post({ ...input, mode: '-' }));
   assert.equal(added.status, 201);
   assert.deepEqual(await added.json(), { video: expected });
@@ -111,7 +117,7 @@ test('既存動画を不明モード「-」へPATCH編集し、投稿者と区�
 test('POSTは全体再生と片方省略を明示nullで保存しGETでも保持する', async () => {
   for (const [times, startSeconds, endSeconds] of [[{ start: '', end: '' }, null, null], [{ start: undefined, end: '1:36' }, null, 96], [{ start: '0:05', end: undefined }, 5, null]]) {
     const { handler, store, requests } = fixture();
-    const expected = { ...apiVideo, startSeconds, endSeconds };
+    const expected = { ...postedVideo, startSeconds, endSeconds };
     const added = await handler(post({ ...input, ...times }));
     assert.equal(added.status, 201);
     assert.deepEqual(await added.json(), { video: expected });
@@ -168,7 +174,7 @@ test('同一動画の並行投稿は1件だけ保存して201と409を返す', a
   const responses = await Promise.all([handler(post()), handler(post())]);
   assert.deepEqual(responses.map(response => response.status).sort(), [201, 409]);
   assert.equal(store.videos.size, 1);
-  assert.deepEqual(store.videos.get(apiVideo.id), apiVideo);
+  assert.deepEqual(store.videos.get(apiVideo.id), postedVideo);
 });
 
 test('投稿者欠落・非公開動画・非JSONレスポンス・通信失敗は502で保存しない', async () => {
@@ -223,7 +229,7 @@ test('PATCHは保存済みの投稿者URLを保持し、入力からの差し替
 });
 
 test('DB取得・重複確認・レート制限・保存の障害は詳細を漏らさず503にする', async () => {
-  for (const method of ['listVideos', 'hasVideo', 'consumeRateLimit', 'insertVideo']) {
+  for (const method of ['listVideos', 'hasVideo', 'hasClip', 'consumeRateLimit', 'insertVideo']) {
     const store = memoryStore();
     store[method] = async () => { throw new Error('SECRET postgresql://username:password@internal.example'); };
     const { handler, requests } = fixture({ store });
@@ -299,10 +305,11 @@ test('Neon storeは専用schemaと一致し、パラメータ化したINSERTで�
   const sql = { async query(text, values) { queries.push({ text, values }); return /RETURNING video_id/.test(text) ? [{ video_id: apiVideo.id, data: apiVideo }] : []; } };
   const store = createNeonStore(undefined, { sql });
   assert.deepEqual(await store.insertVideo(apiVideo), apiVideo);
-  assert.match(queries[0].text, /ON CONFLICT \(video_id\) DO NOTHING/);
+  assert.match(queries[0].text, /ON CONFLICT DO NOTHING/);
   assert.deepEqual(queries[0].values, [apiVideo.id, JSON.stringify(apiVideo)]);
   assert.equal(queries[0].text.includes(apiVideo.author), false);
   assert.equal(await store.hasVideo(apiVideo.id), false);
+  assert.equal(await store.hasClip(apiVideo), false);
   assert.deepEqual(await store.listVideos(), []);
   assert.deepEqual(await store.consumeRateLimit('a'.repeat(64), 10, 60), { allowed: false, retryAfter: 60 });
   const rateQuery = queries.at(-1);
@@ -423,15 +430,15 @@ test('PATCHにも同じOrigin・JSON・サイズ制限を適用しDBアクセス
 test('PATCHはPOSTと共通のIP頻度制限を使い429では更新しない', async () => {
   const { handler, store } = fixture({ rateLimit: 1 });
   assert.equal((await handler(post())).status, 201);
-  const response = await handler(patch(editInput(apiVideo, { title: '制限される更新' })));
+  const response = await handler(patch(editInput(postedVideo, { title: '制限される更新' })));
   assert.equal(response.status, 429);
   assert.equal(response.headers.get('retry-after'), '60');
   assert.equal(store.hashes[0], store.hashes[1]);
-  assert.deepEqual(store.videos.get(apiVideo.id), apiVideo);
+  assert.deepEqual(store.videos.get(apiVideo.id), postedVideo);
 });
 
 test('PATCHのDB取得・頻度制限・更新失敗は秘密を漏らさず503にする', async () => {
-  for (const method of ['getVideo', 'consumeRateLimit', 'updateVideo']) {
+  for (const method of ['getVideo', 'hasClip', 'consumeRateLimit', 'updateVideo']) {
     const store = memoryStore();
     store.videos.set(apiVideo.id, apiVideo);
     store[method] = async () => { throw new Error('SECRET postgresql://username:password@internal.example'); };
@@ -488,4 +495,146 @@ test('Neon storeは明示nullの境界を正規化して保持しUPDATE JSONで�
     assert.equal(await store.getVideo(apiVideo.id), null);
     assert.deepEqual(await store.listVideos(), []);
   }
+});
+
+test('同じ元動画の11区間を独立登録し、最初の旧IDと10個のclip IDをGETで保持する', async () => {
+  const videoId = 'XTAE6nTGf3w';
+  const { handler, store, requests } = fixture({ rateLimit: 20 });
+  const saved = [];
+  for (let index = 0; index < 11; index++) {
+    const response = await handler(post({ ...input, url: `https://youtu.be/${videoId}`, title: `曲${index + 1}`, start: `${index}:00`, end: `${index + 1}:00`, mode: '-', difficulty: 'とてもむずかしい', result: 'クリア', videoId: 'tJAcDG-eS-Q' }));
+    assert.equal(response.status, 201);
+    const { video } = await response.json();
+    assert.equal(video.videoId, videoId);
+    assert.equal(video.title, `曲${index + 1}`);
+    assert.equal(video.startSeconds, index * 60);
+    assert.equal(video.endSeconds, (index + 1) * 60);
+    assert.equal(video.mode, '-');
+    assert.equal(video.difficulty, 'とてもむずかしい');
+    assert.equal(video.result, 'クリア');
+    if (index === 0) assert.equal(video.id, videoId);
+    else assert.match(video.id, /^clip_[0-9a-f]{32}$/);
+    saved.push(video);
+  }
+  assert.equal(new Set(saved.map(video => video.id)).size, 11);
+  assert.equal(store.videos.size, 11);
+  const listed = await fixture({ store }).handler(new Request(endpoint));
+  assert.deepEqual((await listed.json()).videos, saved);
+  assert.ok(requests.every(request => request.url.includes(videoId)));
+});
+
+test('同じ動画の先頭nullと0は同区間として拒否し、異なる終端・開始は許可する', async () => {
+  const { handler, store, requests } = fixture();
+  assert.equal((await handler(post({ ...input, start: '', end: '' }))).status, 201);
+  const duplicate = await handler(post({ ...input, start: '0:00', end: '' }));
+  assert.equal(duplicate.status, 409);
+  assert.equal((await duplicate.json()).code, 'duplicate_clip');
+  assert.equal((await handler(post({ ...input, start: '', end: '1:36' }))).status, 201);
+  assert.equal((await handler(post({ ...input, start: '1:36', end: '' }))).status, 201);
+  assert.equal(store.videos.size, 3);
+  assert.equal(requests.length, 3);
+});
+
+test('予約動画は未移行時だけ保護し、DBに曲があれば別区間を登録できる', async () => {
+  const { handler, store } = fixture({ reservedIds: [apiVideo.id] });
+  const different = { ...input, start: '1:36', end: '3:00' };
+  assert.equal((await handler(post(different))).status, 409);
+  store.videos.set(apiVideo.id, apiVideo);
+  const added = await handler(post(different));
+  assert.equal(added.status, 201);
+  const { video } = await added.json();
+  assert.match(video.id, /^clip_[0-9a-f]{32}$/);
+  assert.equal(video.videoId, apiVideo.id);
+  store.videos.delete(apiVideo.id);
+  assert.equal((await handler(post({ ...input, start: '3:00', end: '4:00' }))).status, 201);
+  assert.equal((await handler(post(different))).status, 409);
+});
+
+test('最初の別区間を並行登録して旧IDが競合しても両区間を失わない', async () => {
+  const store = memoryStore();
+  store.hasVideo = async () => false;
+  const originalInsert = store.insertVideo.bind(store);
+  let inserts = 0;
+  store.insertVideo = async video => { inserts++; return originalInsert(video); };
+  const { handler } = fixture({ store });
+  const responses = await Promise.all([handler(post()), handler(post({ ...input, start: '1:36', end: '3:00' }))]);
+  assert.deepEqual(responses.map(response => response.status), [201, 201]);
+  assert.equal(inserts, 3);
+  const videos = [...store.videos.values()];
+  assert.equal(videos.length, 2);
+  assert.equal(videos.filter(video => video.id === apiVideo.id).length, 1);
+  assert.equal(videos.filter(video => /^clip_[0-9a-f]{32}$/.test(video.id)).length, 1);
+  assert.ok(videos.every(video => video.videoId === apiVideo.id));
+});
+
+test('clipの時刻編集はIDと元動画・作者を維持し、同区間への変更とURL差し替えを拒否する', async () => {
+  const clip = { ...apiVideo, id: `clip_${'a'.repeat(32)}`, videoId: apiVideo.id, startSeconds: 96, endSeconds: 180 };
+  const { handler, store } = fixture();
+  store.videos.set(apiVideo.id, apiVideo);
+  store.videos.set(clip.id, clip);
+  const changed = await handler(patch(editInput(clip, { start: '3:00', end: '4:30', author: '改ざん者', videoId: 'tJAcDG-eS-Q' })));
+  assert.equal(changed.status, 200);
+  const { video } = await changed.json();
+  const expected = { ...clip, startSeconds: 180, endSeconds: 270 };
+  assert.deepEqual(video, { ...expected, revision: revisionFor(expected) });
+  assert.deepEqual(store.videos.get(apiVideo.id), apiVideo);
+  const duplicate = await handler(patch(editInput(expected, { start: '0:00', end: '1:36' })));
+  assert.equal(duplicate.status, 409);
+  assert.equal((await duplicate.json()).code, 'duplicate_clip');
+  const changedUrl = await handler(patch(editInput(expected, { url: 'https://youtu.be/tJAcDG-eS-Q' })));
+  assert.equal(changedUrl.status, 400);
+  const stale = await handler(patch(editInput(clip)));
+  assert.equal(stale.status, 409);
+  assert.equal((await stale.json()).code, 'conflict');
+  assert.deepEqual(store.videos.get(clip.id), expected);
+});
+
+test('PATCHの事前確認後に区間が競合してもunique違反を409へ変換する', async () => {
+  const store = memoryStore();
+  const clip = { ...apiVideo, id: `clip_${'b'.repeat(32)}`, videoId: apiVideo.id, startSeconds: 96, endSeconds: 180 };
+  store.videos.set(apiVideo.id, apiVideo);
+  store.videos.set(clip.id, clip);
+  store.hasClip = async () => false;
+  const { handler } = fixture({ store });
+  const response = await handler(patch(editInput(clip, { start: '0:00', end: '1:36' })));
+  assert.equal(response.status, 409);
+  assert.equal((await response.json()).code, 'duplicate_clip');
+  assert.deepEqual(store.videos.get(clip.id), clip);
+});
+
+test('Neon storeはclip IDと元動画を返し、区間検索はnull/0を同一視し編集対象を除外する', async () => {
+  const clip = { ...apiVideo, id: `clip_${'c'.repeat(32)}`, videoId: apiVideo.id };
+  const queries = [];
+  const sql = { async query(text, values) { queries.push({ text, values }); return [{ video_id: clip.id, data: clip }]; } };
+  const store = createNeonStore(undefined, { sql });
+  assert.deepEqual(await store.getVideo(clip.id), clip);
+  assert.deepEqual(await store.listVideos(), [clip]);
+  assert.equal(await store.hasVideo(apiVideo.id), true);
+  assert.match(queries.at(-1).text, /COALESCE\(data->>'videoId', video_id\) = \$1/);
+  assert.equal(await store.hasClip({ ...clip, startSeconds: null, endSeconds: null }, clip.id), true);
+  assert.deepEqual(queries.at(-1).values, [apiVideo.id, 0, -1, clip.id]);
+  assert.match(queries.at(-1).text, /video_id <> \$4/);
+  for (const data of [{ ...clip, videoId: undefined }, { ...clip, videoId: 'invalid' }, { ...apiVideo, videoId: 'tJAcDG-eS-Q' }]) {
+    const invalidStore = createNeonStore(undefined, { sql: { async query() { return [{ video_id: data.id, data }]; } } });
+    assert.equal(await invalidStore.getVideo(data.id), null);
+  }
+  const duplicateStore = createNeonStore(undefined, { sql: { async query() { const error = new Error('SECRET database diagnostics'); error.code = '23505'; throw error; } } });
+  await assert.rejects(duplicateStore.updateVideo(clip, 'a'.repeat(32)), error => error.code === 'duplicate_clip' && !error.message.includes('SECRET'));
+});
+
+test('複数区間用schemaと冪等移行は旧ID/JSON/created_atを書き換えず区間uniqueを追加する', () => {
+  const schema = readFileSync(new URL('../../Encore/server/schema.sql', import.meta.url), 'utf8');
+  const migration = readFileSync(new URL('../../Encore/server/migrations/20261023_multiple_video_clips.sql', import.meta.url), 'utf8');
+  for (const sql of [schema, migration]) {
+    assert.match(sql, /clip_\[0-9a-f\]\{32\}/);
+    assert.match(sql, /data \? 'videoId'/);
+    assert.match(sql, /CREATE UNIQUE INDEX IF NOT EXISTS encore_shared_videos_clip_identity_idx/);
+    assert.match(sql, /COALESCE\(data->>'videoId', video_id\)/);
+    assert.match(sql, /COALESCE\(\(data->>'startSeconds'\)::numeric, 0\)/);
+    assert.match(sql, /COALESCE\(\(data->>'endSeconds'\)::numeric, -1\)/);
+  }
+  assert.match(migration, /BEGIN;/);
+  assert.match(migration, /COMMIT;/);
+  assert.match(migration, /DROP CONSTRAINT IF EXISTS encore_shared_videos_video_id_check/);
+  assert.equal(/\b(?:UPDATE|INSERT|DELETE|TRUNCATE)\b/i.test(migration), false);
 });

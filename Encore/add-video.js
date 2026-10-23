@@ -1,4 +1,4 @@
-import { extractVideoId, normalizeVideoMetadata } from './model.js';
+import { extractVideoId, normalizeVideoMetadata, videoIdFor } from './model.js';
 
 export const VIDEO_MODES = Object.freeze(['-', 'テレビアニメアイカツ！モード', 'アイカツ！オールスターモード', 'じゆうにアイカツ！モード', 'きかんげんていライブ！モード']);
 export const VIDEO_DIFFICULTIES = Object.freeze(['-', 'かんたん', 'ふつう', 'むずかしい', 'すごくむずかしい', 'とてもむずかしい']);
@@ -11,13 +11,14 @@ export const VIDEO_RESULTS = Object.freeze(['クリア', 'フルコンボ', 'オ
 export const VIDEO_INPUT_LIMITS = Object.freeze({ url: 2048, title: 200, mode: 100, difficulty: 40, idol: 100 });
 
 export function videoToInput(video) {
+  const videoId = videoIdFor(video.id, video);
   const time = seconds => {
     if (!Number.isSafeInteger(seconds) || seconds < 0) return '';
     const parts = [Math.floor(seconds / 60) % 60, seconds % 60].map(value => String(value).padStart(2, '0'));
     return seconds >= 3600 ? `${Math.floor(seconds / 3600)}:${parts.join(':')}` : `${Math.floor(seconds / 60)}:${parts[1]}`;
   };
   return {
-    url: `https://www.youtube.com/watch?v=${video.id}`,
+    url: videoId ? `https://www.youtube.com/watch?v=${videoId}` : '',
     ...Object.fromEntries(['title', 'mode', 'difficulty', 'idol', 'result'].map(field => [field, video[field] || ''])),
     start: time(video.startSeconds), end: time(video.endSeconds),
   };

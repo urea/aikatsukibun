@@ -4,8 +4,15 @@ import { normalizeAuthorUrl } from './youtube-author.js';
 export const DEFAULT_VIDEO_ID = null;
 export const SETTINGS_KEY = 'aikatsu_settings_v2';
 export const DEFAULT_SETTINGS = Object.freeze({ sound: true, soundVolume: 35, videoVolume: 70, muted: false, vibration: true, effects: true, appearance: 'dark' });
-export const isVideoId = value => typeof value === 'string' && /^[\w-]{11}$/.test(value);
-export const uniqueIds = values => [...new Set(Array.isArray(values) ? values.filter(isVideoId) : [])];
+export const isVideoId = value => typeof value === 'string' && value.length === 11 && /^[\w-]{11}$/.test(value);
+export const isEntryId = value => isVideoId(value) || (typeof value === 'string' && value.length === 37 && /^clip_[0-9a-f]{32}$/.test(value));
+export const uniqueIds = values => [...new Set(Array.isArray(values) ? values.filter(isEntryId) : [])];
+
+export function videoIdFor(id, data) {
+  if (!isEntryId(id)) return null;
+  if (isVideoId(id)) return data?.videoId === undefined || data.videoId === id ? id : null;
+  return isVideoId(data?.videoId) ? data.videoId : null;
+}
 
 export function extractVideoId(input) {
   if (typeof input !== 'string') return null;
@@ -33,7 +40,7 @@ export function readSaved(storage, key, fallback) {
 export function normalizeCustomVideos(value) {
   const seen = new Set();
   if (!Array.isArray(value)) return [];
-  return value.filter(item => item && isVideoId(item.id) && !seen.has(item.id) && seen.add(item.id)).map(item => ({
+  return value.filter(item => item && videoIdFor(item.id, item) && !seen.has(item.id) && seen.add(item.id)).map(item => ({
     id: item.id, ...normalizeVideoMetadata(item),
     title: typeof item.title === 'string' ? item.title.slice(0, 500) : `追加した動画 (${item.id})`,
     ...(typeof item.revision === 'string' && /^[0-9a-f]{32}$/.test(item.revision) ? { revision: item.revision } : {}),
@@ -43,6 +50,7 @@ export function normalizeCustomVideos(value) {
 export function normalizeVideoMetadata(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
   const data = {};
+  if (isVideoId(value.videoId)) data.videoId = value.videoId;
   const limits = { title: 500, mode: 100, difficulty: 40, idol: 100, author: 200, authorHandle: 200 };
   for (const [key, limit] of Object.entries(limits)) {
     if (typeof value[key] === 'string') data[key] = value[key].slice(0, limit);

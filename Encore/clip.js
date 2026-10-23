@@ -1,3 +1,5 @@
+import { videoIdFor } from './model.js';
+
 function validStart(data) {
   const start = data?.startSeconds;
   if (start === null) return 0;
@@ -38,10 +40,10 @@ export function seekTimeForPercent(data, percent, videoDuration = 0) {
   return start + clamp(percent, 100) / 100 * duration;
 }
 
-export function youtubeVideoOptions(videoId, data) {
+export function youtubeVideoOptions(id, data) {
   const start = validStart(data);
   const end = validEnd(data, start);
-  const options = { videoId, startSeconds: start ?? 0 };
+  const options = { videoId: videoIdFor(id, data), startSeconds: start ?? 0 };
   if (end !== null) options.endSeconds = end;
   return options;
 }

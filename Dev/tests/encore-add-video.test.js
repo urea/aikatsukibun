@@ -29,6 +29,32 @@ test('編集用の入力は保存された区間・自由入力を復元し、�
   assert.equal(legacy.difficulty, '');
 });
 
+test('同じ元動画の複数曲を編集しても曲IDをYouTube URLに使わず、入力検証は元動画IDを返す', () => {
+  for (const [index, start, end] of [[1, '0:00', '1:36'], [2, '7:31', '9:57']]) {
+    const original = validateVideoInput({ ...input, start, end, title: `${index}曲目` }).video;
+    const entry = { ...original, id: `clip_${String(index).repeat(32)}`, videoId: original.id };
+    const restored = videoToInput(entry);
+    assert.equal(restored.url, input.url);
+    assert.equal(restored.start, start);
+    assert.equal(restored.end, end);
+    assert.deepEqual(validateVideoInput(restored).video, original);
+  }
+  assert.equal(videoToInput({ id: 'tJAcDG-eS-Q', videoId: 'tJAcDG-eS-Q' }).url, input.url);
+});
+
+test('元動画不明のclipや旧IDの食い違いから不正な編集用YouTube URLを作らない', () => {
+  const original = validateVideoInput(input).video;
+  for (const data of [
+    { ...original, id: `clip_${'a'.repeat(32)}` },
+    { ...original, id: `clip_${'a'.repeat(32)}`, videoId: 'invalid' },
+    { ...original, videoId: 'abcdefghijk' },
+  ]) {
+    const restored = videoToInput(data);
+    assert.equal(restored.url, '');
+    assert.ok(validateVideoInput(restored).errors.url);
+  }
+});
+
 test('楽曲区間と必須情報を保存形式に変換する', () => {
   const result = validateVideoInput(input);
   assert.deepEqual(result.errors, {});
