@@ -277,7 +277,7 @@ function renderLibrary() {
   $('library-count').textContent = `${matching.length}曲${query || settings.libraryExcludeOther ? ` / ${ids.length}曲` : ''}`;
   $('library-empty').hidden = matching.length > 0;
   $('library-empty').textContent = settings.libraryExcludeOther && eligible.length < ids.length
-    ? '表示できる曲がありません。「アンコール以外を除外」を外すと対象が広がります。'
+    ? '表示できる曲がありません。「アイカツアンコールだけ」のチェックを外すと対象が広がります。'
     : query ? '見つかりませんでした。別のキーワードを試してください。' : libraryTab === 'favorites' ? '星を押して、お気に入りを追加しましょう。' : libraryTab === 'history' ? '動画を再生すると、ここに履歴が残ります。' : 'アンコールの楽曲は準備中です。';
 }
 function scheduleLibraryRender() {
@@ -699,7 +699,7 @@ $('shuffle').addEventListener('click', () => {
   const id = chooseRandom(candidates, currentId, history.slice(0, 8));
   if (id) selectVideo(id);
   else toast(settings.shuffleExcludeOther
-    ? '再生できる候補がありません。設定から「アンコール以外を除外」を解除できます。'
+    ? '再生できる候補がありません。設定から「おまかせはアイカツアンコールだけ」をオフにできます。'
     : '再生できる候補がありません。「選ぶ」から動画を追加してください。');
 });
 $('share-current').addEventListener('click', () => {

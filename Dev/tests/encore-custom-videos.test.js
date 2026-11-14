@@ -19,10 +19,10 @@ test('おまかせと選曲の除外設定は保存から個別に復元し、�
   }
 });
 
-test('除外を有効にしてもアンコール・未分類・未知の分類は残す', () => {
+test('絞り込みが有効ならアイカツアンコールだけを残し、無効なら未分類も含める', () => {
   for (const category of ['encore', 'other', undefined, null, 'unknown']) {
     assert.equal(passesEncoreFilter(category, false), true);
-    assert.equal(passesEncoreFilter(category, true), category !== 'other');
+    assert.equal(passesEncoreFilter(category, true), category === 'encore');
   }
   assert.equal(passesEncoreFilter('other'), true);
 });

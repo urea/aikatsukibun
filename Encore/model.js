@@ -7,7 +7,7 @@ export const DEFAULT_SETTINGS = Object.freeze({ sound: true, soundVolume: 35, vi
 export const VIDEO_CATEGORIES = Object.freeze({ encore: 'アイカツアンコール', other: 'アイカツアンコール以外' });
 export const isVideoCategory = value => typeof value === 'string' && Object.hasOwn(VIDEO_CATEGORIES, value);
 export const categoryLabel = value => isVideoCategory(value) ? VIDEO_CATEGORIES[value] : '未分類';
-export const passesEncoreFilter = (category, excludeOther) => excludeOther !== true || category !== 'other';
+export const passesEncoreFilter = (category, enabled) => enabled !== true || category === 'encore';
 export const isVideoId = value => typeof value === 'string' && value.length === 11 && /^[\w-]{11}$/.test(value);
 export const isEntryId = value => isVideoId(value) || (typeof value === 'string' && value.length === 37 && /^clip_[0-9a-f]{32}$/.test(value));
 export const uniqueIds = values => [...new Set(Array.isArray(values) ? values.filter(isEntryId) : [])];
