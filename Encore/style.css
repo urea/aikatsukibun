@@ -229,8 +229,6 @@ body.library-open,.app-shell.library-open:fullscreen { overflow:hidden; }
   .library-toolbar { grid-template-columns:minmax(0,1fr); gap:6px; }
   .library-tabs button { padding:10px 8px; }
   .library-header-actions { gap:8px; }
-  .library-header-actions .add-button-label { display:none; }
-  .library-header-actions #open-add { width:44px; padding:10px; }
   .list-meta { padding-top:6px; }
 }
 @media(max-width:599px) {
