@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { isVideoId, isEntryId, videoIdFor, uniqueIds, normalizeCustomVideos, normalizeVideoMetadata } from '../../Encore/model.js';
+import { VIDEO_CATEGORIES, categoryLabel, isVideoId, isEntryId, videoIdFor, uniqueIds, normalizeCustomVideos, normalizeVideoMetadata } from '../../Encore/model.js';
 
 const videoId = 'fYibOFCMpnE';
 const firstId = `clip_${'a'.repeat(32)}`;
@@ -43,8 +43,21 @@ test('メタデータは有効な元YouTube IDだけを保持する', () => {
 });
 
 test('追加した楽曲情報と区間が保存データの再読み込みで失われない', () => {
-  const video = { id: 'fYibOFCMpnE', title: '追加した楽曲', startSeconds: 435, endSeconds: 531, mode: 'じゆうにアイカツ！モード', difficulty: '-', idol: 'マイキャラ', result: 'オールパーフェクト', author: '投稿者@handle' };
+  const video = { id: 'fYibOFCMpnE', title: '追加した楽曲', startSeconds: 435, endSeconds: 531, mode: 'じゆうにアイカツ！モード', difficulty: '-', idol: 'マイキャラ', result: 'オールパーフェクト', author: '投稿者@handle', category: 'other' };
   assert.deepEqual(normalizeCustomVideos(JSON.parse(JSON.stringify([video]))), [video]);
+});
+
+test('保存済みの分類は定義済みの値だけ保持し、未登録・不正値は未分類と表示する', () => {
+  assert.deepEqual(VIDEO_CATEGORIES, { encore: 'アイカツアンコール', other: 'アイカツアンコール以外' });
+  assert.equal(Object.isFrozen(VIDEO_CATEGORIES), true);
+  for (const [category, label] of Object.entries(VIDEO_CATEGORIES)) {
+    assert.equal(categoryLabel(category), label);
+    assert.deepEqual(normalizeVideoMetadata({ title: '楽曲', category }), { title: '楽曲', category });
+  }
+  for (const category of [undefined, null, '', 'other ', 'アイカツアンコール', '__proto__', 'constructor', ['encore']]) {
+    assert.equal(categoryLabel(category), '未分類');
+    assert.deepEqual(normalizeVideoMetadata({ title: '楽曲', category }), { title: '楽曲' });
+  }
 });
 
 test('詳細情報がない旧版の追加動画を保持し、不正IDや重複だけを除く', () => {

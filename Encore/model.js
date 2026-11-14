@@ -4,6 +4,9 @@ import { normalizeAuthorUrl } from './youtube-author.js';
 export const DEFAULT_VIDEO_ID = null;
 export const SETTINGS_KEY = 'aikatsu_settings_v2';
 export const DEFAULT_SETTINGS = Object.freeze({ sound: true, soundVolume: 35, videoVolume: 70, muted: false, vibration: true, effects: true, appearance: 'dark' });
+export const VIDEO_CATEGORIES = Object.freeze({ encore: 'アイカツアンコール', other: 'アイカツアンコール以外' });
+export const isVideoCategory = value => typeof value === 'string' && Object.hasOwn(VIDEO_CATEGORIES, value);
+export const categoryLabel = value => isVideoCategory(value) ? VIDEO_CATEGORIES[value] : '未分類';
 export const isVideoId = value => typeof value === 'string' && value.length === 11 && /^[\w-]{11}$/.test(value);
 export const isEntryId = value => isVideoId(value) || (typeof value === 'string' && value.length === 37 && /^clip_[0-9a-f]{32}$/.test(value));
 export const uniqueIds = values => [...new Set(Array.isArray(values) ? values.filter(isEntryId) : [])];
@@ -51,6 +54,7 @@ export function normalizeVideoMetadata(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
   const data = {};
   if (isVideoId(value.videoId)) data.videoId = value.videoId;
+  if (isVideoCategory(value.category)) data.category = value.category;
   const limits = { title: 500, mode: 100, difficulty: 40, idol: 100, author: 200, authorHandle: 200 };
   for (const [key, limit] of Object.entries(limits)) {
     if (typeof value[key] === 'string') data[key] = value[key].slice(0, limit);

@@ -14,10 +14,11 @@ const input = {
   idol: 'マイキャラ',
   result: 'フルコンボ',
 };
+const classifiedInput = { ...input, category: 'encore' };
 
 test('編集用の入力は保存された区間・自由入力を復元し、時間形式も再検証できる', () => {
   for (const [start, end] of [['0:00', '1:36'], ['7:31', '9:57'], ['1:02:03', '1:04:05'], ['98:59:59', '99:59:59']]) {
-    const original = validateVideoInput({ ...input, start, end, title: '新しい曲', idol: '新しいアイドル' }).video;
+    const original = validateVideoInput({ ...classifiedInput, start, end, title: '新しい曲', idol: '新しいアイドル' }).video;
     const restored = videoToInput(original);
     assert.deepEqual(validateVideoInput(restored).video, original);
     assert.equal(restored.title, '新しい曲');
@@ -27,11 +28,12 @@ test('編集用の入力は保存された区間・自由入力を復元し、�
   assert.equal(legacy.start, '');
   assert.equal(legacy.end, '');
   assert.equal(legacy.difficulty, '');
+  assert.equal(legacy.category, '');
 });
 
 test('同じ元動画の複数曲を編集しても曲IDをYouTube URLに使わず、入力検証は元動画IDを返す', () => {
   for (const [index, start, end] of [[1, '0:00', '1:36'], [2, '7:31', '9:57']]) {
-    const original = validateVideoInput({ ...input, start, end, title: `${index}曲目` }).video;
+    const original = validateVideoInput({ ...classifiedInput, start, end, title: `${index}曲目` }).video;
     const entry = { ...original, id: `clip_${String(index).repeat(32)}`, videoId: original.id };
     const restored = videoToInput(entry);
     assert.equal(restored.url, input.url);
@@ -64,6 +66,32 @@ test('楽曲区間と必須情報を保存形式に変換する', () => {
   });
 });
 
+test('分類は2値だけを保存・復元し、旧入力のキー省略は未分類のまま受け入れる', () => {
+  for (const category of ['encore', 'other']) {
+    const { video, errors } = validateVideoInput({ ...input, category });
+    assert.deepEqual(errors, {});
+    assert.equal(video.category, category);
+    const [saved] = normalizeCustomVideos(JSON.parse(JSON.stringify([video])));
+    const restored = videoToInput(saved);
+    assert.equal(restored.category, category);
+    assert.deepEqual(validateVideoInput(restored).video, video);
+  }
+  const legacy = validateVideoInput(input).video;
+  assert.equal(Object.hasOwn(legacy, 'category'), false);
+  assert.equal(videoToInput(legacy).category, '');
+  assert.equal(videoToInput({ ...legacy, category: 'invalid' }).category, '');
+  for (const category of ['', ' \t ', null, undefined]) {
+    const { video, errors } = validateVideoInput({ ...input, category });
+    assert.equal(video, null);
+    assert.deepEqual(errors, { category: '分類を選択してください。' });
+  }
+  for (const category of ['未分類', 'アイカツアンコール', 'Encore', ' encore', 'other ', '__proto__', 'constructor', 0, false, {}, ['encore']]) {
+    const { video, errors } = validateVideoInput({ ...input, category });
+    assert.equal(video, null);
+    assert.match(errors.category, /分類は「アイカツアンコール」か「アイカツアンコール以外」を選択/);
+  }
+});
+
 test('すべての必須項目で空白や非文字列を拒否し、未完成の動画を返さない', () => {
   const requiredFields = Object.keys(input).filter(field => !['start', 'end'].includes(field));
   for (const field of requiredFields) {
@@ -85,7 +113,7 @@ test('時刻の空欄は先頭・動画終端として保存し、編集時も�
     ['', '', null, null], ['', '1:36', null, 96], ['0:10', '', 10, null],
     [' \t ', ' \n ', null, null], [undefined, undefined, null, null], [null, null, null, null],
   ]) {
-    const { video, errors } = validateVideoInput({ ...input, start, end });
+    const { video, errors } = validateVideoInput({ ...classifiedInput, start, end });
     assert.deepEqual(errors, {});
     assert.equal(video.startSeconds, startSeconds);
     assert.equal(video.endSeconds, endSeconds);
@@ -222,7 +250,7 @@ test('モードは不明と指定された4種類を許容し、保存・編集�
 test('難易度は不明と5段階を許容し、保存・編集用入力への復元で保持する', () => {
   assert.deepEqual(VIDEO_DIFFICULTIES, ['-', 'かんたん', 'ふつう', 'むずかしい', 'すごくむずかしい', 'とてもむずかしい']);
   for (const difficulty of VIDEO_DIFFICULTIES) {
-    const result = validateVideoInput({ ...input, difficulty });
+    const result = validateVideoInput({ ...classifiedInput, difficulty });
     assert.deepEqual(result.errors, {});
     assert.equal(result.video.difficulty, difficulty);
     const [saved] = normalizeCustomVideos(JSON.parse(JSON.stringify([result.video])));

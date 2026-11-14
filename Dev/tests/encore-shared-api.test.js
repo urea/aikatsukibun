@@ -174,6 +174,52 @@ test('POSTはサーバー取得の投稿者だけを保存し、201で正規化�
   assert.equal(store.hashes[0].includes('203.0.113.4'), false);
 });
 
+test('2種類の分類を登録・編集して一覧に反映し、旧版の分類省略による編集でも保持する', async () => {
+  for (const [initial, next] of [['encore', 'other'], ['other', 'encore']]) {
+    const { handler, store } = fixture();
+    const added = await handler(post({ ...input, category: initial }));
+    assert.equal(added.status, 201);
+    const { video: created } = await added.json();
+    assert.deepEqual(created, { ...postedVideo, category: initial });
+
+    const updated = await handler(patch(editInput(created, { category: next })));
+    assert.equal(updated.status, 200);
+    const { video: changed } = await updated.json();
+    assert.equal(changed.category, next);
+
+    const legacyEdit = await handler(patch(editInput(store.videos.get(apiVideo.id), { title: '旧版で曲名を編集' })));
+    assert.equal(legacyEdit.status, 200);
+    const { video: edited } = await legacyEdit.json();
+    assert.equal(edited.category, next);
+    assert.equal(edited.title, '旧版で曲名を編集');
+
+    const listed = await fixture({ store }).handler(new Request(endpoint));
+    assert.equal(listed.status, 200);
+    assert.deepEqual(await listed.json(), { videos: [{ ...postedVideo, category: next, title: edited.title }], withdrawnIds: [] });
+  }
+});
+
+test('旧版の未分類レコードを後から分類でき、空または不正なPOSTとPATCHは保存せず400を返す', async () => {
+  const { handler, store, requests } = fixture();
+  const legacy = await handler(post());
+  assert.equal(legacy.status, 201);
+  assert.equal(Object.hasOwn((await legacy.json()).video, 'category'), false);
+  for (const category of ['', null, '未分類', ' encore', '__proto__', ['other']]) {
+    for (const request of [post({ ...input, category }), patch(editInput(postedVideo, { category }))]) {
+      const response = await handler(request);
+      assert.equal(response.status, 400);
+      assert.match((await response.json()).errors.category, /分類.*選択/);
+    }
+  }
+  assert.deepEqual([...store.videos.values()], [postedVideo]);
+  assert.equal(store.hashes.length, 1);
+  assert.equal(requests.length, 1);
+  const classified = await handler(patch(editInput(postedVideo, { category: 'other' })));
+  assert.equal(classified.status, 200);
+  assert.equal((await classified.json()).video.category, 'other');
+  assert.deepEqual(store.videos.get(apiVideo.id), { ...postedVideo, category: 'other' });
+});
+
 test('不明モード「-」でPOST登録した動画を別の一覧取得でもそのまま保持する', async () => {
   const { handler, store } = fixture();
   const expected = { ...postedVideo, mode: '-' };
@@ -640,6 +686,24 @@ test('Neon storeは明示nullの境界を正規化して保持しUPDATE JSONで�
     assert.equal(await store.getVideo(apiVideo.id), null);
     assert.deepEqual(await store.listVideos(), []);
   }
+});
+
+test('Neon storeは分類を欠く旧PATCHのJSONマージで既存分類を保持する', async () => {
+  const revision = 'a'.repeat(32);
+  let data = { ...apiVideo, category: 'encore' };
+  const sql = { async query(text, values) {
+    if (text.startsWith('UPDATE')) {
+      assert.match(text, /SET data = data \|\| \$2::jsonb/);
+      const submitted = JSON.parse(values[1]);
+      assert.equal(Object.hasOwn(submitted, 'category'), false);
+      data = { ...data, ...submitted };
+    }
+    return [{ video_id: apiVideo.id, data, revision }];
+  } };
+  const store = createNeonStore(undefined, { sql });
+  const expected = { ...apiVideo, title: '旧版で曲名を編集', category: 'encore', revision };
+  assert.deepEqual(await store.updateVideo({ ...apiVideo, title: expected.title }, revision), expected);
+  assert.deepEqual(await store.listVideos(), [expected]);
 });
 
 test('同じ元動画の11区間を独立登録し、最初の旧IDと10個のclip IDをGETで保持する', async () => {

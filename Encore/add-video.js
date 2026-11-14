@@ -1,4 +1,4 @@
-import { extractVideoId, normalizeVideoMetadata, videoIdFor } from './model.js';
+import { extractVideoId, isVideoCategory, normalizeVideoMetadata, videoIdFor, VIDEO_CATEGORIES } from './model.js';
 
 export const VIDEO_MODES = Object.freeze(['-', 'テレビアニメアイカツ！モード', 'アイカツ！オールスターモード', 'じゆうにアイカツ！モード', 'きかんげんていライブ！モード']);
 export const VIDEO_DIFFICULTIES = Object.freeze(['-', 'かんたん', 'ふつう', 'むずかしい', 'すごくむずかしい', 'とてもむずかしい']);
@@ -19,6 +19,7 @@ export function videoToInput(video) {
   };
   return {
     url: videoId ? `https://www.youtube.com/watch?v=${videoId}` : '',
+    category: isVideoCategory(video.category) ? video.category : '',
     ...Object.fromEntries(['title', 'mode', 'difficulty', 'idol', 'result'].map(field => [field, video[field] || ''])),
     start: time(video.startSeconds), end: time(video.endSeconds),
   };
@@ -62,6 +63,14 @@ export function validateVideoInput(input) {
   const errors = {};
   const values = {};
   for (const field of ['url', 'title', 'mode', 'difficulty', 'idol', 'result']) values[field] = readText(source, field, errors);
+  // 旧版は項目自体を送らない。新UIが送る空欄や想定外の値は拒否する。
+  const hasCategory = Object.hasOwn(source, 'category');
+  const category = hasCategory ? source.category : undefined;
+  if (hasCategory && !isVideoCategory(category)) {
+    errors.category = category == null || (typeof category === 'string' && !category.trim())
+      ? '分類を選択してください。'
+      : `分類は「${VIDEO_CATEGORIES.encore}」か「${VIDEO_CATEGORIES.other}」を選択してください。`;
+  }
   const startSeconds = readTime(source, 'start', errors);
   const endSeconds = readTime(source, 'end', errors);
   const id = errors.url ? null : readVideoId(values.url);
@@ -72,6 +81,7 @@ export function validateVideoInput(input) {
   if (!errors.start && !errors.end && endSeconds !== null && endSeconds <= (startSeconds ?? 0)) errors.end = '終了時刻は開始時刻より後にしてください。';
   const video = Object.keys(errors).length ? null : {
     id,
+    ...(hasCategory ? { category } : {}),
     title: values.title,
     startSeconds,
     endSeconds,

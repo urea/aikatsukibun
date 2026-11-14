@@ -1,5 +1,5 @@
 import videoIds from './videos.json';
-import { SETTINGS_KEY, isVideoId, isEntryId, videoIdFor, uniqueIds, readSaved, normalizeCustomVideos, normalizeSettings, chooseRandom, formatTime, displayTitle } from './model.js';
+import { SETTINGS_KEY, VIDEO_CATEGORIES, categoryLabel, isVideoId, isEntryId, videoIdFor, uniqueIds, readSaved, normalizeCustomVideos, normalizeSettings, chooseRandom, formatTime, displayTitle } from './model.js';
 import { icon, setIcon, mountIcons } from './icons.js';
 import { createTapAudio } from './tap-audio.js';
 import { createPadInput, PAD_KEYS } from './pad-input.js';
@@ -83,10 +83,11 @@ function detailsFor(id) {
   if (data.startSeconds !== undefined && data.endSeconds !== undefined) {
     fields.push(['楽曲位置', `${data.startSeconds === null ? '先頭' : formatTime(data.startSeconds)}〜${data.endSeconds === null ? '最後' : formatTime(data.endSeconds)}`]);
   }
+  if (data.category || (data.startSeconds !== undefined && data.endSeconds !== undefined)) fields.push(['分類', categoryLabel(data.category)]);
   return fields.filter(([, value]) => typeof value === 'string' && value.length > 0);
 }
-function renderDetails(container, id, { authorOnly = false, excludeAuthor = false } = {}) {
-  const fields = detailsFor(id).filter(([label]) => authorOnly ? label === '投稿者' : !excludeAuthor || label !== '投稿者');
+function renderDetails(container, id, { authorOnly = false, library = false } = {}) {
+  const fields = detailsFor(id).filter(([label]) => authorOnly ? label === '投稿者' : library ? label !== '投稿者' : label !== '分類');
   container.replaceChildren();
   container.hidden = fields.length === 0;
   for (const [label, value] of fields) {
@@ -257,7 +258,7 @@ function renderLibrary() {
     entry.title.textContent = displayTitle(titleFor(id));
     entry.select.title = titleFor(id);
     entry.select.setAttribute('aria-label', `${displayTitle(titleFor(id))}を再生`);
-    renderDetails(entry.details, id, { excludeAuthor: true });
+    renderDetails(entry.details, id, { library: true });
     renderDetails(entry.author, id, { authorOnly: true });
     entry.row.classList.toggle('has-author', !entry.author.hidden);
     entry.state.hidden = id !== currentId;
@@ -394,9 +395,15 @@ $('video-sort').addEventListener('change', () => {
   renderLibrary();
 });
 
-const addFields = ['url', 'title', 'start', 'end', 'mode', 'difficulty', 'idol', 'result'];
+const addFields = ['url', 'category', 'title', 'start', 'end', 'mode', 'difficulty', 'idol', 'result'];
 const customChoiceValue = '__custom__';
 const customChoiceFields = ['title', 'idol'];
+for (const [value, label] of Object.entries(VIDEO_CATEGORIES)) {
+  const option = document.createElement('option');
+  option.value = value;
+  option.textContent = label;
+  $('add-category').append(option);
+}
 for (const [field, choices] of Object.entries({ mode: VIDEO_MODES, difficulty: VIDEO_DIFFICULTIES, title: VIDEO_SONGS, idol: VIDEO_IDOLS })) {
   for (const value of choices) {
     const option = document.createElement('option');
