@@ -1,5 +1,5 @@
 import videoIds from './videos.json';
-import { SETTINGS_KEY, VIDEO_CATEGORIES, categoryLabel, isVideoId, isEntryId, videoIdFor, uniqueIds, readSaved, normalizeCustomVideos, normalizeSettings, chooseRandom, formatTime, displayTitle } from './model.js';
+import { SETTINGS_KEY, VIDEO_CATEGORIES, categoryLabel, passesEncoreFilter, isVideoId, isEntryId, videoIdFor, uniqueIds, readSaved, normalizeCustomVideos, normalizeSettings, chooseRandom, formatTime, displayTitle } from './model.js';
 import { icon, setIcon, mountIcons } from './icons.js';
 import { createTapAudio } from './tap-audio.js';
 import { createPadInput, PAD_KEYS } from './pad-input.js';
@@ -87,7 +87,7 @@ function detailsFor(id) {
   return fields.filter(([, value]) => typeof value === 'string' && value.length > 0);
 }
 function renderDetails(container, id, { authorOnly = false, library = false } = {}) {
-  const fields = detailsFor(id).filter(([label]) => authorOnly ? label === '投稿者' : library ? label !== '投稿者' : label !== '分類');
+  const fields = detailsFor(id).filter(([label]) => authorOnly ? label === '投稿者' : !library || label !== '投稿者');
   container.replaceChildren();
   container.hidden = fields.length === 0;
   for (const [label, value] of fields) {
@@ -246,7 +246,8 @@ function rowFor(id) {
 function renderLibrary() {
   const ids = (libraryTab === 'favorites' ? favorites : libraryTab === 'history' ? history : allIds()).filter(id => !isWithdrawn(id));
   const query = $('video-search').value.normalize('NFKC').toLocaleLowerCase().trim();
-  const filtered = ids.filter(id => `${titleFor(id)} ${detailsFor(id).map(([, value]) => value).join(' ')} ${id}`.normalize('NFKC').toLocaleLowerCase().includes(query));
+  const eligible = ids.filter(id => passesEncoreFilter(metadata.get(id)?.category, settings.libraryExcludeOther));
+  const filtered = query ? eligible.filter(id => `${titleFor(id)} ${detailsFor(id).map(([, value]) => value).join(' ')} ${id}`.normalize('NFKC').toLocaleLowerCase().includes(query)) : eligible;
   const matching = sortVideoIds(filtered, librarySort, id => metadata.get(id));
   $('video-sort-default').textContent = libraryTab === 'favorites' ? 'お気に入り登録順' : libraryTab === 'history' ? '再生順' : '投稿順';
   const visibleIds = new Set(matching);
@@ -273,9 +274,11 @@ function renderLibrary() {
     const expected = $('video-list').children[index];
     if (expected !== entry.row) $('video-list').insertBefore(entry.row, expected || null);
   });
-  $('library-count').textContent = `${matching.length}曲${query ? ` / ${ids.length}曲` : ''}`;
+  $('library-count').textContent = `${matching.length}曲${query || settings.libraryExcludeOther ? ` / ${ids.length}曲` : ''}`;
   $('library-empty').hidden = matching.length > 0;
-  $('library-empty').textContent = query ? '見つかりませんでした。別のキーワードを試してください。' : libraryTab === 'favorites' ? '星を押して、お気に入りを追加しましょう。' : libraryTab === 'history' ? '動画を再生すると、ここに履歴が残ります。' : 'アンコールの楽曲は準備中です。';
+  $('library-empty').textContent = settings.libraryExcludeOther && eligible.length < ids.length
+    ? '表示できる曲がありません。「アンコール以外を除外」を外すと対象が広がります。'
+    : query ? '見つかりませんでした。別のキーワードを試してください。' : libraryTab === 'favorites' ? '星を押して、お気に入りを追加しましょう。' : libraryTab === 'history' ? '動画を再生すると、ここに履歴が残ります。' : 'アンコールの楽曲は準備中です。';
 }
 function scheduleLibraryRender() {
   clearTimeout(libraryRenderTimer);
@@ -388,6 +391,12 @@ document.querySelectorAll('[data-library]').forEach(button => {
   });
 });
 $('video-search').addEventListener('input', () => { $('library-results').scrollTop = 0; renderLibrary(); });
+$('library-exclude-other').addEventListener('change', event => {
+  settings.libraryExcludeOther = event.currentTarget.checked;
+  save(SETTINGS_KEY, settings);
+  $('library-results').scrollTop = 0;
+  renderLibrary();
+});
 $('video-sort').addEventListener('change', () => {
   librarySort = normalizeLibrarySort($('video-sort').value);
   save('library_sort', librarySort);
@@ -683,10 +692,15 @@ function selectVideo(id) {
   if (!metadata.get(id)) metadata.fetch(id).then(() => { if (id === currentId) updateCurrent(); }).catch(() => {});
 }
 $('shuffle').addEventListener('click', () => {
-  const candidates = allIds().filter(id => metadata.get(id) && !unplayable.has(id));
+  const candidates = allIds().filter(id => {
+    const video = metadata.get(id);
+    return video && !unplayable.has(id) && passesEncoreFilter(video.category, settings.shuffleExcludeOther);
+  });
   const id = chooseRandom(candidates, currentId, history.slice(0, 8));
   if (id) selectVideo(id);
-  else toast('再生できる候補がありません。「選ぶ」から動画を追加してください。');
+  else toast(settings.shuffleExcludeOther
+    ? '再生できる候補がありません。設定から「アンコール以外を除外」を解除できます。'
+    : '再生できる候補がありません。「選ぶ」から動画を追加してください。');
 });
 $('share-current').addEventListener('click', () => {
   if (!publishedIds().includes(currentId)) return;
@@ -889,9 +903,11 @@ function syncSettings() {
   $('vibration-enabled').disabled = !vibrationSupported;
   $('vibration-support').textContent = vibrationSupported ? '' : 'この端末では利用できません';
   $('effects-enabled').checked = settings.effects;
+  $('shuffle-exclude-other').checked = settings.shuffleExcludeOther;
+  $('library-exclude-other').checked = settings.libraryExcludeOther;
   $('appearance').value = settings.appearance;
 }
-for (const [id, key] of [['sound-enabled', 'sound'], ['vibration-enabled', 'vibration'], ['effects-enabled', 'effects']]) {
+for (const [id, key] of [['sound-enabled', 'sound'], ['vibration-enabled', 'vibration'], ['effects-enabled', 'effects'], ['shuffle-exclude-other', 'shuffleExcludeOther']]) {
   $(id).addEventListener('change', () => { settings[key] = $(id).checked; save(SETTINGS_KEY, settings); syncSettings(); });
 }
 for (const [id, key] of [['sound-volume', 'soundVolume'], ['video-volume', 'videoVolume']]) {

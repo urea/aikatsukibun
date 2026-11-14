@@ -31,6 +31,7 @@ input[type=range] { accent-color:var(--accent); cursor:pointer; }
 #playback-status { margin-top:2px; }
 #playback-status:empty { display:none; }
 .song-details { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px 12px; margin:10px 0 0; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:12px; }
+#current-details { grid-template-columns:repeat(4,minmax(0,1fr)); }
 .song-details > div { min-width:0; }
 .song-details dt { color:var(--muted); font-size:10px; }
 .song-details dd { margin:0; overflow-wrap:anywhere; }
@@ -195,6 +196,8 @@ body.library-open,.app-shell.library-open:fullscreen { overflow:hidden; }
 .library-tabs button[aria-selected=true] { border-bottom-color:var(--accent); color:var(--text); }
 .list-meta { display:flex; align-items:center; flex-wrap:wrap; padding:8px 2px 6px; gap:4px 8px; color:var(--muted); font-size:12px; flex-shrink:0; }
 .library-sort select { min-height:36px; max-width:100%; padding:6px 8px; border:1px solid var(--line); border-radius:6px; color:var(--text); background:var(--raised); font-size:12px; }
+.library-filter { display:inline-flex; align-items:center; gap:5px; min-height:36px; color:var(--text); cursor:pointer; }
+.library-filter input { width:15px; height:15px; margin:0; accent-color:var(--accent); cursor:pointer; }
 .list-meta .affiliate-link { min-height:20px; margin:0 0 0 auto; }
 #shared-status { margin-left:auto; }
 .library-results { flex:1; overflow-y:auto; min-height:0; padding:2px 4px 8px 2px; overscroll-behavior:contain; scrollbar-width:thin; scrollbar-color:var(--line) transparent; }

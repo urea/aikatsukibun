@@ -1,6 +1,31 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { VIDEO_CATEGORIES, categoryLabel, isVideoId, isEntryId, videoIdFor, uniqueIds, normalizeCustomVideos, normalizeVideoMetadata } from '../../Encore/model.js';
+import { VIDEO_CATEGORIES, SETTINGS_KEY, categoryLabel, passesEncoreFilter, isVideoId, isEntryId, videoIdFor, uniqueIds, readSaved, normalizeSettings, normalizeCustomVideos, normalizeVideoMetadata } from '../../Encore/model.js';
+
+test('おまかせと選曲の除外設定は保存から個別に復元し、旧設定では両方オフにする', () => {
+  for (const [stored, shuffleExcludeOther, libraryExcludeOther] of [
+    [{}, false, false],
+    [{ shuffleExcludeOther: true }, true, false],
+    [{ libraryExcludeOther: true }, false, true],
+    [{ shuffleExcludeOther: true, libraryExcludeOther: true }, true, true],
+    [{ shuffleExcludeOther: false, libraryExcludeOther: true }, false, true],
+    [{ shuffleExcludeOther: 'true', libraryExcludeOther: 1 }, false, false],
+  ]) {
+    const storage = new Map([[SETTINGS_KEY, JSON.stringify({ sound: false, ...stored })]]);
+    const settings = normalizeSettings(readSaved({ getItem: key => storage.get(key) }, SETTINGS_KEY, {}));
+    assert.equal(settings.shuffleExcludeOther, shuffleExcludeOther);
+    assert.equal(settings.libraryExcludeOther, libraryExcludeOther);
+    assert.equal(settings.sound, false);
+  }
+});
+
+test('除外を有効にしてもアンコール・未分類・未知の分類は残す', () => {
+  for (const category of ['encore', 'other', undefined, null, 'unknown']) {
+    assert.equal(passesEncoreFilter(category, false), true);
+    assert.equal(passesEncoreFilter(category, true), category !== 'other');
+  }
+  assert.equal(passesEncoreFilter('other'), true);
+});
 
 const videoId = 'fYibOFCMpnE';
 const firstId = `clip_${'a'.repeat(32)}`;
