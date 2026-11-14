@@ -17,6 +17,11 @@ function duplicate() {
   return json(409, { error: message, errors: { url: message }, code: 'duplicate_clip' });
 }
 
+function withdrawn() {
+  const message = 'この動画は共有一覧から取り下げられているため、追加できません。';
+  return json(409, { error: message, errors: { url: message }, code: 'withdrawn' });
+}
+
 function conflict() {
   return json(409, { error: 'ほかの方が情報を更新しました。最新の情報を読み込み、内容を確認してから保存してください。', code: 'conflict' });
 }
@@ -93,7 +98,7 @@ export function createSharedVideosHandler({ store, fetchImpl = globalThis.fetch,
   const reserved = new Set(reservedIds);
   return async request => {
     if (request.method === 'GET') {
-      try { return json(200, { videos: await store.listVideos() }); }
+      try { return json(200, await store.listPublication()); }
       catch { return json(503, { error: databaseMessage }); }
     }
     const editing = request.method === 'PATCH';
@@ -126,6 +131,7 @@ export function createSharedVideosHandler({ store, fetchImpl = globalThis.fetch,
     }
     let sourceExists;
     try {
+      if (await store.isWithdrawn(video.id)) return withdrawn();
       sourceExists = await store.hasVideo(video.id);
       if (reserved.has(video.id) && !sourceExists) return duplicate();
       if (await store.hasClip(video)) return duplicate();
@@ -146,6 +152,6 @@ export function createSharedVideosHandler({ store, fetchImpl = globalThis.fetch,
         candidate = { ...savedVideo, id: `clip_${randomBytes(16).toString('hex')}` };
       }
       return json(503, { error: databaseMessage });
-    } catch { return json(503, { error: databaseMessage }); }
+    } catch (error) { return error?.code === 'withdrawn' ? withdrawn() : json(503, { error: databaseMessage }); }
   };
 }

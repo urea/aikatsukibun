@@ -1,7 +1,11 @@
 import { neon } from '@neondatabase/serverless';
 import { isEntryId, isVideoId, videoIdFor, normalizeVideoMetadata } from '../model.js';
 
+const sourceIdSql = alias => `COALESCE(${alias}.data->>'videoId', ${alias}.video_id)`;
+const withdrawalSql = source => `EXISTS (SELECT 1 FROM public.encore_shared_videos withdrawn WHERE ${sourceIdSql('withdrawn')} = ${source} AND withdrawn.data ? 'withdrawnAt')`;
+
 function videoFromRow(row) {
+  if (row?.data && Object.hasOwn(row.data, 'withdrawnAt')) return null;
   if (!isEntryId(row?.video_id) || !isVideoId(videoIdFor(row.video_id, row.data))) return null;
   const metadata = normalizeVideoMetadata(row.data);
   if (!metadata.title?.trim() || !metadata.author?.trim() || metadata.startSeconds === undefined || metadata.endSeconds === undefined) return null;
@@ -12,21 +16,50 @@ function videoFromRow(row) {
 
 export function createNeonStore(connectionString, { sql } = {}) {
   let client = sql;
-  const query = (text, values) => {
+  const getClient = () => {
     if (!client) {
       if (!connectionString) throw new Error('DATABASE_URL is required');
       client = neon(connectionString);
     }
-    return client.query(text, values, { fetchOptions: { signal: AbortSignal.timeout(8000) } });
+    return client;
   };
+  const query = (text, values) => getClient().query(text, values, { fetchOptions: { signal: AbortSignal.timeout(8000) } });
+  async function listPublication() {
+    const rows = await query(`
+      WITH withdrawn_sources AS (
+        SELECT DISTINCT ${sourceIdSql('v')} AS source_id FROM public.encore_shared_videos v WHERE v.data ? 'withdrawnAt'
+      )
+      SELECT v.video_id, w.source_id AS withdrawn_source,
+        CASE WHEN w.source_id IS NULL THEN v.data END AS data,
+        CASE WHEN w.source_id IS NULL THEN md5(v.data::text) END AS revision
+      FROM public.encore_shared_videos v LEFT JOIN withdrawn_sources w ON w.source_id = ${sourceIdSql('v')}
+      ORDER BY v.created_at DESC, v.video_id ASC
+    `, []);
+    const withdrawnIds = new Set();
+    const videos = [];
+    for (const row of rows) {
+      if (isVideoId(row.withdrawn_source)) {
+        withdrawnIds.add(row.withdrawn_source);
+        if (isEntryId(row.video_id)) withdrawnIds.add(row.video_id);
+      } else {
+        const video = videoFromRow(row);
+        if (video) videos.push(video);
+      }
+    }
+    return { videos, withdrawnIds: [...withdrawnIds] };
+  }
   return {
+    listPublication,
     async listVideos() {
-      const rows = await query('SELECT video_id, data, md5(data::text) AS revision FROM public.encore_shared_videos ORDER BY created_at DESC, video_id ASC', []);
-      return rows.map(videoFromRow).filter(Boolean);
+      return (await listPublication()).videos;
     },
     async getVideo(id) {
-      const rows = await query('SELECT video_id, data, md5(data::text) AS revision FROM public.encore_shared_videos WHERE video_id = $1', [id]);
+      const rows = await query(`SELECT video_id, data, md5(data::text) AS revision FROM public.encore_shared_videos v WHERE video_id = $1 AND NOT (data ? 'withdrawnAt') AND NOT ${withdrawalSql(sourceIdSql('v'))}`, [id]);
       return rows.length ? videoFromRow(rows[0]) : null;
+    },
+    async isWithdrawn(id) {
+      const [row] = await query(`SELECT ${withdrawalSql('$1')} AS withdrawn`, [id]);
+      return row?.withdrawn === true;
     },
     async hasVideo(id) {
       const rows = await query("SELECT video_id FROM public.encore_shared_videos WHERE COALESCE(data->>'videoId', video_id) = $1 LIMIT 1", [id]);
@@ -37,14 +70,36 @@ export function createNeonStore(connectionString, { sql } = {}) {
       return rows.length > 0;
     },
     async insertVideo(video) {
-      const rows = await query('INSERT INTO public.encore_shared_videos (video_id, data) VALUES ($1, $2::jsonb) ON CONFLICT DO NOTHING RETURNING video_id, data, md5(data::text) AS revision', [video.id, JSON.stringify(video)]);
-      return rows.length ? videoFromRow(rows[0]) : null;
+      const sourceId = videoIdFor(video.id, video);
+      const data = { ...video };
+      delete data.withdrawnAt;
+      const db = getClient();
+      // 管理ツールと同じ元動画ロック。待機後の新しいスナップショットで取り下げを確認する。
+      const [, [row]] = await db.transaction([
+        db.query('SELECT pg_advisory_xact_lock(1162756943, hashtext($1::text))', [sourceId]),
+        db.query(`
+          WITH withdrawal AS MATERIALIZED (SELECT ${withdrawalSql('$3')} AS blocked), inserted AS (
+            INSERT INTO public.encore_shared_videos (video_id, data)
+            SELECT $1, $2::jsonb FROM withdrawal WHERE NOT blocked
+            ON CONFLICT DO NOTHING RETURNING video_id, data, md5(data::text) AS revision
+          )
+          SELECT video_id, data, revision, false AS blocked FROM inserted
+          UNION ALL SELECT NULL::text, NULL::jsonb, NULL::text, true FROM withdrawal WHERE blocked
+        `, [video.id, JSON.stringify(data), sourceId]),
+      ], { isolationLevel: 'ReadCommitted', fetchOptions: { signal: AbortSignal.timeout(8000) } });
+      if (row?.blocked) {
+        const error = new Error('Withdrawn source video');
+        error.code = 'withdrawn';
+        throw error;
+      }
+      return videoFromRow(row);
     },
     async updateVideo(video, revision) {
       const data = { ...video };
       delete data.revision;
+      delete data.withdrawnAt;
       try {
-        const rows = await query('UPDATE public.encore_shared_videos SET data = data || $2::jsonb WHERE video_id = $1 AND md5(data::text) = $3 RETURNING video_id, data, md5(data::text) AS revision', [video.id, JSON.stringify(data), revision]);
+        const rows = await query(`UPDATE public.encore_shared_videos v SET data = data || $2::jsonb WHERE video_id = $1 AND md5(data::text) = $3 AND NOT (data ? 'withdrawnAt') AND NOT ${withdrawalSql(sourceIdSql('v'))} RETURNING video_id, data, md5(data::text) AS revision`, [video.id, JSON.stringify(data), revision]);
         return rows.length ? videoFromRow(rows[0]) : null;
       } catch (error) {
         if (error?.code === '23505') {

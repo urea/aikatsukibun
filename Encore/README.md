@@ -60,3 +60,20 @@
 - `PATCH /api/videos` はフォーム入力と `id`・`revision` を受け取り、既存の共有動画だけを更新します。投稿者を保持し、DBの単一UPDATEでrevisionを照合します。入力・同一サイトからの送信・サイズ・頻度の制限は登録時と同様に適用します。
 - 登録APIは匿名利用できます。JSONのサイズ制限・同一端末からの短時間の大量登録を制限します。保存する識別子はハッシュ化し、IPアドレスをそのまま保存しません。
 - 一覧はアプリ起動時と選曲画面を開くたびに更新します。取得に失敗した場合は手元の一覧を表示し、再読み込みを案内します。登録失敗時は入力を保持し、成功扱いでローカル保存しません。
+
+## 管理者による取り下げ・復元
+
+公開画面や公開APIに取り下げ操作はありません。アンコールのDB接続設定（`Encore/.env.local` の `DATABASE_URL`）を持つ管理者が、リポジトリのルートで操作します。接続情報は公開・共有しません。
+
+```powershell
+node Encore/tools/moderate-videos.mjs list
+node Encore/tools/moderate-videos.mjs hide "https://www.youtube.com/watch?v=対象の動画ID"
+node Encore/tools/moderate-videos.mjs hide "https://www.youtube.com/watch?v=対象の動画ID" --apply
+node Encore/tools/moderate-videos.mjs restore "https://www.youtube.com/watch?v=対象の動画ID"
+node Encore/tools/moderate-videos.mjs restore "https://www.youtube.com/watch?v=対象の動画ID" --apply
+```
+
+- `--apply` を付けない取り下げ・復元は対象確認だけです。動画のURLと対象曲を確認してから適用してください。
+- 元のYouTube動画を単位とし、同じ動画から登録した曲をまとめて取り下げます。YouTubeの動画本体・登録内容・曲ID・登録日時は保持します。取り下げ中は共有一覧、再生用の共有リンク、お気に入り・履歴の表示から外れ、同じ元動画の新規登録も止まります。復元後は同じ曲IDで表示されます。
+- 反映はアプリが次に一覧を取得した時点です。すでに再生中の端末を遠隔で停止することはできません。オフラインの端末には再接続まで直近の取得内容が残る場合があります。
+- DBのスキーマ変更は不要です。取り下げ状態は既存データの `withdrawnAt` だけで管理します。本番での初回適用は、公開先の `GET /api/videos` が `withdrawnIds` を返す版に更新されてから行ってください。取り下げ済みのデータがある状態で、対応前の版に戻すと再表示されるため、対応済みの版を使ってください。

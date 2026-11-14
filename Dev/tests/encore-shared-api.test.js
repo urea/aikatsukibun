@@ -14,28 +14,45 @@ const post = (body = input, headers = {}) => new Request(endpoint, { method: 'PO
 const revisionFor = video => createHash('md5').update(JSON.stringify(video, Object.keys(video).sort())).digest('hex');
 const patch = (body, headers = {}) => new Request(endpoint, { method: 'PATCH', headers: { ...originHeaders, ...headers }, body: JSON.stringify(body) });
 const editInput = (video = apiVideo, changes = {}) => ({ ...input, id: video.id, revision: revisionFor(video), ...changes });
-const clipKey = video => JSON.stringify([video.videoId || video.id, video.startSeconds ?? 0, video.endSeconds ?? -1]);
+const sourceFor = video => video.videoId || video.id;
+const clipKey = video => JSON.stringify([sourceFor(video), video.startSeconds ?? 0, video.endSeconds ?? -1]);
+const withdrawnAt = '2026-11-15T01:02:03.000Z';
 
 function memoryStore() {
   const videos = new Map();
   const rates = new Map();
+  const isWithdrawn = id => [...videos.values()].some(video => sourceFor(video) === id && Object.hasOwn(video, 'withdrawnAt'));
   return {
     videos, rates, hashes: [],
-    async listVideos() { return [...videos.values()]; },
-    async hasVideo(id) { return [...videos.values()].some(video => (video.videoId || video.id) === id); },
+    async listPublication() {
+      const publicVideos = [];
+      const withdrawnIds = new Set();
+      for (const video of videos.values()) {
+        if (isWithdrawn(sourceFor(video))) {
+          withdrawnIds.add(sourceFor(video)); withdrawnIds.add(video.id);
+        } else publicVideos.push(video);
+      }
+      return { videos: publicVideos, withdrawnIds: [...withdrawnIds] };
+    },
+    async listVideos() { return (await this.listPublication()).videos; },
+    async isWithdrawn(id) { return isWithdrawn(id); },
+    async hasVideo(id) { return [...videos.values()].some(video => sourceFor(video) === id); },
     async hasClip(video, excludeId = null) { return [...videos.values()].some(existing => existing.id !== excludeId && clipKey(existing) === clipKey(video)); },
     async getVideo(id) {
       const video = videos.get(id);
-      return video ? { ...structuredClone(video), revision: revisionFor(video) } : null;
+      return video && !isWithdrawn(sourceFor(video)) ? { ...structuredClone(video), revision: revisionFor(video) } : null;
     },
     async insertVideo(video) {
+      if (isWithdrawn(sourceFor(video))) {
+        const error = new Error('withdrawn'); error.code = 'withdrawn'; throw error;
+      }
       if (videos.has(video.id) || [...videos.values()].some(existing => clipKey(existing) === clipKey(video))) return null;
       videos.set(video.id, structuredClone(video));
       return structuredClone(video);
     },
     async updateVideo(video, revision) {
       const existing = videos.get(video.id);
-      if (!existing || revisionFor(existing) !== revision) return null;
+      if (!existing || isWithdrawn(sourceFor(existing)) || revisionFor(existing) !== revision) return null;
       const data = { ...existing, ...structuredClone(video) };
       delete data.revision;
       if ([...videos.values()].some(item => item.id !== data.id && clipKey(item) === clipKey(data))) {
@@ -69,12 +86,84 @@ test('GETは別端末でも保存済みの一覧を返し、キャッシュさ�
   const response = await handler(new Request(endpoint));
   assert.equal(response.status, 200);
   assert.equal(response.headers.get('cache-control'), 'no-store');
-  assert.deepEqual(await response.json(), { videos: [apiVideo] });
+  assert.deepEqual(await response.json(), { videos: [apiVideo], withdrawnIds: [] });
+});
+
+test('取り下げた元動画は同じソースの全区間が非公開になり、一覧に識別子だけを返す', async () => {
+  const base = { ...apiVideo, title: '非公開の曲名', author: '非公開の投稿者' };
+  const firstClip = { ...base, id: `clip_${'a'.repeat(32)}`, videoId: base.id, startSeconds: 96, endSeconds: 180, withdrawnAt };
+  const sibling = { ...firstClip, id: `clip_${'b'.repeat(32)}`, startSeconds: 180, endSeconds: 250 };
+  delete sibling.withdrawnAt;
+  const other = { ...apiVideo, id: 'tJAcDG-eS-Q' };
+  const { store, handler, requests } = fixture();
+  for (const video of [base, firstClip, sibling, other]) store.videos.set(video.id, video);
+  const response = await handler(new Request(endpoint));
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.deepEqual(body, { videos: [other], withdrawnIds: [base.id, firstClip.id, sibling.id] });
+  assert.doesNotMatch(JSON.stringify(body), /非公開|withdrawnAt/);
+  for (const entry of [base, firstClip, sibling]) {
+    const denied = await handler(patch(editInput(entry, { title: '変更', withdrawnAt: null })));
+    assert.equal(denied.status, 404);
+    assert.doesNotMatch(await denied.text(), /非公開|withdrawnAt/);
+    assert.deepEqual(store.videos.get(entry.id), entry);
+  }
+  assert.equal((await handler(patch(editInput(other, { url: 'https://youtu.be/tJAcDG-eS-Q' })))).status, 200);
+  assert.equal(requests.length, 0);
+});
+
+test('取り下げた元動画は別区間でもPOSTを409にし、他の動画を追加できる', async () => {
+  const { store, handler, requests } = fixture();
+  const clipId = `clip_${'c'.repeat(32)}`;
+  store.videos.set(clipId, { ...apiVideo, id: clipId, videoId: apiVideo.id, withdrawnAt });
+  for (const body of [input, { ...input, start: '1:36', end: '3:00' }]) {
+    const denied = await handler(post(body));
+    assert.equal(denied.status, 409);
+    assert.equal((await denied.json()).code, 'withdrawn');
+  }
+  assert.equal(requests.length, 0);
+  assert.equal(store.hashes.length, 0);
+  assert.equal((await handler(post({ ...input, url: 'https://youtu.be/tJAcDG-eS-Q' }))).status, 201);
+  assert.equal(store.videos.size, 2);
+});
+
+test('投稿者取得を待つ間に取り下げられた動画も挿入時の再確認で拒否する', async () => {
+  const store = memoryStore();
+  const clipId = `clip_${'d'.repeat(32)}`;
+  store.videos.set(clipId, { ...apiVideo, id: clipId, videoId: apiVideo.id });
+  let fetchStarted = false;
+  const { handler } = fixture({ store, fetchImpl: async () => {
+    fetchStarted = true;
+    store.videos.get(clipId).withdrawnAt = withdrawnAt;
+    return Response.json({ title: '動画', author_name: '投稿者' });
+  } });
+  const response = await handler(post({ ...input, start: '1:36', end: '3:00' }));
+  assert.equal(fetchStarted, true);
+  assert.equal(response.status, 409);
+  assert.equal((await response.json()).code, 'withdrawn');
+  assert.equal(store.videos.size, 1);
+});
+
+test('編集用の取得後に取り下げられても更新結果やメタデータを返さない', async () => {
+  const { store, handler } = fixture();
+  store.videos.set(apiVideo.id, apiVideo);
+  const getVideo = store.getVideo.bind(store);
+  store.getVideo = async id => {
+    const existing = await getVideo(id);
+    store.videos.set(id, { ...apiVideo, withdrawnAt });
+    return existing;
+  };
+  const response = await handler(patch(editInput(apiVideo, { title: '取り下げ後に変更' })));
+  assert.equal(response.status, 409);
+  const body = await response.json();
+  assert.equal(body.code, 'conflict');
+  assert.equal('video' in body, false);
+  assert.deepEqual(store.videos.get(apiVideo.id), { ...apiVideo, withdrawnAt });
 });
 
 test('POSTはサーバー取得の投稿者だけを保存し、201で正規化した区間を返す', async () => {
   const { handler, store, requests } = fixture();
-  const response = await handler(post({ ...input, author: '改ざん者', authorHandle: '@Fake', startSeconds: 999, endSeconds: 1000 }));
+  const response = await handler(post({ ...input, author: '改ざん者', authorHandle: '@Fake', startSeconds: 999, endSeconds: 1000, withdrawnAt }));
   assert.equal(response.status, 201);
   assert.deepEqual(await response.json(), { video: postedVideo });
   assert.deepEqual(store.videos.get(apiVideo.id), postedVideo);
@@ -95,7 +184,7 @@ test('不明モード「-」でPOST登録した動画を別の一覧取得でも
   const anotherHandler = fixture({ store }).handler;
   const listed = await anotherHandler(new Request(endpoint));
   assert.equal(listed.status, 200);
-  assert.deepEqual(await listed.json(), { videos: [expected] });
+  assert.deepEqual(await listed.json(), { videos: [expected], withdrawnIds: [] });
 });
 
 test('既存動画を不明モード「-」へPATCH編集し、投稿者と区間を保全してGETで保持する', async () => {
@@ -110,7 +199,7 @@ test('既存動画を不明モード「-」へPATCH編集し、投稿者と区�
   const anotherHandler = fixture({ store }).handler;
   const listed = await anotherHandler(new Request(endpoint));
   assert.equal(listed.status, 200);
-  assert.deepEqual(await listed.json(), { videos: [expected] });
+  assert.deepEqual(await listed.json(), { videos: [expected], withdrawnIds: [] });
   assert.equal(requests.length, 0);
 });
 
@@ -123,7 +212,7 @@ test('POSTは全体再生と片方省略を明示nullで保存しGETでも保持
     assert.deepEqual(await added.json(), { video: expected });
     const listed = await fixture({ store }).handler(new Request(endpoint));
     assert.equal(listed.status, 200);
-    assert.deepEqual(await listed.json(), { videos: [expected] });
+    assert.deepEqual(await listed.json(), { videos: [expected], withdrawnIds: [] });
     assert.equal(requests.length, 1);
   }
 });
@@ -139,7 +228,7 @@ test('PATCHは既存数値区間を全体再生や片方省略へ変更し旧数
     assert.deepEqual(store.videos.get(apiVideo.id), expected);
     const listed = await fixture({ store }).handler(new Request(endpoint));
     assert.equal(listed.status, 200);
-    assert.deepEqual(await listed.json(), { videos: [expected] });
+    assert.deepEqual(await listed.json(), { videos: [expected], withdrawnIds: [] });
     assert.equal(requests.length, 0);
   }
 });
@@ -229,11 +318,11 @@ test('PATCHは保存済みの投稿者URLを保持し、入力からの差し替
 });
 
 test('DB取得・重複確認・レート制限・保存の障害は詳細を漏らさず503にする', async () => {
-  for (const method of ['listVideos', 'hasVideo', 'hasClip', 'consumeRateLimit', 'insertVideo']) {
+  for (const method of ['listPublication', 'isWithdrawn', 'hasVideo', 'hasClip', 'consumeRateLimit', 'insertVideo']) {
     const store = memoryStore();
     store[method] = async () => { throw new Error('SECRET postgresql://username:password@internal.example'); };
     const { handler, requests } = fixture({ store });
-    const response = await handler(method === 'listVideos' ? new Request(endpoint) : post());
+    const response = await handler(method === 'listPublication' ? new Request(endpoint) : post());
     assert.equal(response.status, 503);
     const text = JSON.stringify(await response.json());
     assert.equal(text.includes('SECRET'), false);
@@ -302,12 +391,17 @@ test('IPハッシュはsaltと正規化されたIPで決まり、生IPはstore�
 
 test('Neon storeは専用schemaと一致し、パラメータ化したINSERTで同時重複を防ぐ', async () => {
   const queries = [];
-  const sql = { async query(text, values) { queries.push({ text, values }); return /RETURNING video_id/.test(text) ? [{ video_id: apiVideo.id, data: apiVideo }] : []; } };
+  const sql = {
+    async query(text, values) { queries.push({ text, values }); return /RETURNING video_id/.test(text) ? [{ video_id: apiVideo.id, data: apiVideo }] : []; },
+    async transaction(steps, options) { assert.equal(steps.length, 2); assert.equal(options.isolationLevel, 'ReadCommitted'); return Promise.all(steps); },
+  };
   const store = createNeonStore(undefined, { sql });
   assert.deepEqual(await store.insertVideo(apiVideo), apiVideo);
-  assert.match(queries[0].text, /ON CONFLICT DO NOTHING/);
-  assert.deepEqual(queries[0].values, [apiVideo.id, JSON.stringify(apiVideo)]);
-  assert.equal(queries[0].text.includes(apiVideo.author), false);
+  assert.equal(queries[0].text, 'SELECT pg_advisory_xact_lock(1162756943, hashtext($1::text))');
+  assert.deepEqual(queries[0].values, [apiVideo.id]);
+  assert.match(queries[1].text, /ON CONFLICT DO NOTHING/);
+  assert.deepEqual(queries[1].values, [apiVideo.id, JSON.stringify(apiVideo), apiVideo.id]);
+  assert.equal(queries[1].text.includes(apiVideo.author), false);
   assert.equal(await store.hasVideo(apiVideo.id), false);
   assert.equal(await store.hasClip(apiVideo), false);
   assert.deepEqual(await store.listVideos(), []);
@@ -323,10 +417,57 @@ test('Neon storeは専用schemaと一致し、パラメータ化したINSERTで�
   assert.equal(/beatmaps/i.test(schema), false);
 });
 
+test('Neonの公開一覧と編集取得はソース単位で取り下げを判定し、非公開の曲データを返さない', async () => {
+  const clipId = `clip_${'e'.repeat(32)}`;
+  const clipId2 = `clip_${'f'.repeat(32)}`;
+  const queries = [];
+  const sql = { async query(text, values) {
+    queries.push({ text, values });
+    if (text.includes('AS withdrawn_source')) return [
+      { video_id: clipId, withdrawn_source: 'XTAE6nTGf3w', data: null, revision: null },
+      { video_id: clipId2, withdrawn_source: 'XTAE6nTGf3w', data: null, revision: null },
+      { video_id: apiVideo.id, withdrawn_source: null, data: apiVideo, revision: 'a'.repeat(32) },
+    ];
+    if (text.includes('AS withdrawn')) return [{ withdrawn: values[0] === 'XTAE6nTGf3w' }];
+    return [];
+  } };
+  const store = createNeonStore(undefined, { sql });
+  const exposed = { ...apiVideo, revision: 'a'.repeat(32) };
+  assert.deepEqual(await store.listPublication(), { videos: [exposed], withdrawnIds: ['XTAE6nTGf3w', clipId, clipId2] });
+  assert.equal(queries.length, 1);
+  assert.match(queries[0].text, /CASE WHEN w\.source_id IS NULL THEN v\.data END AS data/);
+  assert.match(queries[0].text, /LEFT JOIN withdrawn_sources w ON w\.source_id = COALESCE\(v\.data->>'videoId', v\.video_id\)/);
+  assert.deepEqual(await store.listVideos(), [exposed]);
+  assert.equal(await store.isWithdrawn('XTAE6nTGf3w'), true);
+  assert.equal(await store.isWithdrawn(apiVideo.id), false);
+  assert.equal(await store.getVideo(clipId), null);
+  assert.match(queries.at(-1).text, /NOT \(data \? 'withdrawnAt'\) AND NOT EXISTS/);
+});
+
+test('Neonの挿入は元動画ロック後の別SQLで取り下げを再確認し、管理属性を保存しない', async () => {
+  const candidate = { ...apiVideo, id: `clip_${'1'.repeat(32)}`, videoId: apiVideo.id, withdrawnAt };
+  const sql = {
+    query(text, values) { return { text, values }; },
+    async transaction([lock, insert], options) {
+      assert.equal(lock.text, 'SELECT pg_advisory_xact_lock(1162756943, hashtext($1::text))');
+      assert.deepEqual(lock.values, [candidate.videoId]);
+      assert.equal(options.isolationLevel, 'ReadCommitted');
+      assert.match(insert.text, /WITH withdrawal AS MATERIALIZED \(SELECT EXISTS[\s\S]+withdrawn\.data \? 'withdrawnAt'\) AS blocked\)/);
+      assert.match(insert.text, /SELECT \$1, \$2::jsonb FROM withdrawal WHERE NOT blocked/);
+      assert.equal(insert.values[0], candidate.id);
+      assert.equal(insert.values[2], candidate.videoId);
+      assert.equal('withdrawnAt' in JSON.parse(insert.values[1]), false);
+      return [[{}], [{ blocked: true }]];
+    },
+  };
+  const store = createNeonStore(undefined, { sql });
+  await assert.rejects(store.insertVideo(candidate), { code: 'withdrawn' });
+});
+
 test('PATCHは共有動画の情報と区間を更新し、URLと自動取得された投稿者を保持する', async () => {
   const { handler, store, requests } = fixture();
   store.videos.set(apiVideo.id, apiVideo);
-  const response = await handler(patch(editInput(apiVideo, { title: '修正した楽曲名', start: '0:03', end: '1:35', mode: 'アイカツ！オールスターモード', difficulty: 'とてもむずかしい', idol: '自由入力アイドル', result: 'オールパーフェクト', author: '改ざん者', authorHandle: '@Fake', startSeconds: 999, endSeconds: 1000 })));
+  const response = await handler(patch(editInput(apiVideo, { title: '修正した楽曲名', start: '0:03', end: '1:35', mode: 'アイカツ！オールスターモード', difficulty: 'とてもむずかしい', idol: '自由入力アイドル', result: 'オールパーフェクト', author: '改ざん者', authorHandle: '@Fake', startSeconds: 999, endSeconds: 1000, withdrawnAt })));
   assert.equal(response.status, 200);
   const body = await response.json();
   const expected = { ...apiVideo, title: '修正した楽曲名', startSeconds: 3, endSeconds: 95, mode: 'アイカツ！オールスターモード', difficulty: 'とてもむずかしい', idol: '自由入力アイドル', result: 'オールパーフェクト' };
@@ -455,17 +596,21 @@ test('PATCHのDB取得・頻度制限・更新失敗は秘密を漏らさず503�
 test('Neon storeは読み込み時にrevisionを付け、JSONのrevisionを保存せず単一UPDATEで競合を防ぐ', async () => {
   const queries = [];
   const revision = 'a'.repeat(32);
-  const sql = { async query(text, values) { queries.push({ text, values }); return [{ video_id: apiVideo.id, data: apiVideo, revision }]; } };
+  const sql = {
+    async query(text, values) { queries.push({ text, values }); return [{ video_id: apiVideo.id, data: apiVideo, revision }]; },
+    async transaction(steps) { return Promise.all(steps); },
+  };
   const store = createNeonStore(undefined, { sql });
   const expected = { ...apiVideo, revision };
   assert.deepEqual(await store.listVideos(), [expected]);
   assert.deepEqual(await store.getVideo(apiVideo.id), expected);
   assert.deepEqual(await store.insertVideo(apiVideo), expected);
   assert.deepEqual(await store.updateVideo({ ...apiVideo, revision }, revision), expected);
-  for (const query of queries) assert.match(query.text, /md5\(data::text\) AS revision/);
+  for (const query of queries.filter(query => !query.text.includes('pg_advisory_xact_lock'))) assert.match(query.text, /md5\((?:v\.)?data::text\)/);
   const update = queries.at(-1);
   assert.match(update.text, /SET data = data \|\| \$2::jsonb/);
   assert.match(update.text, /WHERE video_id = \$1 AND md5\(data::text\) = \$3/);
+  assert.match(update.text, /NOT \(data \? 'withdrawnAt'\)/);
   assert.deepEqual(update.values, [apiVideo.id, JSON.stringify(apiVideo), revision]);
   assert.equal(update.text.includes(apiVideo.author), false);
   const emptyStore = createNeonStore(undefined, { sql: { async query() { return []; } } });

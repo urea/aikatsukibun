@@ -50,7 +50,7 @@ function playerHarness(data = clip, entryId = id) {
     metadata: { get: key => entries.get(key) }, settings: { muted: false, videoVolume: 70 }, SETTINGS_KEY: 'test-settings',
     rangeFor: key => getPlaybackRange(entries.get(key), player.duration), getClipPosition, seekTimeForPercent, youtubeVideoOptions, isVideoId, isEntryId, formatTime, displayTitle,
     playbackSession, youtubeIdFor: key => videoIdFor(key, entries.get(key)),
-    allIds: () => [...entries.keys()], videoIds: [id], sharedVideos: [], pendingSharedVideoId: null,
+    allIds: () => [...entries.keys()], publishedIds: () => [id], isWithdrawn: () => false, pendingSharedVideoId: null,
     titleFor: key => entries.get(key)?.title || `動画 (${key})`, renderDetails: () => {}, updateFavorite: () => {},
     setIcon: (control, value) => { control.icon = value; }, setStatus: value => { $('status').textContent = value; },
     notice: value => { $('notice').textContent = value; },
@@ -104,7 +104,7 @@ test('元動画が不明の曲は再生とシークを無効にし、直接イ�
   // 前のプレーヤーの準備完了通知が遅れても、無効な操作を再び有効にしない。
   harness.context.onPlayerReady({ target: harness.player });
   assert.equal(harness.$('play-toggle').disabled, true);
-  assert.deepEqual(harness.commands, []);
+  assert.deepEqual(harness.commands, [{ type: 'pause' }]);
 
   harness.context.selectVideo(id);
   harness.state(435, 1);

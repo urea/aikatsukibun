@@ -38,15 +38,22 @@ function save(key, value, warn = true) {
 let favorites = uniqueIds(readSaved(storage, 'fav_ids', []));
 let history = uniqueIds(readSaved(storage, 'hist_ids', [])).slice(0, 30);
 let customVideos = normalizeCustomVideos(readSaved(storage, 'custom_videos', []));
-let sharedVideos = normalizeCustomVideos(readSaved(storage, 'shared_videos', []));
+const cachedPublication = readSaved(storage, 'shared_publication', {});
+let sharedVideos = normalizeCustomVideos(cachedPublication.videos ?? readSaved(storage, 'shared_videos', []));
+let withdrawnIds = new Set(uniqueIds(cachedPublication.withdrawnIds));
+let publicationReady = false;
 const sharedClient = createSharedVideosClient();
 const settings = normalizeSettings(readSaved(storage, SETTINGS_KEY, {}));
 const metadata = createMetadata(storage, save);
 customVideos.forEach(video => metadata.seed(video.id, video));
 sharedVideos.forEach(video => metadata.seed(video.id, video, { replace: true }));
+const isWithdrawn = id => withdrawnIds.has(id) || withdrawnIds.has(videoIdFor(id, metadata.get(id)));
+const publishedIds = () => [...videoIds, ...sharedVideos.map(video => video.id)].filter(id => !isWithdrawn(id));
+const savePublication = () => save('shared_publication', { videos: sharedVideos, withdrawnIds: [...withdrawnIds] }, false);
 const lastVideo = readSaved(storage, 'aikatsu_last_video_v2', null);
-const initialIds = uniqueIds([...sharedVideos.map(video => video.id), ...customVideos.map(video => video.id), ...videoIds, ...favorites, ...history]);
-const initialSharedIds = [...videoIds, ...sharedVideos.map(video => video.id)];
+const allIds = () => uniqueIds([...sharedVideos.map(video => video.id), ...customVideos.map(video => video.id), ...videoIds, ...favorites, ...history]).filter(id => !isWithdrawn(id));
+const initialIds = allIds();
+const initialSharedIds = publishedIds();
 const requestedVideoId = readSharedVideoId(location.href);
 let pendingSharedVideoId = requestedVideoId && !initialSharedIds.includes(requestedVideoId) ? requestedVideoId : null;
 let currentId = initialSharedIds.includes(requestedVideoId) ? requestedVideoId : pendingSharedVideoId ? null : initialIds.includes(lastVideo) ? lastVideo : initialIds[0] ?? null;
@@ -65,9 +72,8 @@ let clipEnded = false;
 let libraryRenderTimer;
 const playbackSession = createPlaybackSession();
 const unplayable = new Set();
-const allIds = () => uniqueIds([...sharedVideos.map(video => video.id), ...customVideos.map(video => video.id), ...videoIds, ...favorites, ...history]);
 const titleFor = id => metadata.get(id)?.title || `動画 (${id})`;
-const youtubeIdFor = id => videoIdFor(id, metadata.get(id));
+const youtubeIdFor = id => isWithdrawn(id) ? null : videoIdFor(id, metadata.get(id));
 const rangeFor = id => getPlaybackRange(metadata.get(id), playerReady ? player.getDuration() : 0);
 const authorFor = data => [data?.author, data?.authorHandle].filter(Boolean).join('');
 function detailsFor(id) {
@@ -116,7 +122,7 @@ function updateCurrent() {
   $('shuffle').disabled = allIds().length === 0;
   $('replay').disabled = !hasVideo;
   $('youtube-link').hidden = !hasVideo;
-  $('share-current').disabled = !hasVideo || !metadata.get(currentId)?.title || ![...videoIds, ...sharedVideos.map(video => video.id)].includes(currentId);
+  $('share-current').disabled = !hasVideo || !metadata.get(currentId)?.title || !publishedIds().includes(currentId);
   if (!hasVideo) {
     $('seek').disabled = true;
     $('current-details').hidden = true;
@@ -141,7 +147,7 @@ function syncEditedRange(id, previous, video) {
   if (playerReady) requestPlayback(youtubeVideoOptions(id, video));
 }
 function toggleFavorite(id) {
-  if (!isEntryId(id)) return;
+  if (!isEntryId(id) || isWithdrawn(id)) return;
   const removing = favorites.includes(id);
   favorites = removing ? favorites.filter(value => value !== id) : [id, ...favorites];
   save('fav_ids', favorites);
@@ -237,7 +243,7 @@ function rowFor(id) {
   return entry;
 }
 function renderLibrary() {
-  const ids = libraryTab === 'favorites' ? favorites : libraryTab === 'history' ? history : allIds();
+  const ids = (libraryTab === 'favorites' ? favorites : libraryTab === 'history' ? history : allIds()).filter(id => !isWithdrawn(id));
   const query = $('video-search').value.normalize('NFKC').toLocaleLowerCase().trim();
   const filtered = ids.filter(id => `${titleFor(id)} ${detailsFor(id).map(([, value]) => value).join(' ')} ${id}`.normalize('NFKC').toLocaleLowerCase().includes(query));
   const matching = sortVideoIds(filtered, librarySort, id => metadata.get(id));
@@ -276,6 +282,33 @@ function scheduleLibraryRender() {
 }
 let sharedLoading;
 let sharedRevision = 0;
+function reconcileWithdrawnSelection() {
+  const wasWithdrawn = isWithdrawn(currentId);
+  const requested = pendingSharedVideoId;
+  if (!wasWithdrawn && !requested) return;
+  pendingSharedVideoId = null;
+  const candidates = allIds();
+  currentId = requested && publishedIds().includes(requested) ? requested : candidates.includes(lastVideo) ? lastVideo : candidates[0] ?? null;
+  if (wasWithdrawn) {
+    queuedAutoplay = false;
+    clipEnded = false;
+    playerFailed = false;
+    lastRecordedId = null;
+    $('seek').value = '0'; $('seek').disabled = true;
+    $('current-time').textContent = '0:00'; $('duration').textContent = '0:00';
+    $('player-notice').hidden = true;
+    if (!player) {
+      clearTimeout(playerTimeout);
+      playerTimeout = undefined;
+      $('youtube-player').removeAttribute('src');
+    }
+    if (playerReady) {
+      player.pauseVideo();
+      if (currentId) requestPlayback(youtubeVideoOptions(currentId, metadata.get(currentId)));
+    }
+  }
+  if (wasWithdrawn || currentId !== requested) toast('この曲は共有一覧で利用できません。「選ぶ」から別の曲を選べます。');
+}
 async function refreshSharedVideos() {
   if (sharedLoading) return sharedLoading;
   $('shared-status').textContent = '共有一覧を更新中…';
@@ -283,21 +316,19 @@ async function refreshSharedVideos() {
   const revision = sharedRevision;
   sharedLoading = (async () => {
     try {
-      const videos = await sharedClient.list();
+      const { videos, withdrawnIds: unavailable } = await sharedClient.list();
       if (revision !== sharedRevision) { $('shared-status').textContent = ''; return false; }
       const previous = metadata.get(currentId);
+      const previousId = currentId;
       sharedVideos = videos;
+      withdrawnIds = new Set(unavailable);
       sharedVideos.forEach(video => metadata.seed(video.id, video, { replace: true }));
-      save('shared_videos', sharedVideos, false);
-      if (pendingSharedVideoId) {
-        const requested = pendingSharedVideoId;
-        pendingSharedVideoId = null;
-        currentId = [...videoIds, ...sharedVideos.map(video => video.id)].includes(requested) ? requested : allIds().includes(lastVideo) ? lastVideo : allIds()[0] ?? null;
-        if (currentId !== requested) toast('共有された曲が見つかりませんでした。「選ぶ」から曲を選んでください。');
-      }
+      savePublication();
+      publicationReady = true;
+      reconcileWithdrawnSelection();
       updateCurrent();
       const currentVideo = videos.find(video => video.id === currentId);
-      if (currentVideo) syncEditedRange(currentId, previous, currentVideo);
+      if (currentVideo && previousId === currentId) syncEditedRange(currentId, previous, currentVideo);
       if (currentId && !player) preparePlayer();
       if (panelId === 'library-panel') renderLibrary();
       $('shared-status').textContent = '';
@@ -450,6 +481,7 @@ function openAddForm() {
   openPanel('add-panel');
 }
 async function openEditForm(id) {
+  if (isWithdrawn(id)) return;
   if (formSaving || editOpening) { toast('処理が終わるまでお待ちください'); return; }
   editOpening = true;
   try {
@@ -546,7 +578,7 @@ $('add-form').addEventListener('submit', async event => {
       savedVideo = editing ? await sharedClient.update(editing.id, editing.revision, input) : await sharedClient.add(input);
       sharedRevision++;
       sharedVideos = editing ? sharedVideos.map(item => item.id === editing.id ? savedVideo : item) : [savedVideo, ...sharedVideos.filter(item => item.id !== savedVideo.id)];
-      save('shared_videos', sharedVideos, false);
+      savePublication();
     }
     const savedId = savedVideo.id;
     metadata.seed(savedId, savedVideo, { replace: true });
@@ -617,7 +649,7 @@ function notice(message, retry = false) {
   $('retry-player').hidden = !retry;
 }
 function selectVideo(id) {
-  if (!isEntryId(id)) return;
+  if (!isEntryId(id) || isWithdrawn(id)) return;
   pendingSharedVideoId = null;
   currentId = id;
   lastRecordedId = null;
@@ -639,10 +671,7 @@ function selectVideo(id) {
   else {
     // APIの準備が終わった際に、最後に選択された動画を再生する。
     queuedAutoplay = true;
-    if (!player) {
-      $('youtube-player').src = iframeUrl(id);
-      preparePlayer();
-    }
+    if (!player) preparePlayer();
   }
   if (!metadata.get(id)) metadata.fetch(id).then(() => { if (id === currentId) updateCurrent(); }).catch(() => {});
 }
@@ -653,6 +682,7 @@ $('shuffle').addEventListener('click', () => {
   else toast('再生できる候補がありません。「選ぶ」から動画を追加してください。');
 });
 $('share-current').addEventListener('click', () => {
+  if (!publishedIds().includes(currentId)) return;
   const url = buildXShareUrl(location.href, { ...metadata.get(currentId), id: currentId });
   if (url) window.open(url, '_blank', 'noopener,noreferrer');
 });
@@ -695,6 +725,7 @@ $('seek').addEventListener('change', () => {
 $('seek').addEventListener('blur', () => { seeking = false; });
 $('retry-player').addEventListener('click', () => location.reload());
 $('replay').addEventListener('click', () => {
+  if (!youtubeIdFor(currentId)) return;
   clipEnded = false;
   if (playerReady) requestPlayback(youtubeVideoOptions(currentId, metadata.get(currentId)), true);
   else selectVideo(currentId);
@@ -716,7 +747,7 @@ updateCurrent();
 let playerTimeout;
 let playerScriptRequested = false;
 function preparePlayer() {
-  if (!youtubeIdFor(currentId) || player || playerTimeout) return;
+  if (!publicationReady || !youtubeIdFor(currentId) || player || playerTimeout) return;
   setStatus('プレーヤーを準備中…');
   $('youtube-player').src = iframeUrl(currentId);
   playerTimeout = setTimeout(() => {
@@ -737,7 +768,7 @@ function onPlayerReady(event) {
   const autoplay = queuedAutoplay;
   queuedAutoplay = false;
   requestPlayback(youtubeVideoOptions(currentId, metadata.get(currentId)), autoplay);
-  if (libraryDialog.open) player.pauseVideo();
+  if (libraryDialog.open || !youtubeIdFor(currentId)) player.pauseVideo();
   $('play-toggle').disabled = !youtubeIdFor(currentId); $('mute-toggle').disabled = false;
   applyVideoVolume();
   if (!playerFailed) { $('player-notice').hidden = true; setStatus(''); }
@@ -791,10 +822,7 @@ function createPlayer() {
   });
 }
 window.onYouTubeIframeAPIReady = createPlayer;
-if (currentId) {
-  if (!metadata.get(currentId)) metadata.fetch(currentId).then(updateCurrent).catch(() => {});
-  preparePlayer();
-} else {
+if (!currentId && !pendingSharedVideoId) {
   setStatus('楽曲を登録すると、動画に合わせて遊べます');
 }
 setInterval(() => {
@@ -880,7 +908,13 @@ $('clear-favorites').addEventListener('click', () => {
 });
 reducedMotion.addEventListener('change', syncSettings);
 syncSettings(); syncMute();
-refreshSharedVideos();
+// 初回は公開状態を確認してから動画を読み込む。通信失敗時は保存済みの状態で再生できる。
+refreshSharedVideos().then(() => {
+  publicationReady = true;
+  if (!currentId || isWithdrawn(currentId)) return;
+  if (!metadata.get(currentId)) metadata.fetch(currentId).then(updateCurrent).catch(() => {});
+  preparePlayer();
+});
 
 const playTap = createTapAudio();
 const padInput = createPadInput();

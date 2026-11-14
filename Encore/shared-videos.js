@@ -1,4 +1,4 @@
-import { normalizeCustomVideos } from './model.js';
+import { normalizeCustomVideos, uniqueIds } from './model.js';
 
 const hasPlaybackBounds = video => video && Object.hasOwn(video, 'startSeconds') && Object.hasOwn(video, 'endSeconds');
 
@@ -27,7 +27,7 @@ export function createSharedVideosClient(fetchImpl = fetch) {
     async list() {
       const data = await request();
       if (!Array.isArray(data?.videos)) throw new Error('共有一覧を読み込めませんでした。もう一度お試しください。');
-      return normalizeCustomVideos(data.videos);
+      return { videos: normalizeCustomVideos(data.videos), withdrawnIds: uniqueIds(data.withdrawnIds) };
     },
     async add(input) {
       const data = await request({ method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input) });

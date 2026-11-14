@@ -37,7 +37,7 @@ test('同じYouTube動画の別の曲は別IDと元動画情報を保って取�
     if (options.method === 'PATCH') assert.equal(JSON.parse(options.body).id, next.id);
     return response({ video: next });
   });
-  assert.deepEqual(await client.list(), [first, next]);
+  assert.deepEqual(await client.list(), { videos: [first, next], withdrawnIds: [] });
   assert.deepEqual(await client.add(input), next);
   assert.deepEqual(await client.update(next.id, next.revision, input), next);
 });
@@ -52,15 +52,16 @@ test('共有一覧はGETで取得し、再生に必要な区間と投稿者を�
     assert.ok(options.signal instanceof AbortSignal);
     return response({ videos: [video] });
   });
-  assert.deepEqual(await client.list(), [video]);
+  assert.deepEqual(await client.list(), { videos: [video], withdrawnIds: [] });
   assert.equal(calls, 1);
 });
 
 test('共有一覧の不正なIDや重複を除外し、秘密や余分なレスポンス項目を取り込まない', async () => {
   const client = createSharedVideosClient(async () => response({
     videos: [null, { ...video, id: 'invalid' }, { ...video, privateToken: 'server-only' }, video],
+    withdrawnIds: ['lTLqkpcqWs8', `clip_${'a'.repeat(32)}`, null, 'invalid', 'lTLqkpcqWs8'],
   }));
-  assert.deepEqual(await client.list(), [video]);
+  assert.deepEqual(await client.list(), { videos: [video], withdrawnIds: ['lTLqkpcqWs8', `clip_${'a'.repeat(32)}`] });
 });
 
 test('公開登録はフォーム情報をPOSTし、自動取得された投稿者情報を結果から受け取る', async () => {
@@ -95,7 +96,7 @@ test('全体再生・片方省略の明示null境界は登録・編集の成功�
     });
     assert.deepEqual(await client.add(submitted), saved);
     assert.deepEqual(await client.update(video.id, revision, submitted), saved);
-    assert.deepEqual(await client.list(), [saved]);
+    assert.deepEqual(await client.list(), { videos: [saved], withdrawnIds: [] });
   }
 });
 
@@ -112,7 +113,7 @@ test('編集はIDと読込時revisionをPATCHし、更新後のrevisionを再読
   });
   const saved = await client.update(video.id, revision, { ...input, title: edited.title });
   assert.deepEqual(saved, edited);
-  assert.deepEqual(await client.list(), [edited]);
+  assert.deepEqual(await client.list(), { videos: [edited], withdrawnIds: [] });
 });
 
 test('同時編集の競合を判別でき、ID・区間・投稿者・revisionの壊れた更新結果を成功扱いしない', async () => {
