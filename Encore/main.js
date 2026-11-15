@@ -1,5 +1,5 @@
 import videoIds from './videos.json';
-import { SETTINGS_KEY, VIDEO_CATEGORIES, categoryLabel, passesEncoreFilter, isVideoId, isEntryId, videoIdFor, uniqueIds, readSaved, normalizeCustomVideos, normalizeSettings, chooseRandom, formatTime, displayTitle } from './model.js';
+import { SETTINGS_KEY, VIDEO_CATEGORIES, categoryLabel, isVideoCategory, isPlayableVideo, passesEncoreFilter, isVideoId, isEntryId, videoIdFor, uniqueIds, readSaved, normalizeCustomVideos, normalizeSettings, chooseRandom, formatTime, displayTitle } from './model.js';
 import { icon, setIcon, mountIcons } from './icons.js';
 import { createTapAudio } from './tap-audio.js';
 import { createPadInput, PAD_KEYS } from './pad-input.js';
@@ -52,8 +52,8 @@ const publishedIds = () => [...videoIds, ...sharedVideos.map(video => video.id)]
 const savePublication = () => save('shared_publication', { videos: sharedVideos, withdrawnIds: [...withdrawnIds] }, false);
 const lastVideo = readSaved(storage, 'aikatsu_last_video_v2', null);
 const allIds = () => uniqueIds([...sharedVideos.map(video => video.id), ...customVideos.map(video => video.id), ...videoIds, ...favorites, ...history]).filter(id => !isWithdrawn(id));
-const isMisc = id => metadata.get(id)?.category === 'misc';
-const playCandidateIds = () => allIds().filter(id => !isMisc(id));
+const categoryFor = id => metadata.get(id)?.category ?? 'misc';
+const playCandidateIds = () => allIds().filter(id => isPlayableVideo(metadata.get(id)));
 const initialIds = playCandidateIds();
 const initialSharedIds = publishedIds();
 const requestedVideoId = readSharedVideoId(location.href);
@@ -85,7 +85,8 @@ function detailsFor(id) {
   if (data.startSeconds !== undefined && data.endSeconds !== undefined) {
     fields.push(['楽曲位置', `${data.startSeconds === null ? '先頭' : formatTime(data.startSeconds)}〜${data.endSeconds === null ? '最後' : formatTime(data.endSeconds)}`]);
   }
-  if (data.category || (data.startSeconds !== undefined && data.endSeconds !== undefined)) fields.push(['分類', categoryLabel(data.category)]);
+  if (data.category || (data.startSeconds !== undefined && data.endSeconds !== undefined)) fields.push(['分類', categoryLabel(categoryFor(id))]);
+  if (typeof data.playable === 'boolean') fields.push(['ボタン操作', data.playable ? 'プレイ可' : '視聴のみ']);
   return fields.filter(([, value]) => typeof value === 'string' && value.length > 0);
 }
 function renderDetails(container, id, { authorOnly = false, library = false } = {}) {
@@ -247,10 +248,9 @@ function rowFor(id) {
 }
 function renderLibrary() {
   const ids = (libraryTab === 'favorites' ? favorites : libraryTab === 'history' ? history : allIds())
-    .filter(id => !isWithdrawn(id) && (settings.libraryShowMisc || !isMisc(id)));
+    .filter(id => !isWithdrawn(id) && categoryFor(id) === settings.libraryCategory);
   const query = $('video-search').value.normalize('NFKC').toLocaleLowerCase().trim();
-  const eligible = ids.filter(id => passesEncoreFilter(metadata.get(id)?.category, settings.libraryExcludeOther));
-  const filtered = query ? eligible.filter(id => `${titleFor(id)} ${detailsFor(id).map(([, value]) => value).join(' ')} ${id}`.normalize('NFKC').toLocaleLowerCase().includes(query)) : eligible;
+  const filtered = query ? ids.filter(id => `${titleFor(id)} ${detailsFor(id).map(([, value]) => value).join(' ')} ${id}`.normalize('NFKC').toLocaleLowerCase().includes(query)) : ids;
   const matching = sortVideoIds(filtered, librarySort, id => metadata.get(id));
   $('video-sort-default').textContent = libraryTab === 'favorites' ? 'お気に入り登録順' : libraryTab === 'history' ? '再生順' : '投稿順';
   const visibleIds = new Set(matching);
@@ -277,11 +277,9 @@ function renderLibrary() {
     const expected = $('video-list').children[index];
     if (expected !== entry.row) $('video-list').insertBefore(entry.row, expected || null);
   });
-  $('library-count').textContent = `${matching.length}曲${query || settings.libraryExcludeOther ? ` / ${ids.length}曲` : ''}`;
+  $('library-count').textContent = `${matching.length}曲${query ? ` / ${ids.length}曲` : ''}`;
   $('library-empty').hidden = matching.length > 0;
-  $('library-empty').textContent = settings.libraryExcludeOther && eligible.length < ids.length
-    ? '表示できる曲がありません。「プレイ動画」を選ぶと対象が広がります。'
-    : query ? '見つかりませんでした。別のキーワードを試してください。' : libraryTab === 'favorites' ? '星を押して、お気に入りを追加しましょう。' : libraryTab === 'history' ? '動画を再生すると、ここに履歴が残ります。' : 'アンコールの楽曲は準備中です。';
+  $('library-empty').textContent = query ? '見つかりませんでした。別のキーワードを試してください。' : 'この分類に表示できる動画がありません。';
 }
 function scheduleLibraryRender() {
   clearTimeout(libraryRenderTimer);
@@ -289,14 +287,14 @@ function scheduleLibraryRender() {
 }
 let sharedLoading;
 let sharedRevision = 0;
-function reconcilePublishedSelection(replaceImplicitMisc) {
+function reconcilePublishedSelection(replaceImplicitVideo) {
   const wasWithdrawn = isWithdrawn(currentId);
   const requested = pendingSharedVideoId;
-  if (!wasWithdrawn && !requested && !replaceImplicitMisc) return;
+  if (!wasWithdrawn && !requested && !replaceImplicitVideo) return;
   pendingSharedVideoId = null;
   const candidates = playCandidateIds();
   currentId = requested && publishedIds().includes(requested) ? requested : candidates.includes(lastVideo) ? lastVideo : candidates[0] ?? null;
-  if (wasWithdrawn || replaceImplicitMisc) {
+  if (wasWithdrawn || replaceImplicitVideo) {
     queuedAutoplay = false;
     clipEnded = false;
     playerFailed = false;
@@ -323,7 +321,7 @@ async function refreshSharedVideos() {
   const revision = sharedRevision;
   sharedLoading = (async () => {
     try {
-      const { videos, withdrawnIds: unavailable } = await sharedClient.list({ includeMisc: true });
+      const { videos, withdrawnIds: unavailable } = await sharedClient.list({ includeMisc: true, classification: 'series' });
       if (revision !== sharedRevision) { $('shared-status').textContent = ''; return false; }
       const previous = metadata.get(currentId);
       const previousId = currentId;
@@ -331,9 +329,10 @@ async function refreshSharedVideos() {
       withdrawnIds = new Set(unavailable);
       sharedVideos.forEach(video => metadata.seed(video.id, video, { replace: true }));
       savePublication();
-      const replaceImplicitMisc = !publicationReady && !readSharedVideoId(location.href) && isMisc(currentId);
+      const initialVideo = metadata.get(currentId);
+      const replaceImplicitVideo = !publicationReady && !readSharedVideoId(location.href) && initialVideo && !isPlayableVideo(initialVideo);
       publicationReady = true;
-      reconcilePublishedSelection(replaceImplicitMisc);
+      reconcilePublishedSelection(replaceImplicitVideo);
       updateCurrent();
       const currentVideo = videos.find(video => video.id === currentId);
       if (currentVideo && previousId === currentId) syncEditedRange(currentId, previous, currentVideo);
@@ -395,11 +394,11 @@ document.querySelectorAll('[data-library]').forEach(button => {
   });
 });
 $('video-search').addEventListener('input', () => { $('library-results').scrollTop = 0; renderLibrary(); });
-$('library-video-filter').value = settings.libraryExcludeOther ? 'encore' : settings.libraryShowMisc ? 'include-misc' : 'playable';
+$('library-video-filter').value = settings.libraryCategory;
 $('library-video-filter').addEventListener('change', event => {
   const filter = event.currentTarget.value;
-  settings.libraryExcludeOther = filter === 'encore';
-  settings.libraryShowMisc = filter === 'include-misc';
+  if (!isVideoCategory(filter)) return;
+  settings.libraryCategory = filter;
   save(SETTINGS_KEY, settings);
   $('library-results').scrollTop = 0;
   renderLibrary();
@@ -411,7 +410,7 @@ $('video-sort').addEventListener('change', () => {
   renderLibrary();
 });
 
-const addFields = ['url', 'category', 'title', 'start', 'end', 'mode', 'difficulty', 'idol', 'result'];
+const addFields = ['url', 'category', 'playable', 'title', 'start', 'end', 'mode', 'difficulty', 'idol', 'result'];
 const customChoiceValue = '__custom__';
 const customChoiceFields = ['title', 'idol'];
 for (const [value, label] of Object.entries(VIDEO_CATEGORIES)) {

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { categoryLabel } from '../../Encore/model.js';
 import { createModerationStore } from '../../Encore/server/moderation.js';
 import { runModerationCli } from '../../Encore/tools/moderate-videos.mjs';
 
@@ -83,6 +84,9 @@ test('help and invalid invocation do not read the environment or construct a dat
     ['hide', fakeConnection, '--apply'], ['hide', sourceId, '--restore-withdrawn'],
     ['misc'], ['misc', `https://youtu.be/${sourceId}`], ['misc', clipId, '--restore-withdrawn', '--restore-withdrawn'],
     ['misc', clipId, '--apply', '--apply'], ['misc', clipId, '--restore'],
+    ['classify', clipId, 'encore'], ['classify', clipId, 'unlisted', 'watch'],
+    ['classify', clipId, 'other', 'false'], ['classify', clipId, 'misc', 'watch', '--apply', '--apply'],
+    ['classify', clipId, 'other', 'watch', '--restore-withdrawn'], ['classify', `https://youtu.be/${sourceId}`, 'other', 'watch'],
   ]) assert.equal(await cli.run(args), 2);
   assert.deepEqual(cli.calls, []);
   assert.doesNotMatch(cli.errors.join('\n'), /secret-marker/);
@@ -156,6 +160,56 @@ test('misc accepts legacy IDs and distinguishes already categorized or missing e
   row = null;
   assert.equal(await cli.run(['misc', sourceId]), 0);
   assert.match(cli.outputs.join('\n'), /対象の共有曲は見つかりません/);
+});
+
+test('classify previews classification and playability; apply maps watch/playable to booleans and leaves unchanged unset', async () => {
+  let row = { ...legacyRow, category: 'encore', playable: null };
+  const writes = [];
+  const reads = [];
+  const cli = fixture({ makeStore: () => ({
+    async listEntry(id) { reads.push(id); return [row]; },
+    async classifyEntry(id, category, playable) {
+      writes.push([id, category, playable]);
+      const changed = row.category !== category || (playable !== undefined && row.playable !== playable);
+      row = { ...row, category, ...(playable === undefined ? {} : { playable }) };
+      return { changed: Number(changed), rows: [row] };
+    },
+  }) });
+  assert.equal(await cli.run(['classify', sourceId, 'other', 'watch']), 0);
+  assert.deepEqual(reads, [sourceId]);
+  assert.deepEqual(writes, []);
+  assert.ok(cli.outputs.includes(`分類: ${categoryLabel('encore')} → ${categoryLabel('other')}｜プレイ可否: 未指定 → 視聴のみ`));
+  assert.match(cli.outputs.join('\n'), /変更予定: 1曲/);
+  assert.match(cli.outputs.join('\n'), new RegExp(`classify ${sourceId} other watch --apply`));
+  for (const [category, mode, playable, changed] of [
+    ['other', 'watch', false, 1], ['other', 'watch', false, 0], ['encore', 'unchanged', undefined, 1], ['misc', 'playable', true, 1],
+  ]) {
+    cli.outputs.length = 0;
+    assert.equal(await cli.run(['classify', sourceId, category, mode, '--apply']), 0);
+    assert.deepEqual(writes.at(-1), [sourceId, category, playable]);
+    assert.match(cli.outputs.join('\n'), new RegExp(`変更: ${changed}曲`));
+    if (mode === 'unchanged') assert.match(cli.outputs.join('\n'), /プレイ可否: 視聴のみ/);
+  }
+});
+
+test('classify previews no change and reports a refused apply for row withdrawal or whole-source suppression', async () => {
+  for (const [row, message] of [
+    [{ ...clipRow, category: 'encore', playable: true }, /対象曲が非表示/],
+    [{ ...clipRow, category: 'encore', playable: true, withdrawn: false, other_withdrawn: true }, /同じ元動画に非表示曲/],
+  ]) {
+    const cli = fixture({ makeStore: () => ({
+      listEntry: async () => [row],
+      classifyEntry: async () => ({ changed: 0, rows: [row] }),
+    }) });
+    assert.equal(await cli.run(['classify', clipId, 'other', 'unchanged']), 0);
+    assert.match(cli.outputs.join('\n'), /変更予定: 0曲/);
+    assert.match(cli.outputs.join('\n'), /プレイ可否: プレイ可能（維持）/);
+    assert.doesNotMatch(cli.outputs.join('\n'), /反映するには/);
+    cli.outputs.length = 0;
+    assert.equal(await cli.run(['classify', clipId, 'other', 'unchanged', '--apply']), 1);
+    assert.match(cli.outputs.join('\n'), /変更: 0曲/);
+    assert.match(cli.outputs.join('\n'), message);
+  }
 });
 
 test('the store lists the legacy id and clips by source and checks presence instead of a truthy marker', async () => {
@@ -265,4 +319,51 @@ test('misc uses the source lock but limits the write to the exact entry and requ
   assert.deepEqual(await store.markMisc(otherSourceId), { changed: 0, rows: [] });
   await assert.rejects(store.markMisc(clipId, { restoreWithdrawn: 'true' }), TypeError);
   assert.equal(transactions.length, 2);
+});
+
+test('classify SQL is idempotent and skips an entry if either it or a sibling is withdrawn under the source lock', async () => {
+  const queries = [];
+  const transactions = [];
+  const active = { ...clipRow, withdrawn: false, category: 'other', playable: false };
+  const sql = {
+    async query(text, values) {
+      queries.push({ text, values });
+      return text.includes('AS other_withdrawn') ? [active] : [{ source_id: sourceId }];
+    },
+    async transaction(build, options) {
+      transactions.push({ queries: build({ query: (text, values) => ({ text, values }) }), options });
+      return [[], [], [], [], [active]];
+    },
+  };
+  const store = createModerationStore(undefined, { sql });
+  assert.equal((await store.listEntry(clipId))[0].playable, false);
+  assert.match(queries[0].text, /data->'playable' AS playable/);
+  assert.deepEqual(queries[0].values, [clipId]);
+  for (const flag of [undefined, false, true]) {
+    assert.deepEqual(await store.classifyEntry(clipId, 'other', flag), { changed: 0, rows: [active] });
+    const transaction = transactions.at(-1);
+    const [lockTimeout, statementTimeout, lock, update, returned] = transaction.queries;
+    assert.match(lockTimeout.text, /^SET LOCAL lock_timeout/);
+    assert.match(statementTimeout.text, /^SET LOCAL statement_timeout/);
+    assert.equal(lock.text, 'SELECT pg_advisory_xact_lock(1162756943, hashtext($1::text))');
+    assert.deepEqual(lock.values, [sourceId]);
+    assert.match(update.text, /SET data = data \|\| jsonb_build_object\('category', \$3::text/);
+    assert.match(update.text, /WHERE video_id = \$1 AND COALESCE\(data->>'videoId', video_id\) = \$2/);
+    assert.match(update.text, /AND NOT \(data \? 'withdrawnAt'\)/);
+    assert.match(update.text, /AND NOT EXISTS \(\s*SELECT 1 FROM public\.encore_shared_videos sibling\s*WHERE COALESCE\(sibling\.data->>'videoId', sibling\.video_id\) = \$2\s*AND sibling\.video_id <> \$1 AND sibling\.data \? 'withdrawnAt'/);
+    assert.match(update.text, /data->>'category' IS DISTINCT FROM \$3::text/);
+    if (flag === undefined) {
+      assert.doesNotMatch(update.text, /playable/);
+      assert.deepEqual(update.values, [clipId, sourceId, 'other']);
+    } else {
+      assert.match(update.text, /'playable', \$4::boolean/);
+      assert.match(update.text, /data->'playable' IS DISTINCT FROM to_jsonb\(\$4::boolean\)/);
+      assert.deepEqual(update.values, [clipId, sourceId, 'other', flag]);
+    }
+    assert.deepEqual(returned.values, [clipId]);
+    assert.equal(transaction.options.isolationLevel, 'ReadCommitted');
+  }
+  await assert.rejects(store.classifyEntry(clipId, 'other', 'false'), TypeError);
+  await assert.rejects(store.classifyEntry(clipId, 'unknown', false), TypeError);
+  assert.equal(transactions.length, 3);
 });

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { VIDEO_CATEGORIES, SETTINGS_KEY, categoryLabel, passesEncoreFilter, isVideoId, isEntryId, videoIdFor, uniqueIds, readSaved, normalizeSettings, normalizeCustomVideos, normalizeVideoMetadata } from '../../Encore/model.js';
+import { VIDEO_CATEGORIES, SETTINGS_KEY, categoryLabel, passesEncoreFilter, isPlayableVideo, isVideoId, isEntryId, videoIdFor, uniqueIds, readSaved, normalizeSettings, normalizeCustomVideos, normalizeVideoMetadata } from '../../Encore/model.js';
 
 test('おまかせと選曲の絞り込み・その他の動画の表示を個別に復元し、未設定ではオフにする', () => {
   for (const [stored, shuffleExcludeOther, libraryExcludeOther, libraryShowMisc] of [
@@ -27,6 +27,23 @@ test('絞り込みが有効ならアイカツアンコールだけを残し、�
     assert.equal(passesEncoreFilter(category, true), category === 'encore');
   }
   assert.equal(passesEncoreFilter('other'), true);
+});
+
+test('選曲画面の分類を保持し、旧版ではその他表示オンのみをその他の動画へ引き継ぐ', () => {
+  for (const [stored, expected] of [
+    [{}, 'encore'],
+    [{ libraryShowMisc: true }, 'misc'],
+    [{ libraryShowMisc: 'true' }, 'encore'],
+    [{ libraryCategory: 'other' }, 'other'],
+    [{ libraryCategory: 'misc' }, 'misc'],
+    [{ libraryCategory: 'encore', libraryShowMisc: true }, 'encore'],
+    [{ libraryCategory: 'invalid', libraryShowMisc: true }, 'misc'],
+    [{ libraryCategory: '__proto__' }, 'encore'],
+  ]) {
+    const settings = normalizeSettings(JSON.parse(JSON.stringify({ shuffleExcludeOther: true, ...stored })));
+    assert.equal(settings.libraryCategory, expected);
+    assert.equal(settings.shuffleExcludeOther, true);
+  }
 });
 
 const videoId = 'fYibOFCMpnE';
@@ -75,7 +92,7 @@ test('追加した楽曲情報と区間が保存データの再読み込みで�
 });
 
 test('保存済みの分類は定義済みの値だけ保持し、未登録・不正値は未分類と表示する', () => {
-  assert.deepEqual(VIDEO_CATEGORIES, { encore: 'アイカツアンコール', other: 'アイカツアンコール以外', misc: 'その他の動画' });
+  assert.deepEqual(VIDEO_CATEGORIES, { encore: 'アイカツE', other: 'その他アイカツ', misc: 'その他の動画' });
   assert.equal(Object.isFrozen(VIDEO_CATEGORIES), true);
   for (const [category, label] of Object.entries(VIDEO_CATEGORIES)) {
     assert.equal(categoryLabel(category), label);
@@ -85,6 +102,23 @@ test('保存済みの分類は定義済みの値だけ保持し、未登録・�
     assert.equal(categoryLabel(category), '未分類');
     assert.deepEqual(normalizeVideoMetadata({ title: '楽曲', category }), { title: '楽曲' });
   }
+});
+
+test('遊べるかの保存値を分類より優先し、未設定の旧データは分類で補う', () => {
+  for (const category of ['encore', 'other', 'misc', undefined]) {
+    const base = category === undefined ? { title: '動画' } : { title: '動画', category };
+    for (const playable of [true, false]) {
+      const metadata = normalizeVideoMetadata(JSON.parse(JSON.stringify({ ...base, playable })));
+      assert.deepEqual(metadata, { ...base, playable });
+      assert.equal(isPlayableVideo(metadata), playable);
+    }
+    for (const playable of [undefined, null, 'false', 'no', 0, 1, [], {}]) {
+      const metadata = normalizeVideoMetadata({ ...base, playable });
+      assert.deepEqual(metadata, base);
+      assert.equal(isPlayableVideo(metadata), category !== 'misc');
+    }
+  }
+  for (const video of [null, undefined, false, '動画', []]) assert.equal(isPlayableVideo(video), false);
 });
 
 test('詳細情報がない旧版の追加動画を保持し、不正IDや重複だけを除く', () => {

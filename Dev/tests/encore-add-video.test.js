@@ -14,7 +14,7 @@ const input = {
   idol: 'マイキャラ',
   result: 'フルコンボ',
 };
-const classifiedInput = { ...input, category: 'encore' };
+const classifiedInput = { ...input, category: 'encore', playable: 'yes' };
 
 test('編集用の入力は保存された区間・自由入力を復元し、時間形式も再検証できる', () => {
   for (const [start, end] of [['0:00', '1:36'], ['7:31', '9:57'], ['1:02:03', '1:04:05'], ['98:59:59', '99:59:59']]) {
@@ -29,6 +29,7 @@ test('編集用の入力は保存された区間・自由入力を復元し、�
   assert.equal(legacy.end, '');
   assert.equal(legacy.difficulty, '');
   assert.equal(legacy.category, '');
+  assert.equal(legacy.playable, 'yes');
 });
 
 test('同じ元動画の複数曲を編集しても曲IDをYouTube URLに使わず、入力検証は元動画IDを返す', () => {
@@ -74,7 +75,7 @@ test('分類は3値だけを保存・復元し、旧入力のキー省略は未�
     const [saved] = normalizeCustomVideos(JSON.parse(JSON.stringify([video])));
     const restored = videoToInput(saved);
     assert.equal(restored.category, category);
-    assert.deepEqual(validateVideoInput(restored).video, video);
+    assert.deepEqual(validateVideoInput(restored).video, { ...video, playable: category !== 'misc' });
   }
   const legacy = validateVideoInput(input).video;
   assert.equal(Object.hasOwn(legacy, 'category'), false);
@@ -85,10 +86,30 @@ test('分類は3値だけを保存・復元し、旧入力のキー省略は未�
     assert.equal(video, null);
     assert.deepEqual(errors, { category: '分類を選択してください。' });
   }
-  for (const category of ['未分類', 'アイカツアンコール', 'その他の動画', 'Encore', ' encore', 'other ', 'misc ', '__proto__', 'constructor', 0, false, {}, ['encore']]) {
+  for (const category of ['未分類', 'アイカツE', 'その他アイカツ', 'その他の動画', 'Encore', ' encore', 'other ', 'misc ', '__proto__', 'constructor', 0, false, {}, ['encore']]) {
     const { video, errors } = validateVideoInput({ ...input, category });
     assert.equal(video, null);
-    assert.match(errors.category, /分類は「アイカツアンコール」、「アイカツアンコール以外」、「その他の動画」のいずれかを選択/);
+    assert.match(errors.category, /分類は「アイカツE」、「その他アイカツ」、「その他の動画」のいずれかを選択/);
+  }
+});
+
+test('遊べるかの入力は分類と独立し、フォーム値とAPIの真偽値を保存・復元する', () => {
+  for (const category of ['encore', 'other', 'misc']) {
+    for (const [playable, expected] of [['yes', true], ['no', false], [true, true], [false, false]]) {
+      const { video, errors } = validateVideoInput({ ...input, category, playable });
+      assert.deepEqual(errors, {});
+      assert.equal(video.playable, expected);
+      const [saved] = normalizeCustomVideos(JSON.parse(JSON.stringify([video])));
+      const restored = videoToInput(saved);
+      assert.equal(restored.playable, expected ? 'yes' : 'no');
+      assert.deepEqual(validateVideoInput(restored).video, video);
+    }
+  }
+  assert.equal(Object.hasOwn(validateVideoInput(input).video, 'playable'), false);
+  for (const playable of ['', ' yes', 'true', 'false', 'unknown', null, undefined, 0, 1, {}, ['yes']]) {
+    const { video, errors } = validateVideoInput({ ...input, playable });
+    assert.equal(video, null);
+    assert.deepEqual(errors, { playable: 'このアプリで遊べるかを選択してください。' });
   }
 });
 

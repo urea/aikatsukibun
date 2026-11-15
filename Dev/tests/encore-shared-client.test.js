@@ -75,6 +75,22 @@ test('その他の動画を含む一覧を選ぶときだけ共有APIにパラ�
   assert.deepEqual(urls, ['/api/videos', '/api/videos', '/api/videos?includeMisc=1']);
 });
 
+test('シリーズ一覧の取得は明示クエリを送り、シリーズとプレイ可否を保持する', async () => {
+  const encore = { ...video, category: 'encore', playable: false, revision: 'a'.repeat(32) };
+  const misc = { ...video, id: 'lTLqkpcqWs8', category: 'misc', playable: true, revision: 'b'.repeat(32) };
+  const withdrawnIds = ['abcdefghijk'];
+  const urls = [];
+  const client = createSharedVideosClient(async (url, options) => {
+    urls.push(url);
+    assert.equal(options.method ?? 'GET', 'GET');
+    assert.equal(options.cache, 'no-store');
+    return response({ videos: url.includes('includeMisc=1') ? [encore, misc] : [encore], withdrawnIds });
+  });
+  assert.deepEqual(await client.list({ classification: 'series' }), { videos: [encore], withdrawnIds });
+  assert.deepEqual(await client.list({ includeMisc: true, classification: 'series' }), { videos: [encore, misc], withdrawnIds });
+  assert.deepEqual(urls, ['/api/videos?classification=series', '/api/videos?includeMisc=1&classification=series']);
+});
+
 test('共有一覧の不正なIDや重複を除外し、秘密や余分なレスポンス項目を取り込まない', async () => {
   const client = createSharedVideosClient(async () => response({
     videos: [null, { ...video, id: 'invalid' }, { ...video, privateToken: 'server-only' }, video],

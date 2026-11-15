@@ -1,4 +1,4 @@
-import { extractVideoId, isVideoCategory, normalizeVideoMetadata, videoIdFor, VIDEO_CATEGORIES } from './model.js';
+import { extractVideoId, isPlayableVideo, isVideoCategory, normalizeVideoMetadata, videoIdFor, VIDEO_CATEGORIES } from './model.js';
 
 export const VIDEO_MODES = Object.freeze(['-', 'テレビアニメアイカツ！モード', 'アイカツ！オールスターモード', 'じゆうにアイカツ！モード', 'きかんげんていライブ！モード']);
 export const VIDEO_DIFFICULTIES = Object.freeze(['-', 'かんたん', 'ふつう', 'むずかしい', 'すごくむずかしい', 'とてもむずかしい']);
@@ -20,6 +20,7 @@ export function videoToInput(video) {
   return {
     url: videoId ? `https://www.youtube.com/watch?v=${videoId}` : '',
     category: isVideoCategory(video.category) ? video.category : '',
+    playable: isPlayableVideo(video) ? 'yes' : 'no',
     ...Object.fromEntries(['title', 'mode', 'difficulty', 'idol', 'result'].map(field => [field, video[field] || ''])),
     start: time(video.startSeconds), end: time(video.endSeconds),
   };
@@ -71,6 +72,9 @@ export function validateVideoInput(input) {
       ? '分類を選択してください。'
       : `分類は${Object.values(VIDEO_CATEGORIES).map(label => `「${label}」`).join('、')}のいずれかを選択してください。`;
   }
+  const hasPlayable = Object.hasOwn(source, 'playable');
+  const playable = source.playable === 'yes' ? true : source.playable === 'no' ? false : source.playable;
+  if (hasPlayable && typeof playable !== 'boolean') errors.playable = 'このアプリで遊べるかを選択してください。';
   const startSeconds = readTime(source, 'start', errors);
   const endSeconds = readTime(source, 'end', errors);
   const id = errors.url ? null : readVideoId(values.url);
@@ -82,6 +86,7 @@ export function validateVideoInput(input) {
   const video = Object.keys(errors).length ? null : {
     id,
     ...(hasCategory ? { category } : {}),
+    ...(hasPlayable ? { playable } : {}),
     title: values.title,
     startSeconds,
     endSeconds,

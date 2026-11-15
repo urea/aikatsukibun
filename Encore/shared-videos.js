@@ -24,8 +24,12 @@ export function createSharedVideosClient(fetchImpl = fetch) {
     } finally { clearTimeout(timeout); }
   }
   return {
-    async list({ includeMisc = false } = {}) {
-      const data = await request({}, includeMisc === true ? '/api/videos?includeMisc=1' : '/api/videos');
+    async list({ includeMisc = false, classification } = {}) {
+      const params = new URLSearchParams();
+      if (includeMisc === true) params.set('includeMisc', '1');
+      if (classification === 'series') params.set('classification', 'series');
+      const query = params.toString();
+      const data = await request({}, query ? `/api/videos?${query}` : '/api/videos');
       if (!Array.isArray(data?.videos)) throw new Error('共有一覧を読み込めませんでした。もう一度お試しください。');
       return { videos: normalizeCustomVideos(data.videos), withdrawnIds: uniqueIds(data.withdrawnIds) };
     },

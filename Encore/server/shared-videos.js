@@ -26,6 +26,12 @@ function conflict() {
   return json(409, { error: 'ほかの方が情報を更新しました。最新の情報を読み込み、内容を確認してから保存してください。', code: 'conflict' });
 }
 
+function legacyCategory(video) {
+  if (video.playable === false) return 'misc';
+  if (video.category === 'misc' && video.playable === true) return 'other';
+  return video.category;
+}
+
 function acceptsOrigin(request) {
   try {
     const target = new URL(request.url);
@@ -100,8 +106,13 @@ export function createSharedVideosHandler({ store, fetchImpl = globalThis.fetch,
     if (request.method === 'GET') {
       try {
         const publication = await store.listPublication();
-        const includeMisc = new URL(request.url).searchParams.get('includeMisc') === '1';
-        return json(200, includeMisc ? publication : { ...publication, videos: publication.videos.filter(video => video.category !== 'misc') });
+        const params = new URL(request.url).searchParams;
+        const includeMisc = params.get('includeMisc') === '1';
+        const videos = params.get('classification') === 'series' ? publication.videos : publication.videos.map(video => {
+          const category = legacyCategory(video);
+          return category === video.category ? video : { ...video, category };
+        });
+        return json(200, { ...publication, videos: includeMisc ? videos : videos.filter(video => video.category !== 'misc') });
       }
       catch { return json(503, { error: databaseMessage }); }
     }
@@ -124,6 +135,11 @@ export function createSharedVideosHandler({ store, fetchImpl = globalThis.fetch,
         if (existing.revision !== parsed.input.revision) return conflict();
         const identity = { ...video, id: existing.id };
         if (existing.videoId || existing.id !== sourceId) identity.videoId = sourceId;
+        if (!Object.hasOwn(video, 'playable')) {
+          if (typeof existing.playable === 'boolean') identity.playable = existing.playable;
+          // 旧画面に見せた分類をそのまま送ったとき、実際のシリーズ分類を変えない。
+          if (video.category !== existing.category && video.category === legacyCategory(existing)) delete identity.category;
+        }
         if (await store.hasClip(identity, existing.id)) return duplicate();
         const hash = clientHash(request, getClientAddress, rateLimitSalt);
         const rate = await store.consumeRateLimit(hash, rateLimit, rateWindowSeconds);

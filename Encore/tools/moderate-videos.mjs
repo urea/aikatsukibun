@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { realpathSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { parseEnv } from 'node:util';
-import { categoryLabel, extractVideoId, isEntryId } from '../model.js';
+import { categoryLabel, extractVideoId, isEntryId, isVideoCategory } from '../model.js';
 import { createModerationStore } from '../server/moderation.js';
 
 const ENV_FILE = new URL('../.env.local', import.meta.url);
@@ -11,15 +11,23 @@ const USAGE = `Encore 共有曲の管理
   node Encore/tools/moderate-videos.mjs hide <YouTube ID/URL> [--apply]
   node Encore/tools/moderate-videos.mjs restore <YouTube ID/URL> [--apply]
   node Encore/tools/moderate-videos.mjs misc <曲ID> [--restore-withdrawn] [--apply]
+  node Encore/tools/moderate-videos.mjs classify <曲ID> <encore|other|misc> <playable|watch|unchanged> [--apply]
 
-hide / restore / misc はまず --apply を付けずに実行し、対象曲と件数を確認してください。
+hide / restore / misc / classify はまず --apply を付けずに実行し、対象曲と件数を確認してください。
 変更する場合は、同じコマンドに --apply を付けて再実行してください。
 misc は指定の曲1件を「その他の動画」に移します。非表示の曲を復元して移す場合は --restore-withdrawn を指定します。
+classify は曲1件の分類とプレイ可否を変更します。unchanged はプレイ可否を維持し、非表示の曲は変更しません。
 接続先には Encore/.env.local の DATABASE_URL を使います。`;
 
 function parseArgs(args) {
   const [action, target, flag, ...rest] = args;
   if (args.length === 0 || (args.length === 1 && ['--help', '-h'].includes(action))) return { help: true };
+  if (action === 'classify') {
+    const [mode, applyFlag] = rest;
+    if (!isEntryId(target) || !isVideoCategory(flag) || !['playable', 'watch', 'unchanged'].includes(mode)
+      || rest.length > 2 || (applyFlag !== undefined && applyFlag !== '--apply')) return null;
+    return { action, entryId: target, category: flag, mode, apply: applyFlag === '--apply' };
+  }
   if (action === 'misc') {
     const flags = args.slice(2);
     if (!isEntryId(target) || flags.some(value => !['--apply', '--restore-withdrawn'].includes(value)) || new Set(flags).size !== flags.length) return null;
@@ -62,6 +70,35 @@ function printRows(rows, output) {
   }
 }
 
+const playabilityLabel = value => value === true ? 'プレイ可能' : value === false ? '視聴のみ' : '未指定';
+
+async function runClassify(store, { entryId, category, mode, apply }, observedAt, output) {
+  const playable = mode === 'unchanged' ? undefined : mode === 'playable';
+  const { rows, changed } = apply
+    ? await store.classifyEntry(entryId, category, playable)
+    : { rows: await store.listEntry(entryId) };
+  const [row] = rows;
+  const skipped = row?.withdrawn || row?.other_withdrawn;
+  const differs = row && (row.category !== category || (playable !== undefined && row.playable !== playable));
+  const affected = !skipped && differs ? 1 : 0;
+  output(`[${datetime(observedAt)}] 分類変更${apply ? '' : 'のプレビュー'}｜曲ID: ${entryId}`);
+  output(apply ? `変更: ${changed}曲` : `変更予定: ${affected}曲。データベースは変更していません。`);
+  if (!row) output('対象の共有曲は見つかりませんでした。');
+  else {
+    if (row.withdrawn) output('対象曲が非表示のため変更しません。');
+    else if (row.other_withdrawn) output('同じ元動画に非表示曲があり、公開対象外のため変更しません。');
+    else if (apply && differs) output('指定した分類またはプレイ可否を確認できませんでした。');
+    const current = `分類: ${categoryLabel(row.category)}`;
+    const next = ` → ${categoryLabel(category)}`;
+    const currentPlayability = `プレイ可否: ${playabilityLabel(row.playable)}`;
+    const nextPlayability = playable === undefined ? '（維持）' : ` → ${playabilityLabel(playable)}`;
+    output(`${current}${apply ? '' : next}｜${currentPlayability}${apply ? '' : nextPlayability}`);
+    printRows(rows, output);
+  }
+  if (!apply && affected) output(`反映するには: node Encore/tools/moderate-videos.mjs classify ${entryId} ${category} ${mode} --apply`);
+  return apply && (!row || skipped || differs) ? 1 : 0;
+}
+
 async function runMisc(store, { entryId, apply, restoreWithdrawn }, observedAt, output) {
   const { rows, changed } = apply ? await store.markMisc(entryId, { restoreWithdrawn }) : { rows: await store.listEntry(entryId) };
   const [row] = rows;
@@ -80,7 +117,7 @@ export async function runModerationCli(args, { read = readFile, makeStore = crea
   const options = parseArgs(args);
   if (options?.help) { output(USAGE); return 0; }
   if (!options) {
-    error('引数を確認してください。list / hide / restore はYouTubeのIDまたはURL、misc は曲IDを指定します。');
+    error('引数を確認してください。list / hide / restore はYouTubeのIDまたはURL、misc / classify は曲IDを指定します。');
     error(USAGE);
     return 2;
   }
@@ -97,6 +134,7 @@ export async function runModerationCli(args, { read = readFile, makeStore = crea
   try {
     const observedAt = now();
     const store = makeStore(connectionString);
+    if (action === 'classify') return await runClassify(store, options, observedAt, output);
     if (action === 'misc') {
       await runMisc(store, options, observedAt, output);
       return 0;
@@ -115,7 +153,7 @@ export async function runModerationCli(args, { read = readFile, makeStore = crea
     return 0;
   } catch {
     error(apply
-      ? action === 'misc'
+      ? options.entryId
         ? `曲ID ${options.entryId} の反映結果を確認できませんでした。--apply を外して現在の状態を確認してください。`
         : `YouTube ${sourceId} の反映結果を確認できませんでした。再実行する前に list で現在の状態を確認してください。`
       : '共有曲を取得できませんでした。Encoreの接続設定と通信状態を確認してください。');

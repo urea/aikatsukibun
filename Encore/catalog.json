@@ -1,6 +1,8 @@
 {
   "lTLqkpcqWs8": {
     "title": "アイドル活動！",
+    "category": "encore",
+    "playable": true,
     "startSeconds": 435,
     "endSeconds": 531,
     "mode": "じゆうにアイカツ！モード",
@@ -12,6 +14,8 @@
   },
   "tJAcDG-eS-Q": {
     "title": "君のEntrance",
+    "category": "encore",
+    "playable": true,
     "startSeconds": 451,
     "endSeconds": 597,
     "mode": "アイカツ！オールスターモード",

@@ -1,5 +1,5 @@
 import { neon } from '@neondatabase/serverless';
-import { isEntryId, isVideoId } from '../model.js';
+import { isEntryId, isVideoCategory, isVideoId } from '../model.js';
 
 const SOURCE = "COALESCE(data->>'videoId', video_id)";
 const HAS_WITHDRAWN_AT = "data ? 'withdrawnAt'";
@@ -16,7 +16,7 @@ const LIST_ENTRY = `
       AND sibling.video_id <> entry.entry_id AND sibling.data ? 'withdrawnAt'
   ) AS other_withdrawn
   FROM (
-    SELECT ${ROW_COLUMNS}, data->>'category' AS category
+    SELECT ${ROW_COLUMNS}, data->>'category' AS category, data->'playable' AS playable
     FROM public.encore_shared_videos WHERE video_id = $1
   ) entry`;
 const FETCH_TIMEOUT_MS = 8000;
@@ -27,6 +27,14 @@ export function createModerationStore(connectionString, { sql: injectedSql } = {
   const listQuery = sourceId => sourceId === null
     ? [`${LIST} ${ORDER}`, []]
     : [`${LIST} WHERE ${SOURCE} = $1 ${ORDER}`, [sourceId]];
+  async function sourceForEntry(entryId) {
+    // 曲IDがclip形式なら元動画IDは別に保存されている。ロック取得後に再確認する。
+    const [entry] = await sql.query(`SELECT ${SOURCE} AS source_id FROM public.encore_shared_videos WHERE video_id = $1`, [entryId], { fetchOptions: fetchOptions() });
+    if (!entry) return null;
+    if (!isVideoId(entry.source_id)) throw new TypeError('Invalid source video');
+    return entry.source_id;
+  }
+
   async function lockedChange(sourceId, change, changeValues, read, readValues) {
     const [, , , changed, rows] = await sql.transaction(transaction => [
       transaction.query("SET LOCAL lock_timeout = '2s'"),
@@ -60,11 +68,8 @@ export function createModerationStore(connectionString, { sql: injectedSql } = {
     },
     async markMisc(entryId, { restoreWithdrawn = false } = {}) {
       if (!isEntryId(entryId) || typeof restoreWithdrawn !== 'boolean') throw new TypeError('Invalid song category operation');
-      // 曲IDがclip形式なら元動画IDは別に保存されている。ロック取得後に再確認する。
-      const [entry] = await sql.query(`SELECT ${SOURCE} AS source_id FROM public.encore_shared_videos WHERE video_id = $1`, [entryId], { fetchOptions: fetchOptions() });
-      if (!entry) return { changed: 0, rows: [] };
-      const sourceId = entry.source_id;
-      if (!isVideoId(sourceId)) throw new TypeError('Invalid source video');
+      const sourceId = await sourceForEntry(entryId);
+      if (!sourceId) return { changed: 0, rows: [] };
       const data = restoreWithdrawn ? "(data - 'withdrawnAt')" : 'data';
       return lockedChange(sourceId, `UPDATE public.encore_shared_videos
         SET data = ${data} || jsonb_build_object('category', 'misc')
@@ -72,6 +77,25 @@ export function createModerationStore(connectionString, { sql: injectedSql } = {
           AND (data->>'category' IS DISTINCT FROM 'misc'${restoreWithdrawn ? ` OR (${HAS_WITHDRAWN_AT})` : ''})
           ${restoreWithdrawn ? '' : `AND NOT (${HAS_WITHDRAWN_AT})`}
         RETURNING video_id`, [entryId, sourceId], LIST_ENTRY, [entryId]);
+    },
+    async classifyEntry(entryId, category, playable) {
+      if (!isEntryId(entryId) || !isVideoCategory(category) || (playable !== undefined && typeof playable !== 'boolean')) {
+        throw new TypeError('Invalid song classification');
+      }
+      const sourceId = await sourceForEntry(entryId);
+      if (!sourceId) return { changed: 0, rows: [] };
+      const setPlayable = playable !== undefined;
+      return lockedChange(sourceId, `UPDATE public.encore_shared_videos
+        SET data = data || jsonb_build_object('category', $3::text${setPlayable ? ", 'playable', $4::boolean" : ''})
+        WHERE video_id = $1 AND ${SOURCE} = $2
+          AND NOT (${HAS_WITHDRAWN_AT})
+          AND NOT EXISTS (
+            SELECT 1 FROM public.encore_shared_videos sibling
+            WHERE COALESCE(sibling.data->>'videoId', sibling.video_id) = $2
+              AND sibling.video_id <> $1 AND sibling.data ? 'withdrawnAt'
+          )
+          AND (data->>'category' IS DISTINCT FROM $3::text${setPlayable ? " OR data->'playable' IS DISTINCT FROM to_jsonb($4::boolean)" : ''})
+        RETURNING video_id`, setPlayable ? [entryId, sourceId, category, playable] : [entryId, sourceId, category], LIST_ENTRY, [entryId]);
     },
   };
 }
