@@ -1,5 +1,5 @@
 import videoIds from './videos.json';
-import { SETTINGS_KEY, VIDEO_CATEGORIES, categoryLabel, isVideoCategory, isPlayableVideo, passesEncoreFilter, isVideoId, isEntryId, videoIdFor, uniqueIds, readSaved, normalizeCustomVideos, normalizeSettings, chooseRandom, formatTime, displayTitle } from './model.js';
+import { SETTINGS_KEY, VIDEO_CATEGORIES, categoryLabel, isVideoCategory, isPlayableVideo, isVideoId, isEntryId, videoIdFor, uniqueIds, readSaved, normalizeCustomVideos, normalizeSettings, chooseRandom, formatTime, displayTitle } from './model.js';
 import { icon, setIcon, mountIcons } from './icons.js';
 import { createTapAudio } from './tap-audio.js';
 import { createPadInput, PAD_KEYS } from './pad-input.js';
@@ -123,7 +123,7 @@ function updateCurrent() {
   $('youtube-player').hidden = !hasVideo;
   $('video-empty').hidden = hasVideo;
   $('favorite-current').disabled = !hasVideo;
-  $('shuffle').disabled = playCandidateIds().length === 0;
+  $('shuffle').disabled = allIds().length === 0;
   $('replay').disabled = !hasVideo;
   $('youtube-link').hidden = !hasVideo;
   $('share-current').disabled = !hasVideo || !metadata.get(currentId)?.title || !publishedIds().includes(currentId);
@@ -699,15 +699,15 @@ function selectVideo(id) {
   if (!metadata.get(id)) metadata.fetch(id).then(() => { if (id === currentId) updateCurrent(); }).catch(() => {});
 }
 $('shuffle').addEventListener('click', () => {
-  const candidates = playCandidateIds().filter(id => {
-    const video = metadata.get(id);
-    return video && !unplayable.has(id) && passesEncoreFilter(video.category, settings.shuffleExcludeOther);
-  });
+  const category = settings.shuffleCategory;
+  const candidates = allIds().filter(id =>
+    metadata.get(id) && !unplayable.has(id) && (category === 'all' || categoryFor(id) === category)
+  );
   const id = chooseRandom(candidates, currentId, history.slice(0, 8));
   if (id) selectVideo(id);
-  else toast(settings.shuffleExcludeOther
-    ? '再生できる候補がありません。設定から「おまかせはアイカツアンコールだけ」をオフにできます。'
-    : '再生できる候補がありません。「選ぶ」から動画を追加してください。');
+  else toast(category === 'all'
+    ? '再生できる候補がありません。「選ぶ」から動画を追加してください。'
+    : `${categoryLabel(category)}に再生できる動画がありません。設定の「おまかせの対象」で分類を変更できます。`);
 });
 $('share-current').addEventListener('click', () => {
   if (!publishedIds().includes(currentId)) return;
@@ -910,12 +910,16 @@ function syncSettings() {
   $('vibration-enabled').disabled = !vibrationSupported;
   $('vibration-support').textContent = vibrationSupported ? '' : 'この端末では利用できません';
   $('effects-enabled').checked = settings.effects;
-  $('shuffle-exclude-other').checked = settings.shuffleExcludeOther;
+  $('shuffle-category').value = settings.shuffleCategory;
   $('appearance').value = settings.appearance;
 }
-for (const [id, key] of [['sound-enabled', 'sound'], ['vibration-enabled', 'vibration'], ['effects-enabled', 'effects'], ['shuffle-exclude-other', 'shuffleExcludeOther']]) {
+for (const [id, key] of [['sound-enabled', 'sound'], ['vibration-enabled', 'vibration'], ['effects-enabled', 'effects']]) {
   $(id).addEventListener('change', () => { settings[key] = $(id).checked; save(SETTINGS_KEY, settings); syncSettings(); });
 }
+$('shuffle-category').addEventListener('change', () => {
+  settings.shuffleCategory = $('shuffle-category').value;
+  save(SETTINGS_KEY, settings);
+});
 for (const [id, key] of [['sound-volume', 'soundVolume'], ['video-volume', 'videoVolume']]) {
   $(id).addEventListener('input', () => {
     settings[key] = Number($(id).value);

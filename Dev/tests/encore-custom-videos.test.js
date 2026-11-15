@@ -1,32 +1,25 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { VIDEO_CATEGORIES, SETTINGS_KEY, categoryLabel, passesEncoreFilter, isPlayableVideo, isVideoId, isEntryId, videoIdFor, uniqueIds, readSaved, normalizeSettings, normalizeCustomVideos, normalizeVideoMetadata } from '../../Encore/model.js';
+import { VIDEO_CATEGORIES, SETTINGS_KEY, categoryLabel, isPlayableVideo, isVideoId, isEntryId, videoIdFor, uniqueIds, readSaved, normalizeSettings, normalizeCustomVideos, normalizeVideoMetadata } from '../../Encore/model.js';
 
-test('おまかせと選曲の絞り込み・その他の動画の表示を個別に復元し、未設定ではオフにする', () => {
-  for (const [stored, shuffleExcludeOther, libraryExcludeOther, libraryShowMisc] of [
-    [{}, false, false, false],
-    [{ shuffleExcludeOther: true }, true, false, false],
-    [{ libraryExcludeOther: true }, false, true, false],
-    [{ libraryShowMisc: true }, false, false, true],
-    [{ shuffleExcludeOther: true, libraryExcludeOther: true }, true, true, false],
-    [{ shuffleExcludeOther: false, libraryExcludeOther: true, libraryShowMisc: true }, false, true, true],
-    [{ shuffleExcludeOther: 'true', libraryExcludeOther: 1, libraryShowMisc: 'true' }, false, false, false],
+test('おまかせの分類を復元し、旧設定のオンをアイカツE、オフをすべての分類に引き継ぐ', () => {
+  for (const [stored, expected] of [
+    [{}, 'all'],
+    [{ shuffleExcludeOther: false }, 'all'],
+    [{ shuffleExcludeOther: true }, 'encore'],
+    [{ shuffleExcludeOther: 'true' }, 'all'],
+    [{ shuffleCategory: 'all', shuffleExcludeOther: true }, 'all'],
+    [{ shuffleCategory: 'encore' }, 'encore'],
+    [{ shuffleCategory: 'other' }, 'other'],
+    [{ shuffleCategory: 'misc' }, 'misc'],
+    [{ shuffleCategory: '__proto__' }, 'all'],
+    [{ shuffleCategory: true, shuffleExcludeOther: true }, 'encore'],
   ]) {
     const storage = new Map([[SETTINGS_KEY, JSON.stringify({ sound: false, ...stored })]]);
     const settings = normalizeSettings(readSaved({ getItem: key => storage.get(key) }, SETTINGS_KEY, {}));
-    assert.equal(settings.shuffleExcludeOther, shuffleExcludeOther);
-    assert.equal(settings.libraryExcludeOther, libraryExcludeOther);
-    assert.equal(settings.libraryShowMisc, libraryShowMisc);
+    assert.equal(settings.shuffleCategory, expected);
     assert.equal(settings.sound, false);
   }
-});
-
-test('絞り込みが有効ならアイカツアンコールだけを残し、無効なら未分類も含める', () => {
-  for (const category of ['encore', 'other', 'misc', undefined, null, 'unknown']) {
-    assert.equal(passesEncoreFilter(category, false), true);
-    assert.equal(passesEncoreFilter(category, true), category === 'encore');
-  }
-  assert.equal(passesEncoreFilter('other'), true);
 });
 
 test('選曲画面の分類を保持し、旧版ではその他表示オンのみをその他の動画へ引き継ぐ', () => {
@@ -40,9 +33,9 @@ test('選曲画面の分類を保持し、旧版ではその他表示オンの�
     [{ libraryCategory: 'invalid', libraryShowMisc: true }, 'misc'],
     [{ libraryCategory: '__proto__' }, 'encore'],
   ]) {
-    const settings = normalizeSettings(JSON.parse(JSON.stringify({ shuffleExcludeOther: true, ...stored })));
+    const settings = normalizeSettings({ shuffleCategory: 'other', ...stored });
     assert.equal(settings.libraryCategory, expected);
-    assert.equal(settings.shuffleExcludeOther, true);
+    assert.equal(settings.shuffleCategory, 'other');
   }
 });
 

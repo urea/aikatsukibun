@@ -55,7 +55,7 @@
             <label class="setting-row range-setting"><span>効果音の音量 <output id="sound-volume-value">35%</output></span><input id="sound-volume" type="range" min="0" max="100" value="35" aria-label="効果音の音量" /></label>
             <label class="setting-row"><span>タップ時の振動<small id="vibration-support"></small></span><input id="vibration-enabled" class="switch" type="checkbox" checked /></label>
             <label class="setting-row"><span>タップ時の光</span><input id="effects-enabled" class="switch" type="checkbox" checked /></label>
-            <label class="setting-row"><span>おまかせはアイカツアンコールだけ</span><input id="shuffle-exclude-other" class="switch" type="checkbox" /></label>
+            <label class="setting-row"><span>おまかせの対象</span><select id="shuffle-category"><option value="all">すべての分類</option><option value="encore">アイカツE</option><option value="other">その他アイカツ</option><option value="misc">その他の動画</option></select></label>
             <label class="setting-row"><span>配色</span><select id="appearance" aria-label="配色"><option value="dark">ダーク</option><option value="light">ライト</option><option value="system">端末に合わせる</option></select></label>
             <button id="replay" class="action-button wide-button" type="button"><span data-icon="replay"></span>最初から再生</button><button id="open-help" class="action-button wide-button" type="button"><span data-icon="help"></span>遊び方</button>
             <div class="saved-data"><p class="secondary">このブラウザーの保存データ</p><button id="clear-history" class="text-button" type="button">再生履歴を消去</button><button id="clear-favorites" class="text-button" type="button">お気に入りをすべて外す</button></div>

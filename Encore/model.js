@@ -3,11 +3,10 @@ import { normalizeAuthorUrl } from './youtube-author.js';
 // 保存データとURLの境界処理。保存領域はstorage.jsで通常版と分離する。
 export const DEFAULT_VIDEO_ID = null;
 export const SETTINGS_KEY = 'aikatsu_settings_v2';
-export const DEFAULT_SETTINGS = Object.freeze({ sound: true, soundVolume: 35, videoVolume: 70, muted: false, vibration: true, effects: true, appearance: 'dark', shuffleExcludeOther: false, libraryExcludeOther: false, libraryShowMisc: false, libraryCategory: 'encore' });
+export const DEFAULT_SETTINGS = Object.freeze({ sound: true, soundVolume: 35, videoVolume: 70, muted: false, vibration: true, effects: true, appearance: 'dark', shuffleCategory: 'all', libraryExcludeOther: false, libraryShowMisc: false, libraryCategory: 'encore' });
 export const VIDEO_CATEGORIES = Object.freeze({ encore: 'アイカツE', other: 'その他アイカツ', misc: 'その他の動画' });
 export const isVideoCategory = value => typeof value === 'string' && Object.hasOwn(VIDEO_CATEGORIES, value);
 export const categoryLabel = value => isVideoCategory(value) ? VIDEO_CATEGORIES[value] : '未分類';
-export const passesEncoreFilter = (category, enabled) => enabled !== true || category === 'encore';
 
 export function isPlayableVideo(video) {
   if (!video || typeof video !== 'object' || Array.isArray(video)) return false;
@@ -82,7 +81,9 @@ export function normalizeVideoMetadata(value) {
 export function normalizeSettings(value) {
   const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
   const settings = { ...DEFAULT_SETTINGS };
-  for (const key of ['sound', 'muted', 'vibration', 'effects', 'shuffleExcludeOther', 'libraryExcludeOther', 'libraryShowMisc']) if (typeof source[key] === 'boolean') settings[key] = source[key];
+  for (const key of ['sound', 'muted', 'vibration', 'effects', 'libraryExcludeOther', 'libraryShowMisc']) if (typeof source[key] === 'boolean') settings[key] = source[key];
+  if (source.shuffleCategory === 'all' || isVideoCategory(source.shuffleCategory)) settings.shuffleCategory = source.shuffleCategory;
+  else if (source.shuffleExcludeOther === true) settings.shuffleCategory = 'encore';
   if (isVideoCategory(source.libraryCategory)) settings.libraryCategory = source.libraryCategory;
   else if (settings.libraryShowMisc) settings.libraryCategory = 'misc';
   for (const key of ['soundVolume', 'videoVolume']) if (typeof source[key] === 'number' && Number.isFinite(source[key])) settings[key] = Math.round(Math.max(0, Math.min(100, source[key])));
