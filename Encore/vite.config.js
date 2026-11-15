@@ -34,7 +34,9 @@ export default defineConfig(({ mode }) => {
             for (const [key, value] of Object.entries(request.headers)) if (value) headers.set(key, Array.isArray(value) ? value.join(',') : value);
             headers.set('x-encore-dev-address', request.socket.remoteAddress || 'local');
             const method = request.method || 'GET';
-            const result = await handler(new Request(`http://${request.headers.host}/api/videos`, {
+            const queryIndex = request.url?.indexOf('?') ?? -1;
+            const query = queryIndex < 0 ? '' : request.url.slice(queryIndex);
+            const result = await handler(new Request(`http://${request.headers.host}/api/videos${query}`, {
               method, headers, ...(method === 'GET' || method === 'HEAD' ? {} : { body: Buffer.concat(chunks) }),
             }));
             response.writeHead(result.status, Object.fromEntries(result.headers));

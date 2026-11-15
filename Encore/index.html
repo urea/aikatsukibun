@@ -86,6 +86,7 @@
           <span id="library-count">動画を準備中</span>
           <label class="library-sort"><span class="sr-only">曲の並び順</span><select id="video-sort"><option id="video-sort-default" value="posted">投稿順</option><option value="song-difficulty">曲名・難易度順</option></select></label>
           <label class="library-filter"><input id="library-exclude-other" type="checkbox" />アイカツアンコールだけ</label>
+          <label class="library-filter"><input id="library-show-misc" type="checkbox" />その他の動画も表示</label>
           <span id="metadata-status"></span><span id="shared-status" role="status"></span><button id="retry-shared" class="text-button" type="button" hidden>再読み込み</button>
           <a id="amazon-search-library" class="affiliate-link" href="https://www.amazon.co.jp/s?k=%E3%82%A2%E3%82%A4%E3%82%AB%E3%83%84%EF%BC%81&amp;__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A&amp;linkCode=ll2&amp;tag=mczd-22&amp;linkId=cbf8830a4d983e70ccb8fbb8d985ddb5&amp;ref_=as_li_ss_tl" target="_blank" rel="sponsored noopener noreferrer">PR｜Amazonでアイカツ！を探す <span aria-hidden="true">↗</span><span class="sr-only">（新しいタブで開く）</span></a>
         </div>
@@ -94,12 +95,12 @@
       <section id="add-panel" class="side-panel" aria-labelledby="add-heading" hidden>
         <header class="panel-header"><div class="panel-heading-group"><button type="button" class="icon-button" data-back="library-panel" aria-label="選曲に戻る"><span data-icon="back"></span></button><h2 id="add-heading">動画を追加</h2></div><button type="button" class="action-button" data-close aria-label="動画追加を閉じて再生画面に戻る"><span data-icon="close"></span>戻る</button></header>
         <form id="add-form" class="panel-content add-form" novalidate>
-          <p id="add-posting-guide" class="secondary">アプリの3ボタンで遊べる動画の投稿をお願いします。動画の内容によっては、管理人の判断で掲載を取り下げる場合があります。</p>
+          <p id="add-posting-guide" class="secondary">アプリの3ボタンで遊べる動画の投稿をお願いします。動画の内容によっては、管理人の判断で分類を変更する場合があります。</p>
           <p id="add-description" class="secondary">開始・終了時刻は任意です。その他の項目は必須です。追加した動画と楽曲情報は公開され、すべての利用者の一覧に表示されます。</p>
           <p id="edit-author" class="secondary" hidden></p>
           <div class="add-fields">
             <div class="add-field field-wide"><label for="add-url">YouTube URL</label><input id="add-url" name="url" type="text" inputmode="url" placeholder="https://www.youtube.com/watch?v=…" maxlength="2048" autocomplete="off" aria-describedby="add-url-hint add-url-error" required /><small id="add-url-hint">共有URL・Shortsにも対応。投稿者は追加時に自動取得します。</small><p id="add-url-error" class="field-error" hidden></p></div>
-            <div class="add-field field-wide"><label for="add-category">分類</label><select id="add-category" name="category" aria-describedby="add-category-hint add-category-error" required><option value="">選択してください</option></select><small id="add-category-hint">動画でプレイしている作品で選んでください。アンコール以外も登録できます。</small><p id="add-category-error" class="field-error" hidden></p></div>
+            <div class="add-field field-wide"><label for="add-category">分類</label><select id="add-category" name="category" aria-describedby="add-category-hint add-category-error" required><option value="">選択してください</option></select><small id="add-category-hint">プレイ動画は作品で分類します。MVやライブなどは「その他の動画」を選べます。</small><p id="add-category-error" class="field-error" hidden></p></div>
             <div class="add-field field-title field-wide"><label for="add-title">楽曲名</label><select id="add-title" name="title" aria-describedby="add-title-hint add-title-error" required><option value="">選択してください</option></select><input id="add-title-custom" name="titleCustom" type="text" placeholder="楽曲名を入力" maxlength="200" aria-label="楽曲名（自由入力）" aria-describedby="add-title-hint add-title-error" hidden /><small id="add-title-hint">プレイしている曲名を選択。一覧にない曲は「自由入力」。</small><p id="add-title-error" class="field-error" hidden></p></div>
             <div class="add-field"><label for="add-start">開始時刻（任意）</label><input id="add-start" name="start" type="text" inputmode="text" placeholder="例：7:15" maxlength="8" aria-describedby="add-start-hint add-start-error" /><small id="add-start-hint">元動画内の開始位置。空欄なら動画の先頭から。</small><p id="add-start-error" class="field-error" hidden></p></div>
             <div class="add-field"><label for="add-end">終了時刻（任意）</label><input id="add-end" name="end" type="text" inputmode="text" placeholder="例：8:51" maxlength="8" aria-describedby="add-end-hint add-end-error" /><small id="add-end-hint">空欄なら動画の最後まで。1時間以上は 1:07:15 の形式。</small><p id="add-end-error" class="field-error" hidden></p></div>

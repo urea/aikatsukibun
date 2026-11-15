@@ -3,11 +3,11 @@ import { normalizeCustomVideos, uniqueIds } from './model.js';
 const hasPlaybackBounds = video => video && Object.hasOwn(video, 'startSeconds') && Object.hasOwn(video, 'endSeconds');
 
 export function createSharedVideosClient(fetchImpl = fetch) {
-  async function request(options = {}) {
+  async function request(options = {}, path = '/api/videos') {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 20000);
     try {
-      const response = await fetchImpl('/api/videos', { ...options, cache: 'no-store', signal: controller.signal });
+      const response = await fetchImpl(path, { ...options, cache: 'no-store', signal: controller.signal });
       const data = await response.json();
       if (!response.ok) {
         const error = new Error(typeof data?.error === 'string' ? data.error : '共有データに接続できませんでした。もう一度お試しください。');
@@ -24,8 +24,8 @@ export function createSharedVideosClient(fetchImpl = fetch) {
     } finally { clearTimeout(timeout); }
   }
   return {
-    async list() {
-      const data = await request();
+    async list({ includeMisc = false } = {}) {
+      const data = await request({}, includeMisc === true ? '/api/videos?includeMisc=1' : '/api/videos');
       if (!Array.isArray(data?.videos)) throw new Error('共有一覧を読み込めませんでした。もう一度お試しください。');
       return { videos: normalizeCustomVideos(data.videos), withdrawnIds: uniqueIds(data.withdrawnIds) };
     },

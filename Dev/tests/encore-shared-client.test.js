@@ -59,6 +59,22 @@ test('共有一覧はGETで取得し、再生に必要な区間と投稿者を�
   assert.equal(calls, 1);
 });
 
+test('その他の動画を含む一覧を選ぶときだけ共有APIにパラメーターを送る', async () => {
+  const misc = { ...video, id: 'lTLqkpcqWs8', category: 'misc', revision: 'b'.repeat(32) };
+  const withdrawnIds = ['abcdefghijk'];
+  const urls = [];
+  const client = createSharedVideosClient(async (url, options) => {
+    urls.push(url);
+    assert.equal(options.method ?? 'GET', 'GET');
+    assert.equal(options.cache, 'no-store');
+    return response({ videos: url.endsWith('?includeMisc=1') ? [video, misc] : [video], withdrawnIds });
+  });
+  assert.deepEqual(await client.list(), { videos: [video], withdrawnIds });
+  assert.deepEqual(await client.list({ includeMisc: false }), { videos: [video], withdrawnIds });
+  assert.deepEqual(await client.list({ includeMisc: true }), { videos: [video, misc], withdrawnIds });
+  assert.deepEqual(urls, ['/api/videos', '/api/videos', '/api/videos?includeMisc=1']);
+});
+
 test('共有一覧の不正なIDや重複を除外し、秘密や余分なレスポンス項目を取り込まない', async () => {
   const client = createSharedVideosClient(async () => response({
     videos: [null, { ...video, id: 'invalid' }, { ...video, privateToken: 'server-only' }, video],

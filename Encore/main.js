@@ -52,7 +52,9 @@ const publishedIds = () => [...videoIds, ...sharedVideos.map(video => video.id)]
 const savePublication = () => save('shared_publication', { videos: sharedVideos, withdrawnIds: [...withdrawnIds] }, false);
 const lastVideo = readSaved(storage, 'aikatsu_last_video_v2', null);
 const allIds = () => uniqueIds([...sharedVideos.map(video => video.id), ...customVideos.map(video => video.id), ...videoIds, ...favorites, ...history]).filter(id => !isWithdrawn(id));
-const initialIds = allIds();
+const isMisc = id => metadata.get(id)?.category === 'misc';
+const playCandidateIds = () => allIds().filter(id => !isMisc(id));
+const initialIds = playCandidateIds();
 const initialSharedIds = publishedIds();
 const requestedVideoId = readSharedVideoId(location.href);
 let pendingSharedVideoId = requestedVideoId && !initialSharedIds.includes(requestedVideoId) ? requestedVideoId : null;
@@ -120,7 +122,7 @@ function updateCurrent() {
   $('youtube-player').hidden = !hasVideo;
   $('video-empty').hidden = hasVideo;
   $('favorite-current').disabled = !hasVideo;
-  $('shuffle').disabled = allIds().length === 0;
+  $('shuffle').disabled = playCandidateIds().length === 0;
   $('replay').disabled = !hasVideo;
   $('youtube-link').hidden = !hasVideo;
   $('share-current').disabled = !hasVideo || !metadata.get(currentId)?.title || !publishedIds().includes(currentId);
@@ -244,7 +246,8 @@ function rowFor(id) {
   return entry;
 }
 function renderLibrary() {
-  const ids = (libraryTab === 'favorites' ? favorites : libraryTab === 'history' ? history : allIds()).filter(id => !isWithdrawn(id));
+  const ids = (libraryTab === 'favorites' ? favorites : libraryTab === 'history' ? history : allIds())
+    .filter(id => !isWithdrawn(id) && (settings.libraryShowMisc || !isMisc(id)));
   const query = $('video-search').value.normalize('NFKC').toLocaleLowerCase().trim();
   const eligible = ids.filter(id => passesEncoreFilter(metadata.get(id)?.category, settings.libraryExcludeOther));
   const filtered = query ? eligible.filter(id => `${titleFor(id)} ${detailsFor(id).map(([, value]) => value).join(' ')} ${id}`.normalize('NFKC').toLocaleLowerCase().includes(query)) : eligible;
@@ -286,14 +289,14 @@ function scheduleLibraryRender() {
 }
 let sharedLoading;
 let sharedRevision = 0;
-function reconcileWithdrawnSelection() {
+function reconcilePublishedSelection(replaceImplicitMisc) {
   const wasWithdrawn = isWithdrawn(currentId);
   const requested = pendingSharedVideoId;
-  if (!wasWithdrawn && !requested) return;
+  if (!wasWithdrawn && !requested && !replaceImplicitMisc) return;
   pendingSharedVideoId = null;
-  const candidates = allIds();
+  const candidates = playCandidateIds();
   currentId = requested && publishedIds().includes(requested) ? requested : candidates.includes(lastVideo) ? lastVideo : candidates[0] ?? null;
-  if (wasWithdrawn) {
+  if (wasWithdrawn || replaceImplicitMisc) {
     queuedAutoplay = false;
     clipEnded = false;
     playerFailed = false;
@@ -311,7 +314,7 @@ function reconcileWithdrawnSelection() {
       if (currentId) requestPlayback(youtubeVideoOptions(currentId, metadata.get(currentId)));
     }
   }
-  if (wasWithdrawn || currentId !== requested) toast('この曲は共有一覧で利用できません。「選ぶ」から別の曲を選べます。');
+  if (wasWithdrawn || (requested && currentId !== requested)) toast('この曲は共有一覧で利用できません。「選ぶ」から別の曲を選べます。');
 }
 async function refreshSharedVideos() {
   if (sharedLoading) return sharedLoading;
@@ -320,7 +323,7 @@ async function refreshSharedVideos() {
   const revision = sharedRevision;
   sharedLoading = (async () => {
     try {
-      const { videos, withdrawnIds: unavailable } = await sharedClient.list();
+      const { videos, withdrawnIds: unavailable } = await sharedClient.list({ includeMisc: true });
       if (revision !== sharedRevision) { $('shared-status').textContent = ''; return false; }
       const previous = metadata.get(currentId);
       const previousId = currentId;
@@ -328,8 +331,9 @@ async function refreshSharedVideos() {
       withdrawnIds = new Set(unavailable);
       sharedVideos.forEach(video => metadata.seed(video.id, video, { replace: true }));
       savePublication();
+      const replaceImplicitMisc = !publicationReady && !readSharedVideoId(location.href) && isMisc(currentId);
       publicationReady = true;
-      reconcileWithdrawnSelection();
+      reconcilePublishedSelection(replaceImplicitMisc);
       updateCurrent();
       const currentVideo = videos.find(video => video.id === currentId);
       if (currentVideo && previousId === currentId) syncEditedRange(currentId, previous, currentVideo);
@@ -391,12 +395,23 @@ document.querySelectorAll('[data-library]').forEach(button => {
   });
 });
 $('video-search').addEventListener('input', () => { $('library-results').scrollTop = 0; renderLibrary(); });
-$('library-exclude-other').addEventListener('change', event => {
-  settings.libraryExcludeOther = event.currentTarget.checked;
-  save(SETTINGS_KEY, settings);
-  $('library-results').scrollTop = 0;
-  renderLibrary();
-});
+function syncLibraryFilters() {
+  $('library-exclude-other').checked = settings.libraryExcludeOther;
+  $('library-show-misc').checked = settings.libraryShowMisc;
+}
+for (const [id, key, alternate] of [
+  ['library-exclude-other', 'libraryExcludeOther', 'libraryShowMisc'],
+  ['library-show-misc', 'libraryShowMisc', 'libraryExcludeOther'],
+]) {
+  $(id).addEventListener('change', event => {
+    settings[key] = event.currentTarget.checked;
+    if (settings[key]) settings[alternate] = false;
+    save(SETTINGS_KEY, settings);
+    syncLibraryFilters();
+    $('library-results').scrollTop = 0;
+    renderLibrary();
+  });
+}
 $('video-sort').addEventListener('change', () => {
   librarySort = normalizeLibrarySort($('video-sort').value);
   save('library_sort', librarySort);
@@ -693,7 +708,7 @@ function selectVideo(id) {
   if (!metadata.get(id)) metadata.fetch(id).then(() => { if (id === currentId) updateCurrent(); }).catch(() => {});
 }
 $('shuffle').addEventListener('click', () => {
-  const candidates = allIds().filter(id => {
+  const candidates = playCandidateIds().filter(id => {
     const video = metadata.get(id);
     return video && !unplayable.has(id) && passesEncoreFilter(video.category, settings.shuffleExcludeOther);
   });
@@ -905,7 +920,7 @@ function syncSettings() {
   $('vibration-support').textContent = vibrationSupported ? '' : 'この端末では利用できません';
   $('effects-enabled').checked = settings.effects;
   $('shuffle-exclude-other').checked = settings.shuffleExcludeOther;
-  $('library-exclude-other').checked = settings.libraryExcludeOther;
+  syncLibraryFilters();
   $('appearance').value = settings.appearance;
 }
 for (const [id, key] of [['sound-enabled', 'sound'], ['vibration-enabled', 'vibration'], ['effects-enabled', 'effects'], ['shuffle-exclude-other', 'shuffleExcludeOther']]) {

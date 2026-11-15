@@ -3,8 +3,8 @@ import { normalizeAuthorUrl } from './youtube-author.js';
 // 保存データとURLの境界処理。保存領域はstorage.jsで通常版と分離する。
 export const DEFAULT_VIDEO_ID = null;
 export const SETTINGS_KEY = 'aikatsu_settings_v2';
-export const DEFAULT_SETTINGS = Object.freeze({ sound: true, soundVolume: 35, videoVolume: 70, muted: false, vibration: true, effects: true, appearance: 'dark', shuffleExcludeOther: false, libraryExcludeOther: false });
-export const VIDEO_CATEGORIES = Object.freeze({ encore: 'アイカツアンコール', other: 'アイカツアンコール以外' });
+export const DEFAULT_SETTINGS = Object.freeze({ sound: true, soundVolume: 35, videoVolume: 70, muted: false, vibration: true, effects: true, appearance: 'dark', shuffleExcludeOther: false, libraryExcludeOther: false, libraryShowMisc: false });
+export const VIDEO_CATEGORIES = Object.freeze({ encore: 'アイカツアンコール', other: 'アイカツアンコール以外', misc: 'その他の動画' });
 export const isVideoCategory = value => typeof value === 'string' && Object.hasOwn(VIDEO_CATEGORIES, value);
 export const categoryLabel = value => isVideoCategory(value) ? VIDEO_CATEGORIES[value] : '未分類';
 export const passesEncoreFilter = (category, enabled) => enabled !== true || category === 'encore';
@@ -75,7 +75,7 @@ export function normalizeVideoMetadata(value) {
 export function normalizeSettings(value) {
   const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
   const settings = { ...DEFAULT_SETTINGS };
-  for (const key of ['sound', 'muted', 'vibration', 'effects', 'shuffleExcludeOther', 'libraryExcludeOther']) if (typeof source[key] === 'boolean') settings[key] = source[key];
+  for (const key of ['sound', 'muted', 'vibration', 'effects', 'shuffleExcludeOther', 'libraryExcludeOther', 'libraryShowMisc']) if (typeof source[key] === 'boolean') settings[key] = source[key];
   for (const key of ['soundVolume', 'videoVolume']) if (typeof source[key] === 'number' && Number.isFinite(source[key])) settings[key] = Math.round(Math.max(0, Math.min(100, source[key])));
   if (['dark', 'light', 'system'].includes(source.appearance)) settings.appearance = source.appearance;
   return settings;

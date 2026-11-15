@@ -66,8 +66,8 @@ test('楽曲区間と必須情報を保存形式に変換する', () => {
   });
 });
 
-test('分類は2値だけを保存・復元し、旧入力のキー省略は未分類のまま受け入れる', () => {
-  for (const category of ['encore', 'other']) {
+test('分類は3値だけを保存・復元し、旧入力のキー省略は未分類のまま受け入れる', () => {
+  for (const category of ['encore', 'other', 'misc']) {
     const { video, errors } = validateVideoInput({ ...input, category });
     assert.deepEqual(errors, {});
     assert.equal(video.category, category);
@@ -85,10 +85,10 @@ test('分類は2値だけを保存・復元し、旧入力のキー省略は未�
     assert.equal(video, null);
     assert.deepEqual(errors, { category: '分類を選択してください。' });
   }
-  for (const category of ['未分類', 'アイカツアンコール', 'Encore', ' encore', 'other ', '__proto__', 'constructor', 0, false, {}, ['encore']]) {
+  for (const category of ['未分類', 'アイカツアンコール', 'その他の動画', 'Encore', ' encore', 'other ', 'misc ', '__proto__', 'constructor', 0, false, {}, ['encore']]) {
     const { video, errors } = validateVideoInput({ ...input, category });
     assert.equal(video, null);
-    assert.match(errors.category, /分類は「アイカツアンコール」か「アイカツアンコール以外」を選択/);
+    assert.match(errors.category, /分類は「アイカツアンコール」、「アイカツアンコール以外」、「その他の動画」のいずれかを選択/);
   }
 });
 

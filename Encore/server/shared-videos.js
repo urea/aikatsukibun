@@ -98,7 +98,11 @@ export function createSharedVideosHandler({ store, fetchImpl = globalThis.fetch,
   const reserved = new Set(reservedIds);
   return async request => {
     if (request.method === 'GET') {
-      try { return json(200, await store.listPublication()); }
+      try {
+        const publication = await store.listPublication();
+        const includeMisc = new URL(request.url).searchParams.get('includeMisc') === '1';
+        return json(200, includeMisc ? publication : { ...publication, videos: publication.videos.filter(video => video.category !== 'misc') });
+      }
       catch { return json(503, { error: databaseMessage }); }
     }
     const editing = request.method === 'PATCH';

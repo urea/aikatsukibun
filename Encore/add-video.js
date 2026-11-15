@@ -69,7 +69,7 @@ export function validateVideoInput(input) {
   if (hasCategory && !isVideoCategory(category)) {
     errors.category = category == null || (typeof category === 'string' && !category.trim())
       ? '分類を選択してください。'
-      : `分類は「${VIDEO_CATEGORIES.encore}」か「${VIDEO_CATEGORIES.other}」を選択してください。`;
+      : `分類は${Object.values(VIDEO_CATEGORIES).map(label => `「${label}」`).join('、')}のいずれかを選択してください。`;
   }
   const startSeconds = readTime(source, 'start', errors);
   const endSeconds = readTime(source, 'end', errors);

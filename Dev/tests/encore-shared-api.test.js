@@ -89,6 +89,28 @@ test('GETは別端末でも保存済みの一覧を返し、キャッシュさ�
   assert.deepEqual(await response.json(), { videos: [apiVideo], withdrawnIds: [] });
 });
 
+test('GETはその他の動画を明示指定で含め、通常一覧と取り下げ情報の互換性を保つ', async () => {
+  const { store, handler } = fixture();
+  const encore = { ...apiVideo, category: 'encore' };
+  const misc = { ...apiVideo, id: 'tJAcDG-eS-Q', category: 'misc' };
+  const other = { ...apiVideo, id: 'lTLqkpcqWs8', category: 'other' };
+  const legacy = { ...apiVideo, id: 'abcdefghijk' };
+  const hidden = { ...apiVideo, id: 'zyxwvutsrqp', category: 'misc', withdrawnAt, title: '非公開の曲名' };
+  for (const video of [encore, misc, other, legacy, hidden]) store.videos.set(video.id, video);
+
+  for (const suffix of ['', '?includeMisc=0', '?includeMisc=true', '?includeMisc=']) {
+    const response = await handler(new Request(`${endpoint}${suffix}`));
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('cache-control'), 'no-store');
+    assert.deepEqual(await response.json(), { videos: [encore, other, legacy], withdrawnIds: [hidden.id] });
+  }
+
+  const response = await handler(new Request(`${endpoint}?includeMisc=1`));
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('cache-control'), 'no-store');
+  assert.deepEqual(await response.json(), { videos: [encore, misc, other, legacy], withdrawnIds: [hidden.id] });
+});
+
 test('取り下げた元動画は同じソースの全区間が非公開になり、一覧に識別子だけを返す', async () => {
   const base = { ...apiVideo, title: '非公開の曲名', author: '非公開の投稿者' };
   const firstClip = { ...base, id: `clip_${'a'.repeat(32)}`, videoId: base.id, startSeconds: 96, endSeconds: 180, withdrawnAt };
@@ -197,6 +219,29 @@ test('2種類の分類を登録・編集して一覧に反映し、旧版の分�
     assert.equal(listed.status, 200);
     assert.deepEqual(await listed.json(), { videos: [{ ...postedVideo, category: next, title: edited.title }], withdrawnIds: [] });
   }
+});
+
+test('その他の動画の分類を公開登録・編集でき、旧一覧には表示しない', async () => {
+  const { store, handler } = fixture();
+  const added = await handler(post({ ...input, category: 'misc' }));
+  assert.equal(added.status, 201);
+  const { video: created } = await added.json();
+  assert.deepEqual(created, { ...postedVideo, category: 'misc' });
+  assert.deepEqual(await (await handler(new Request(endpoint))).json(), { videos: [], withdrawnIds: [] });
+
+  const updated = await handler(patch(editInput(created, { category: 'encore' })));
+  assert.equal(updated.status, 200);
+  const expected = { ...postedVideo, category: 'encore' };
+  assert.deepEqual(await (await handler(new Request(endpoint))).json(), { videos: [expected], withdrawnIds: [] });
+
+  const categorized = await handler(patch(editInput(expected, { category: 'misc' })));
+  assert.equal(categorized.status, 200);
+  const legacyEdit = await handler(patch(editInput(store.videos.get(apiVideo.id), { title: '旧版で曲名を編集' })));
+  assert.equal(legacyEdit.status, 200);
+  const { video: edited } = await legacyEdit.json();
+  assert.equal(edited.category, 'misc');
+  assert.deepEqual(await (await handler(new Request(`${endpoint}?includeMisc=1`))).json(), { videos: [{ ...created, title: edited.title }], withdrawnIds: [] });
+  assert.deepEqual(await (await handler(new Request(endpoint))).json(), { videos: [], withdrawnIds: [] });
 });
 
 test('旧版の未分類レコードを後から分類でき、空または不正なPOSTとPATCHは保存せず400を返す', async () => {

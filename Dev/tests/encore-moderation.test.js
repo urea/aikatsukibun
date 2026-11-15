@@ -80,7 +80,9 @@ test('help and invalid invocation do not read the environment or construct a dat
   for (const args of [
     ['hide'], ['restore', clipId], ['hide', sourceId, '--appl'], ['list', sourceId, '--apply'],
     ['hide', sourceId, '--apply', '--apply'], ['hide', '--apply', sourceId], ['delete', sourceId],
-    ['hide', fakeConnection, '--apply'],
+    ['hide', fakeConnection, '--apply'], ['hide', sourceId, '--restore-withdrawn'],
+    ['misc'], ['misc', `https://youtu.be/${sourceId}`], ['misc', clipId, '--restore-withdrawn', '--restore-withdrawn'],
+    ['misc', clipId, '--apply', '--apply'], ['misc', clipId, '--restore'],
   ]) assert.equal(await cli.run(args), 2);
   assert.deepEqual(cli.calls, []);
   assert.doesNotMatch(cli.errors.join('\n'), /secret-marker/);
@@ -106,6 +108,54 @@ test('a preview does not let a stored title inject misleading terminal lines or 
   assert.equal(await cli.run(['list']), 0);
   assert.match(cli.outputs[1], /表題  \[2J 偽の見出し/);
   assert.doesNotMatch(cli.outputs[1], /[\n\u001b\u202e]/u);
+});
+
+test('misc previews a single exact entry and only restores it when explicitly requested', async () => {
+  const row = { ...clipRow, category: 'encore', other_withdrawn: true };
+  const writes = [];
+  const reads = [];
+  const cli = fixture({ makeStore: () => ({
+    async listEntry(id) { reads.push(id); return [row]; },
+    async markMisc(id, options) {
+      writes.push([id, options]);
+      return options.restoreWithdrawn
+        ? { changed: 1, rows: [{ ...row, category: 'misc', withdrawn: false, withdrawn_at: null }] }
+        : { changed: 0, rows: [row] };
+    },
+  }) });
+  assert.equal(await cli.run(['misc', clipId]), 0);
+  assert.deepEqual(reads, [clipId]);
+  assert.deepEqual(writes, []);
+  assert.match(cli.outputs.join('\n'), /変更予定: 0曲/);
+  assert.match(cli.outputs.join('\n'), /非表示のため変更しません/);
+  assert.doesNotMatch(cli.outputs.join('\n'), /反映するには/);
+  cli.outputs.length = 0;
+  assert.equal(await cli.run(['misc', clipId, '--restore-withdrawn']), 0);
+  assert.deepEqual(writes, []);
+  assert.match(cli.outputs.join('\n'), /変更予定: 1曲/);
+  assert.match(cli.outputs.join('\n'), new RegExp(`misc ${clipId} --restore-withdrawn --apply`));
+  assert.equal(await cli.run(['misc', clipId, '--apply']), 0);
+  cli.outputs.length = 0;
+  assert.equal(await cli.run(['misc', clipId, '--restore-withdrawn', '--apply']), 0);
+  assert.deepEqual(writes, [[clipId, { restoreWithdrawn: false }], [clipId, { restoreWithdrawn: true }]]);
+  assert.match(cli.outputs.join('\n'), /変更: 1曲/);
+  assert.match(cli.outputs.join('\n'), /ほかの非表示曲があるため.*公開一覧には表示されません/);
+  assert.match(cli.outputs.join('\n'), /分類: その他の動画/);
+  assert.doesNotMatch(cli.outputs.join('\n'), /既存曲/);
+});
+
+test('misc accepts legacy IDs and distinguishes already categorized or missing entries', async () => {
+  let row = { ...legacyRow, category: 'misc' };
+  const cli = fixture({ makeStore: () => ({ listEntry: async id => {
+    assert.equal(id, sourceId);
+    return row ? [row] : [];
+  } }) });
+  assert.equal(await cli.run(['misc', sourceId]), 0);
+  assert.match(cli.outputs.join('\n'), /変更予定: 0曲/);
+  assert.doesNotMatch(cli.outputs.join('\n'), /反映するには/);
+  row = null;
+  assert.equal(await cli.run(['misc', sourceId]), 0);
+  assert.match(cli.outputs.join('\n'), /対象の共有曲は見つかりません/);
 });
 
 test('the store lists the legacy id and clips by source and checks presence instead of a truthy marker', async () => {
@@ -164,5 +214,55 @@ test('hide and restore place the source lock before writes and mutate only the e
   }
   await assert.rejects(store.changeVisibility('delete', otherSourceId, at), TypeError);
   await assert.rejects(store.changeVisibility('hide', clipId, at), TypeError);
+  assert.equal(transactions.length, 2);
+});
+
+test('misc uses the source lock but limits the write to the exact entry and requires permission to remove its marker', async () => {
+  const reads = [];
+  const transactions = [];
+  const sql = {
+    async query(text, values, options) {
+      reads.push({ text, values, options });
+      if (text.includes('AS other_withdrawn')) return [{ ...clipRow, category: 'encore', other_withdrawn: true }];
+      return values[0] === clipId ? [{ source_id: sourceId }] : [];
+    },
+    async transaction(build, options) {
+      const queries = build({ query: (text, values = []) => ({ text, values }) });
+      transactions.push({ queries, options });
+      return [[], [], [], [{ video_id: clipId }], [{ ...clipRow, category: 'misc', other_withdrawn: true }]];
+    },
+  };
+  const store = createModerationStore(undefined, { sql });
+  assert.equal((await store.listEntry(clipId))[0].entry_id, clipId);
+  assert.deepEqual(reads[0].values, [clipId]);
+  assert.match(reads[0].text, /WHERE video_id = \$1/);
+  assert.match(reads[0].text, /sibling.video_id <> entry.entry_id AND sibling.data \? 'withdrawnAt'/);
+  assert.equal(transactions.length, 0);
+  for (const restoreWithdrawn of [false, true]) {
+    const { changed, rows } = await store.markMisc(clipId, { restoreWithdrawn });
+    assert.equal(changed, 1);
+    assert.deepEqual(rows.map(row => row.entry_id), [clipId]);
+    const { queries, options } = transactions.at(-1);
+    assert.deepEqual(reads.at(-1).values, [clipId]);
+    assert.match(queries[0].text, /^SET LOCAL lock_timeout/);
+    assert.match(queries[1].text, /^SET LOCAL statement_timeout/);
+    assert.equal(queries[2].text, 'SELECT pg_advisory_xact_lock(1162756943, hashtext($1::text))');
+    assert.deepEqual(queries[2].values, [sourceId]);
+    assert.match(queries[3].text, /WHERE video_id = \$1 AND COALESCE\(data->>'videoId', video_id\) = \$2/);
+    assert.deepEqual(queries[3].values, [clipId, sourceId]);
+    assert.match(queries[3].text, /jsonb_build_object\('category', 'misc'\)/);
+    assert.match(queries[3].text, /data->>'category' IS DISTINCT FROM 'misc'/);
+    if (restoreWithdrawn) {
+      assert.match(queries[3].text, /data - 'withdrawnAt'/);
+      assert.match(queries[3].text, /OR \(data \? 'withdrawnAt'\)/);
+    } else {
+      assert.doesNotMatch(queries[3].text, /data - 'withdrawnAt'/);
+      assert.match(queries[3].text, /AND NOT \(data \? 'withdrawnAt'\)/);
+    }
+    assert.deepEqual(queries[4].values, [clipId]);
+    assert.ok(options.fetchOptions.signal instanceof AbortSignal);
+  }
+  assert.deepEqual(await store.markMisc(otherSourceId), { changed: 0, rows: [] });
+  await assert.rejects(store.markMisc(clipId, { restoreWithdrawn: 'true' }), TypeError);
   assert.equal(transactions.length, 2);
 });

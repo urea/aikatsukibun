@@ -2,25 +2,27 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { VIDEO_CATEGORIES, SETTINGS_KEY, categoryLabel, passesEncoreFilter, isVideoId, isEntryId, videoIdFor, uniqueIds, readSaved, normalizeSettings, normalizeCustomVideos, normalizeVideoMetadata } from '../../Encore/model.js';
 
-test('おまかせと選曲の除外設定は保存から個別に復元し、旧設定では両方オフにする', () => {
-  for (const [stored, shuffleExcludeOther, libraryExcludeOther] of [
-    [{}, false, false],
-    [{ shuffleExcludeOther: true }, true, false],
-    [{ libraryExcludeOther: true }, false, true],
-    [{ shuffleExcludeOther: true, libraryExcludeOther: true }, true, true],
-    [{ shuffleExcludeOther: false, libraryExcludeOther: true }, false, true],
-    [{ shuffleExcludeOther: 'true', libraryExcludeOther: 1 }, false, false],
+test('おまかせと選曲の絞り込み・その他の動画の表示を個別に復元し、未設定ではオフにする', () => {
+  for (const [stored, shuffleExcludeOther, libraryExcludeOther, libraryShowMisc] of [
+    [{}, false, false, false],
+    [{ shuffleExcludeOther: true }, true, false, false],
+    [{ libraryExcludeOther: true }, false, true, false],
+    [{ libraryShowMisc: true }, false, false, true],
+    [{ shuffleExcludeOther: true, libraryExcludeOther: true }, true, true, false],
+    [{ shuffleExcludeOther: false, libraryExcludeOther: true, libraryShowMisc: true }, false, true, true],
+    [{ shuffleExcludeOther: 'true', libraryExcludeOther: 1, libraryShowMisc: 'true' }, false, false, false],
   ]) {
     const storage = new Map([[SETTINGS_KEY, JSON.stringify({ sound: false, ...stored })]]);
     const settings = normalizeSettings(readSaved({ getItem: key => storage.get(key) }, SETTINGS_KEY, {}));
     assert.equal(settings.shuffleExcludeOther, shuffleExcludeOther);
     assert.equal(settings.libraryExcludeOther, libraryExcludeOther);
+    assert.equal(settings.libraryShowMisc, libraryShowMisc);
     assert.equal(settings.sound, false);
   }
 });
 
 test('絞り込みが有効ならアイカツアンコールだけを残し、無効なら未分類も含める', () => {
-  for (const category of ['encore', 'other', undefined, null, 'unknown']) {
+  for (const category of ['encore', 'other', 'misc', undefined, null, 'unknown']) {
     assert.equal(passesEncoreFilter(category, false), true);
     assert.equal(passesEncoreFilter(category, true), category === 'encore');
   }
@@ -73,7 +75,7 @@ test('追加した楽曲情報と区間が保存データの再読み込みで�
 });
 
 test('保存済みの分類は定義済みの値だけ保持し、未登録・不正値は未分類と表示する', () => {
-  assert.deepEqual(VIDEO_CATEGORIES, { encore: 'アイカツアンコール', other: 'アイカツアンコール以外' });
+  assert.deepEqual(VIDEO_CATEGORIES, { encore: 'アイカツアンコール', other: 'アイカツアンコール以外', misc: 'その他の動画' });
   assert.equal(Object.isFrozen(VIDEO_CATEGORIES), true);
   for (const [category, label] of Object.entries(VIDEO_CATEGORIES)) {
     assert.equal(categoryLabel(category), label);

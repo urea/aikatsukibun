@@ -50,7 +50,7 @@ function playerHarness(data = clip, entryId = id) {
     metadata: { get: key => entries.get(key) }, settings: { muted: false, videoVolume: 70 }, SETTINGS_KEY: 'test-settings',
     rangeFor: key => getPlaybackRange(entries.get(key), player.duration), getClipPosition, seekTimeForPercent, youtubeVideoOptions, isVideoId, isEntryId, formatTime, displayTitle,
     playbackSession, youtubeIdFor: key => videoIdFor(key, entries.get(key)),
-    allIds: () => [...entries.keys()], publishedIds: () => [id], isWithdrawn: () => false, pendingSharedVideoId: null,
+    playCandidateIds: () => [...entries.keys()].filter(id => entries.get(id)?.category !== 'misc'), publishedIds: () => [id], isWithdrawn: () => false, pendingSharedVideoId: null,
     titleFor: key => entries.get(key)?.title || `動画 (${key})`, renderDetails: () => {}, updateFavorite: () => {},
     setIcon: (control, value) => { control.icon = value; }, setStatus: value => { $('status').textContent = value; },
     notice: value => { $('notice').textContent = value; },
