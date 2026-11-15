@@ -469,6 +469,7 @@ function syncFormMode() {
   const editing = Boolean(editingVideo);
   const local = editingVideo?.local;
   $('add-heading').textContent = editing ? '動画情報を編集' : '動画を追加';
+  $('add-posting-guide').hidden = editing;
   $('add-description').textContent = editing
     ? local ? '開始・終了時刻は任意です。その他の項目は必須です。変更はこのブラウザーだけに反映されます。'
       : '開始・終了時刻は任意です。その他の項目は必須です。変更は共有一覧に保存され、すべての利用者に反映されます。'
