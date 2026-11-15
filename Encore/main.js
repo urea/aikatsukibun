@@ -280,7 +280,7 @@ function renderLibrary() {
   $('library-count').textContent = `${matching.length}曲${query || settings.libraryExcludeOther ? ` / ${ids.length}曲` : ''}`;
   $('library-empty').hidden = matching.length > 0;
   $('library-empty').textContent = settings.libraryExcludeOther && eligible.length < ids.length
-    ? '表示できる曲がありません。「アイカツアンコールだけ」のチェックを外すと対象が広がります。'
+    ? '表示できる曲がありません。「プレイ動画」を選ぶと対象が広がります。'
     : query ? '見つかりませんでした。別のキーワードを試してください。' : libraryTab === 'favorites' ? '星を押して、お気に入りを追加しましょう。' : libraryTab === 'history' ? '動画を再生すると、ここに履歴が残ります。' : 'アンコールの楽曲は準備中です。';
 }
 function scheduleLibraryRender() {
@@ -395,23 +395,15 @@ document.querySelectorAll('[data-library]').forEach(button => {
   });
 });
 $('video-search').addEventListener('input', () => { $('library-results').scrollTop = 0; renderLibrary(); });
-function syncLibraryFilters() {
-  $('library-exclude-other').checked = settings.libraryExcludeOther;
-  $('library-show-misc').checked = settings.libraryShowMisc;
-}
-for (const [id, key, alternate] of [
-  ['library-exclude-other', 'libraryExcludeOther', 'libraryShowMisc'],
-  ['library-show-misc', 'libraryShowMisc', 'libraryExcludeOther'],
-]) {
-  $(id).addEventListener('change', event => {
-    settings[key] = event.currentTarget.checked;
-    if (settings[key]) settings[alternate] = false;
-    save(SETTINGS_KEY, settings);
-    syncLibraryFilters();
-    $('library-results').scrollTop = 0;
-    renderLibrary();
-  });
-}
+$('library-video-filter').value = settings.libraryExcludeOther ? 'encore' : settings.libraryShowMisc ? 'include-misc' : 'playable';
+$('library-video-filter').addEventListener('change', event => {
+  const filter = event.currentTarget.value;
+  settings.libraryExcludeOther = filter === 'encore';
+  settings.libraryShowMisc = filter === 'include-misc';
+  save(SETTINGS_KEY, settings);
+  $('library-results').scrollTop = 0;
+  renderLibrary();
+});
 $('video-sort').addEventListener('change', () => {
   librarySort = normalizeLibrarySort($('video-sort').value);
   save('library_sort', librarySort);
@@ -920,7 +912,6 @@ function syncSettings() {
   $('vibration-support').textContent = vibrationSupported ? '' : 'この端末では利用できません';
   $('effects-enabled').checked = settings.effects;
   $('shuffle-exclude-other').checked = settings.shuffleExcludeOther;
-  syncLibraryFilters();
   $('appearance').value = settings.appearance;
 }
 for (const [id, key] of [['sound-enabled', 'sound'], ['vibration-enabled', 'vibration'], ['effects-enabled', 'effects'], ['shuffle-exclude-other', 'shuffleExcludeOther']]) {
