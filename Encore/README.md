@@ -5,6 +5,8 @@
 - アンコール版の公開先: https://aikatsu-encore-kibun.vercel.app/
 - 通常版の公開先: https://aikatsukibun.vercel.app/
 
+公開ドメインのページ閲覧数と訪問者数は、Vercelのプロジェクト「Analytics」で確認できます。曲を選び直す操作はページ閲覧に含めません。
+
 - `videos.json`: アンコール用の動画ID一覧。
 - `catalog.json`: 楽曲情報の正本。動画IDごとに `title`（楽曲）、`startSeconds` / `endSeconds`（元動画内の開始・終了秒）、`mode`（モード）、`difficulty`（難易度）、`idol`（アイドル）、`result`（成績）、`author`（投稿者名）、`authorHandle`（ハンドル）を管理します。
 - 「アイドル活動！」（7:15〜8:51、1分36秒）と「君のEntrance」（7:31〜9:57、2分26秒）を登録済みです。楽曲位置・モード・難易度・アイドル・成績はユーザー指定、投稿者は動画情報で確認しています。

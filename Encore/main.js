@@ -1,4 +1,5 @@
 import videoIds from './videos.json';
+import { inject, pageview } from '@vercel/analytics';
 import { SETTINGS_KEY, SHARED_BROWSE_CACHE_SECONDS, VIDEO_CATEGORIES, categoryLabel, isVideoCategory, isPlayableVideo, isVideoId, isEntryId, videoIdFor, uniqueIds, readSaved, normalizeCustomVideos, normalizeSettings, chooseRandom, formatTime, displayTitle } from './model.js';
 import { icon, setIcon, mountIcons } from './icons.js';
 import { createTapAudio } from './tap-audio.js';
@@ -15,6 +16,10 @@ import { normalizeLibrarySort, sortVideoIds } from './library-sort.js';
 import { createPlaybackSession } from './playback-session.js';
 
 const $ = id => document.getElementById(id);
+if (import.meta.env.PROD && location.hostname === 'aikatsu-encore-kibun.vercel.app') {
+  inject({ mode: 'production', disableAutoTrack: true });
+  pageview({ path: location.pathname });
+}
 mountIcons();
 let storage;
 try { storage = createEncoreStorage(window.localStorage); } catch { /* 保存不可でも利用できる。 */ }
