@@ -6,6 +6,7 @@ import { createSharedVideosHandler, MAX_JSON_BYTES } from '../../Encore/server/s
 import { createNeonStore } from '../../Encore/server/neon-store.js';
 
 const endpoint = 'https://encore.example/api/videos';
+const browseQuery = '?includeMisc=1&classification=series&view=browse';
 const input = { url: 'https://youtu.be/fYibOFCMpnE', title: 'テスト用の曲', start: '0:00', end: '1:36', mode: 'じゆうにアイカツ！モード', difficulty: '-', idol: 'マイキャラ', result: 'フルコンボ' };
 const apiVideo = { id: 'fYibOFCMpnE', title: input.title, startSeconds: 0, endSeconds: 96, mode: input.mode, difficulty: '-', idol: 'マイキャラ', result: 'フルコンボ', author: '実際の投稿者', authorHandle: '@Actual' };
 const postedVideo = { ...apiVideo, videoId: apiVideo.id };
@@ -136,6 +137,26 @@ test('シリーズGETは実分類とプレイ可否を返し、旧一覧では�
   assert.deepEqual(await get('?classification=series'), { videos: [unplayableEncore, unplayableUncategorized, legacyOther], withdrawnIds: [hidden.id] });
   assert.deepEqual(await get('?includeMisc=1&classification=series'), { videos: publicVideos, withdrawnIds: [hidden.id] });
   assert.deepEqual([...store.videos.values()], [...publicVideos, hidden]);
+});
+
+test('正規の閲覧用GETだけが成功時にVercel CDNで60秒キャッシュされる', async () => {
+  const { store, handler } = fixture();
+  const published = { ...apiVideo, category: 'misc', playable: false };
+  store.videos.set(published.id, published);
+
+  for (const query of [browseQuery, '?includeMisc=1&classification=series', `${browseQuery}&other=1`]) {
+    const response = await handler(new Request(`${endpoint}${query}`));
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('cache-control'), 'no-store');
+    assert.equal(response.headers.get('vercel-cdn-cache-control'), query === browseQuery ? 'public, s-maxage=60' : null);
+    assert.deepEqual(await response.json(), { videos: [published], withdrawnIds: [] });
+  }
+
+  store.listPublication = async () => { throw new Error('DB unavailable'); };
+  const failed = await handler(new Request(`${endpoint}${browseQuery}`));
+  assert.equal(failed.status, 503);
+  assert.equal(failed.headers.get('cache-control'), 'no-store');
+  assert.equal(failed.headers.get('vercel-cdn-cache-control'), null);
 });
 
 test('取り下げた元動画は同じソースの全区間が非公開になり、一覧に識別子だけを返す', async () => {

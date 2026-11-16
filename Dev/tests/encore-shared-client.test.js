@@ -91,6 +91,22 @@ test('シリーズ一覧の取得は明示クエリを送り、シリーズと�
   assert.deepEqual(urls, ['/api/videos?classification=series', '/api/videos?includeMisc=1&classification=series']);
 });
 
+test('閲覧指定のシリーズ全件GETだけが共有CDN用URLを使う', async () => {
+  const calls = [];
+  const client = createSharedVideosClient(async (url, { cache }) => {
+    calls.push({ url, cache });
+    return response({ videos: [video] });
+  });
+  await client.list({ includeMisc: true, classification: 'series', browse: true });
+  await client.list({ includeMisc: true, classification: 'series' });
+  await client.list({ classification: 'series', browse: true });
+  assert.deepEqual(calls, [
+    { url: '/api/videos?includeMisc=1&classification=series&view=browse', cache: 'default' },
+    { url: '/api/videos?includeMisc=1&classification=series', cache: 'no-store' },
+    { url: '/api/videos?classification=series', cache: 'no-store' },
+  ]);
+});
+
 test('共有一覧の不正なIDや重複を除外し、秘密や余分なレスポンス項目を取り込まない', async () => {
   const client = createSharedVideosClient(async () => response({
     videos: [null, { ...video, id: 'invalid' }, { ...video, privateToken: 'server-only' }, video],

@@ -2,7 +2,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { isIP } from 'node:net';
 import { validateVideoInput, withVideoAuthor } from '../add-video.js';
 import { readYouTubeAuthor } from '../youtube-author.js';
-import { isEntryId, videoIdFor } from '../model.js';
+import { isEntryId, videoIdFor, SHARED_BROWSE_CACHE_SECONDS } from '../model.js';
 
 export const MAX_JSON_BYTES = 16 * 1024;
 const databaseMessage = '共有データを利用できません。時間をおいて、もう一度お試しください。';
@@ -106,13 +106,17 @@ export function createSharedVideosHandler({ store, fetchImpl = globalThis.fetch,
     if (request.method === 'GET') {
       try {
         const publication = await store.listPublication();
-        const params = new URL(request.url).searchParams;
+        const url = new URL(request.url);
+        const params = url.searchParams;
         const includeMisc = params.get('includeMisc') === '1';
         const videos = params.get('classification') === 'series' ? publication.videos : publication.videos.map(video => {
           const category = legacyCategory(video);
           return category === video.category ? video : { ...video, category };
         });
-        return json(200, { ...publication, videos: includeMisc ? videos : videos.filter(video => video.category !== 'misc') });
+        const headers = url.search === '?includeMisc=1&classification=series&view=browse'
+          ? { 'Vercel-CDN-Cache-Control': `public, s-maxage=${SHARED_BROWSE_CACHE_SECONDS}` }
+          : {};
+        return json(200, { ...publication, videos: includeMisc ? videos : videos.filter(video => video.category !== 'misc') }, headers);
       }
       catch { return json(503, { error: databaseMessage }); }
     }

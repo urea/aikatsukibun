@@ -7,7 +7,7 @@ export function createSharedVideosClient(fetchImpl = fetch) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 20000);
     try {
-      const response = await fetchImpl(path, { ...options, cache: 'no-store', signal: controller.signal });
+      const response = await fetchImpl(path, { cache: 'no-store', ...options, signal: controller.signal });
       const data = await response.json();
       if (!response.ok) {
         const error = new Error(typeof data?.error === 'string' ? data.error : '共有データに接続できませんでした。もう一度お試しください。');
@@ -24,12 +24,14 @@ export function createSharedVideosClient(fetchImpl = fetch) {
     } finally { clearTimeout(timeout); }
   }
   return {
-    async list({ includeMisc = false, classification } = {}) {
+    async list({ includeMisc = false, classification, browse = false } = {}) {
       const params = new URLSearchParams();
       if (includeMisc === true) params.set('includeMisc', '1');
       if (classification === 'series') params.set('classification', 'series');
+      const useBrowse = browse === true && includeMisc === true && classification === 'series';
+      if (useBrowse) params.set('view', 'browse');
       const query = params.toString();
-      const data = await request({}, query ? `/api/videos?${query}` : '/api/videos');
+      const data = await request({ cache: useBrowse ? 'default' : 'no-store' }, query ? `/api/videos?${query}` : '/api/videos');
       if (!Array.isArray(data?.videos)) throw new Error('共有一覧を読み込めませんでした。もう一度お試しください。');
       return { videos: normalizeCustomVideos(data.videos), withdrawnIds: uniqueIds(data.withdrawnIds) };
     },
