@@ -43,6 +43,10 @@ let sharedVideos = normalizeCustomVideos(cachedPublication.videos ?? readSaved(s
 let withdrawnIds = new Set(uniqueIds(cachedPublication.withdrawnIds));
 let sharedFetchedAt = Number.isFinite(cachedPublication.fetchedAt) ? cachedPublication.fetchedAt : 0;
 let sharedLiveUntil = Number.isFinite(cachedPublication.liveUntil) ? cachedPublication.liveUntil : 0;
+let sharedPublishedAt = Number.isFinite(cachedPublication.publishedAt) ? cachedPublication.publishedAt : 0;
+let sharedLiveSince = Number.isFinite(cachedPublication.liveSince) ? cachedPublication.liveSince : 0;
+let sharedLiveFailed = false;
+let sharedSyncPending = cachedPublication.syncPending === true;
 let publicationReady = false;
 const sharedClient = createSharedVideosClient();
 const settings = normalizeSettings(readSaved(storage, SETTINGS_KEY, {}));
@@ -51,7 +55,7 @@ customVideos.forEach(video => metadata.seed(video.id, video));
 sharedVideos.forEach(video => metadata.seed(video.id, video, { replace: true }));
 const isWithdrawn = id => withdrawnIds.has(id) || withdrawnIds.has(videoIdFor(id, metadata.get(id)));
 const publishedIds = () => [...videoIds, ...sharedVideos.map(video => video.id)].filter(id => !isWithdrawn(id));
-const savePublication = () => save('shared_publication', { videos: sharedVideos, withdrawnIds: [...withdrawnIds], fetchedAt: sharedFetchedAt, liveUntil: sharedLiveUntil }, false);
+const savePublication = () => save('shared_publication', { videos: sharedVideos, withdrawnIds: [...withdrawnIds], fetchedAt: sharedFetchedAt, liveUntil: sharedLiveUntil, publishedAt: sharedPublishedAt, liveSince: sharedLiveSince, syncPending: sharedSyncPending }, false);
 const lastVideo = readSaved(storage, 'aikatsu_last_video_v2', null);
 const allIds = () => uniqueIds([...sharedVideos.map(video => video.id), ...customVideos.map(video => video.id), ...videoIds, ...favorites, ...history]).filter(id => !isWithdrawn(id));
 const categoryFor = id => metadata.get(id)?.category ?? 'misc';
@@ -323,6 +327,24 @@ function reconcilePublishedSelection(replaceImplicitVideo) {
   }
   if (wasWithdrawn || (requested && currentId !== requested)) toast('この曲は共有一覧で利用できません。「選ぶ」から別の曲を選べます。');
 }
+function showSharedReadStatus(failed = false) {
+  const format = time => new Intl.DateTimeFormat('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(time);
+  const publicationDate = sharedPublishedAt ? `公開一覧 ${format(sharedPublishedAt)} 時点` : '';
+  const cause = sharedLiveFailed ? '最新の共有一覧を取得できません' : failed ? '共有一覧を取得できません' : '';
+  let status = publicationDate;
+  if (cause) {
+    status = cause;
+    if (sharedVideos.length || withdrawnIds.size) {
+      const when = sharedFetchedAt ? format(sharedFetchedAt) : '日時不明';
+      status += publicationDate ? `。${publicationDate}のデータを表示中` : `。保存済みの一覧を表示中（最終取得 ${when}）`;
+    }
+  }
+  if (sharedSyncPending) {
+    const warning = '保存済みの変更を公開一覧に反映できていません';
+    status = status ? `${status}。${warning}` : warning;
+  }
+  $('shared-status').textContent = status;
+}
 async function refreshSharedVideos({ fresh = false } = {}) {
   if (sharedLoading) {
     if (!fresh || sharedLoadingLive) return sharedLoading;
@@ -330,22 +352,30 @@ async function refreshSharedVideos({ fresh = false } = {}) {
     return refreshSharedVideos({ fresh });
   }
   const now = Date.now();
-  if (!fresh && now < nextSharedRefreshAt) return true;
-  sharedLoadingLive = fresh || now < sharedLiveUntil;
+  if (!fresh && (now < nextSharedRefreshAt || now < sharedLiveUntil)) return true;
+  sharedLoadingLive = fresh;
   $('shared-status').textContent = '共有一覧を更新中…';
   $('retry-shared').disabled = true;
   const revision = sharedRevision;
   sharedLoading = (async () => {
     try {
-      const { videos, withdrawnIds: unavailable } = await sharedClient.list({ includeMisc: true, classification: 'series', browse: !sharedLoadingLive });
-      if (revision !== sharedRevision) { $('shared-status').textContent = ''; return false; }
+      const { videos, withdrawnIds: unavailable, publishedAt } = await sharedClient.list({ includeMisc: true, classification: 'series', browse: !fresh });
+      if (revision !== sharedRevision) { showSharedReadStatus(); return false; }
+      nextSharedRefreshAt = Date.now() + sharedReuseMs;
+      // 公開反映前のJSONでは、このタブで確認できた新しい編集内容を戻さない。
+      if (!fresh && publishedAt && publishedAt < sharedLiveSince) { showSharedReadStatus(); return true; }
       const previous = metadata.get(currentId);
       const previousId = currentId;
       sharedVideos = videos;
       withdrawnIds = new Set(unavailable);
       sharedFetchedAt = Date.now();
-      nextSharedRefreshAt = sharedFetchedAt + sharedReuseMs;
-      if (fresh) sharedLiveUntil = sharedFetchedAt + sharedLiveWindowMs;
+      sharedPublishedAt = publishedAt ?? 0;
+      if (publishedAt && publishedAt >= sharedLiveSince) sharedSyncPending = false;
+      if (fresh) {
+        sharedLiveSince = now;
+        sharedLiveUntil = sharedFetchedAt + sharedLiveWindowMs;
+        sharedLiveFailed = false;
+      }
       sharedVideos.forEach(video => metadata.seed(video.id, video, { replace: true }));
       savePublication();
       const initialVideo = metadata.get(currentId);
@@ -357,14 +387,11 @@ async function refreshSharedVideos({ fresh = false } = {}) {
       if (currentVideo && previousId === currentId) syncEditedRange(currentId, previous, currentVideo);
       if (currentId && !player) preparePlayer();
       if (panelId === 'library-panel') renderLibrary();
-      $('shared-status').textContent = '';
+      showSharedReadStatus();
       return true;
     } catch {
-      $('shared-status').textContent = '共有一覧を取得できません';
-      if (sharedVideos.length || withdrawnIds.size) {
-        const when = sharedFetchedAt ? new Intl.DateTimeFormat('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(sharedFetchedAt) : '日時不明';
-        $('shared-status').textContent += `。保存済みの一覧を表示中（最終取得 ${when}）`;
-      }
+      if (fresh) sharedLiveFailed = true;
+      showSharedReadStatus(true);
       nextSharedRefreshAt = 0;
       if (pendingSharedVideoId) setStatus('共有された曲を取得できません。「選ぶ」から再試行してください。');
       return false;
@@ -619,17 +646,24 @@ $('add-form').addEventListener('submit', async event => {
     // 一覧取得中の結果で、登録直後の動画を消さない。
     if (sharedLoading) await sharedLoading;
     let savedVideo;
+    let publicationPending = false;
     if (editing?.local) {
       savedVideo = { ...video, id: editing.id, ...(editing.videoId ? { videoId: editing.videoId } : {}), ...(editing.author ? { author: editing.author } : {}), ...(editing.authorHandle ? { authorHandle: editing.authorHandle } : {}), ...(editing.authorUrl ? { authorUrl: editing.authorUrl } : {}) };
       customVideos = customVideos.map(item => item.id === editing.id ? savedVideo : item);
       save('custom_videos', customVideos);
     } else {
-      savedVideo = editing ? await sharedClient.update(editing.id, editing.revision, input) : await sharedClient.add(input);
+      const saveStartedAt = Date.now();
+      const { publicationUpdated, ...saved } = editing ? await sharedClient.update(editing.id, editing.revision, input) : await sharedClient.add(input);
+      savedVideo = saved;
+      publicationPending = publicationUpdated === false;
+      sharedSyncPending = publicationPending;
       sharedRevision++;
       sharedVideos = editing ? sharedVideos.map(item => item.id === editing.id ? savedVideo : item) : [savedVideo, ...sharedVideos.filter(item => item.id !== savedVideo.id)];
       sharedLiveUntil = Date.now() + sharedLiveWindowMs;
       nextSharedRefreshAt = sharedLiveUntil;
+      sharedLiveSince = saveStartedAt;
       savePublication();
+      showSharedReadStatus();
     }
     const savedId = savedVideo.id;
     metadata.seed(savedId, savedVideo, { replace: true });
@@ -646,7 +680,9 @@ $('add-form').addEventListener('submit', async event => {
       if (editing) openPanel('library-panel');
       else selectVideo(savedId);
     }
-    toast(editing ? editing.local ? 'このブラウザーの動画情報を更新しました' : '共有一覧の動画情報を更新しました' : '共有一覧と、この端末のお気に入りに追加しました');
+    toast(publicationPending
+      ? '動画情報を保存しました。公開一覧への反映を確認できませんでした。'
+      : editing ? editing.local ? 'このブラウザーの動画情報を更新しました' : '共有一覧の動画情報を更新しました' : '共有一覧と、この端末のお気に入りに追加しました');
   } catch (error) {
     if (error.errors && typeof error.errors === 'object') showAddErrors(error.errors);
     message.textContent = error.name === 'AbortError' || error instanceof TypeError ? '動画情報を取得できませんでした。通信を確認して、もう一度お試しください。' : error.message;

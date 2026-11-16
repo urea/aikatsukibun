@@ -148,7 +148,7 @@ test('正規の閲覧用GETだけが成功時にVercel CDNで60秒キャッシ�
     const response = await handler(new Request(`${endpoint}${query}`));
     assert.equal(response.status, 200);
     assert.equal(response.headers.get('cache-control'), 'no-store');
-    assert.equal(response.headers.get('vercel-cdn-cache-control'), query === browseQuery ? 'public, s-maxage=60' : null);
+    assert.equal(response.headers.get('vercel-cdn-cache-control'), query === browseQuery ? 'public, s-maxage=300' : null);
     assert.deepEqual(await response.json(), { videos: [published], withdrawnIds: [] });
   }
 
@@ -157,6 +157,83 @@ test('正規の閲覧用GETだけが成功時にVercel CDNで60秒キャッシ�
   assert.equal(failed.status, 503);
   assert.equal(failed.headers.get('cache-control'), 'no-store');
   assert.equal(failed.headers.get('vercel-cdn-cache-control'), null);
+});
+
+test('公開JSONを設定した閲覧用GETはDB停止中も一覧と公開日時を返し、最新GETは503を返す', async () => {
+  const publication = { videos: [{ ...apiVideo, category: 'misc' }], withdrawnIds: ['zyxwvutsrqp'], publishedAt: '2026-11-17T00:00:00.000Z' };
+  const store = memoryStore();
+  let dbReads = 0;
+  store.listPublication = async () => { dbReads++; throw new Error('DB unavailable'); };
+  const { handler } = fixture({ store, snapshot: { read: async () => publication } });
+
+  const browse = await handler(new Request(`${endpoint}${browseQuery}`));
+  assert.equal(browse.status, 200);
+  assert.equal(browse.headers.get('vercel-cdn-cache-control'), 'public, s-maxage=300');
+  assert.deepEqual(await browse.json(), publication);
+  assert.equal(dbReads, 0);
+
+  const fresh = await handler(new Request(`${endpoint}?includeMisc=1&classification=series`));
+  assert.equal(fresh.status, 503);
+  assert.equal(fresh.headers.get('cache-control'), 'no-store');
+  assert.equal(fresh.headers.get('vercel-cdn-cache-control'), null);
+  assert.match((await fresh.json()).error, /共有データを利用できません/);
+  assert.equal(dbReads, 1);
+});
+
+test('公開JSONが未作成または読めない場合は過去の一覧やDBへ切り替えず503を返す', async () => {
+  const store = memoryStore();
+  let dbReads = 0;
+  store.listPublication = async () => { dbReads++; return { videos: [apiVideo], withdrawnIds: [] }; };
+  for (const read of [async () => null, async () => { throw new Error('SECRET'); }]) {
+    const { handler } = fixture({ store, snapshot: { read } });
+    const response = await handler(new Request(`${endpoint}${browseQuery}`));
+    assert.equal(response.status, 503);
+    assert.equal(response.headers.get('cache-control'), 'no-store');
+    assert.equal(response.headers.get('vercel-cdn-cache-control'), null);
+    const body = await response.json();
+    assert.match(body.error, /公開一覧を取得できません/);
+    assert.doesNotMatch(body.error, /SECRET/);
+  }
+  assert.equal(dbReads, 0);
+});
+
+test('追加と編集に成功すると保存済みの最新一覧を取得して公開JSONを更新する', async () => {
+  const published = [];
+  const snapshot = { async publish(loadPublication) { published.push(await loadPublication()); } };
+  const { store, handler } = fixture({ snapshot });
+  const added = await handler(post());
+  assert.equal(added.status, 201);
+  assert.deepEqual(await added.json(), { video: postedVideo });
+  assert.deepEqual(published[0].videos, [postedVideo]);
+
+  const updated = await handler(patch(editInput(store.videos.get(apiVideo.id), { title: '編集後の曲' })));
+  assert.equal(updated.status, 200);
+  assert.equal((await updated.json()).publicationUpdated, undefined);
+  assert.equal(published[1].videos[0].title, '編集後の曲');
+
+  const rejected = await handler(patch(editInput(postedVideo)));
+  assert.equal(rejected.status, 409);
+  assert.equal(published.length, 2);
+});
+
+test('公開JSONへの反映に失敗しても追加・編集の保存結果を返し、反映失敗を通知する', async t => {
+  const warnings = t.mock.method(console, 'warn', () => {});
+  const snapshot = { async publish() { throw new Error('SECRET'); } };
+  const { store, handler } = fixture({ snapshot });
+
+  const added = await handler(post());
+  assert.equal(added.status, 201);
+  assert.equal(added.headers.get('cache-control'), 'no-store');
+  assert.deepEqual(await added.json(), { video: postedVideo, publicationUpdated: false });
+
+  const updated = await handler(patch(editInput(store.videos.get(apiVideo.id), { title: '保存済みの曲' })));
+  assert.equal(updated.status, 200);
+  const result = await updated.json();
+  assert.equal(result.publicationUpdated, false);
+  assert.equal(result.video.title, '保存済みの曲');
+  assert.equal(store.videos.get(apiVideo.id).title, '保存済みの曲');
+  assert.equal(warnings.mock.callCount(), 2);
+  assert.doesNotMatch(JSON.stringify(warnings.mock.calls.map(call => call.arguments)), /SECRET/);
 });
 
 test('取り下げた元動画は同じソースの全区間が非公開になり、一覧に識別子だけを返す', async () => {

@@ -33,19 +33,24 @@ export function createSharedVideosClient(fetchImpl = fetch) {
       const query = params.toString();
       const data = await request({ cache: useBrowse ? 'default' : 'no-store' }, query ? `/api/videos?${query}` : '/api/videos');
       if (!Array.isArray(data?.videos)) throw new Error('共有一覧を読み込めませんでした。もう一度お試しください。');
-      return { videos: normalizeCustomVideos(data.videos), withdrawnIds: uniqueIds(data.withdrawnIds) };
+      const publishedAt = typeof data.publishedAt === 'string' ? Date.parse(data.publishedAt) : NaN;
+      return {
+        videos: normalizeCustomVideos(data.videos),
+        withdrawnIds: uniqueIds(data.withdrawnIds),
+        ...(Number.isFinite(publishedAt) ? { publishedAt } : {}),
+      };
     },
     async add(input) {
       const data = await request({ method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input) });
       const [video] = normalizeCustomVideos([data?.video]);
       if (!video?.author || !hasPlaybackBounds(video)) throw new Error('登録結果を確認できませんでした。一覧を再読み込みしてください。');
-      return video;
+      return data.publicationUpdated === false ? { ...video, publicationUpdated: false } : video;
     },
     async update(id, revision, input) {
       const data = await request({ method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...input, id, revision }) });
       const [video] = normalizeCustomVideos([data?.video]);
       if (video?.id !== id || !video.author || !hasPlaybackBounds(video) || !video.revision) throw new Error('更新結果を確認できませんでした。一覧を再読み込みしてください。');
-      return video;
+      return data.publicationUpdated === false ? { ...video, publicationUpdated: false } : video;
     },
   };
 }

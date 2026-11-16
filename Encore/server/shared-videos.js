@@ -6,7 +6,9 @@ import { isEntryId, videoIdFor, SHARED_BROWSE_CACHE_SECONDS } from '../model.js'
 
 export const MAX_JSON_BYTES = 16 * 1024;
 const databaseMessage = '共有データを利用できません。時間をおいて、もう一度お試しください。';
+const publicationMessage = '公開一覧を取得できませんでした。「最新に更新」をお試しください。';
 const upstreamMessage = '動画と投稿者の情報を取得できませんでした。URLと公開状態を確認し、時間をおいて再度お試しください。';
+const browseQuery = '?includeMisc=1&classification=series&view=browse';
 
 function json(status, body, headers = {}) {
   return Response.json(body, { status, headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', ...headers } });
@@ -100,25 +102,39 @@ async function fetchAuthor(id, fetchImpl, timeoutMs) {
   } finally { clearTimeout(timer); }
 }
 
-export function createSharedVideosHandler({ store, fetchImpl = globalThis.fetch, reservedIds = [], timeoutMs = 8000, rateLimit = 10, rateWindowSeconds = 60, getClientAddress, rateLimitSalt = 'encore-shared-videos' } = {}) {
+export function createSharedVideosHandler({ store, fetchImpl = globalThis.fetch, reservedIds = [], timeoutMs = 8000, rateLimit = 10, rateWindowSeconds = 60, getClientAddress, rateLimitSalt = 'encore-shared-videos', snapshot } = {}) {
   const reserved = new Set(reservedIds);
+  async function respondToSavedVideo(status, video) {
+    if (snapshot) {
+      try { await snapshot.publish(() => store.listPublication()); }
+      catch {
+        console.warn('アンコールの動画を保存しましたが、公開一覧を更新できませんでした。');
+        return json(status, { video, publicationUpdated: false });
+      }
+    }
+    return json(status, { video });
+  }
+
   return async request => {
     if (request.method === 'GET') {
+      const url = new URL(request.url);
+      const browse = url.search === browseQuery;
+      const useSnapshot = browse && snapshot;
       try {
-        const publication = await store.listPublication();
-        const url = new URL(request.url);
+        const publication = useSnapshot ? await snapshot.read() : await store.listPublication();
+        if (publication === null) return json(503, { error: publicationMessage });
         const params = url.searchParams;
         const includeMisc = params.get('includeMisc') === '1';
         const videos = params.get('classification') === 'series' ? publication.videos : publication.videos.map(video => {
           const category = legacyCategory(video);
           return category === video.category ? video : { ...video, category };
         });
-        const headers = url.search === '?includeMisc=1&classification=series&view=browse'
+        const headers = browse
           ? { 'Vercel-CDN-Cache-Control': `public, s-maxage=${SHARED_BROWSE_CACHE_SECONDS}` }
           : {};
         return json(200, { ...publication, videos: includeMisc ? videos : videos.filter(video => video.category !== 'misc') }, headers);
       }
-      catch { return json(503, { error: databaseMessage }); }
+      catch { return json(503, { error: useSnapshot ? publicationMessage : databaseMessage }); }
     }
     const editing = request.method === 'PATCH';
     if (request.method !== 'POST' && !editing) return json(405, { error: 'この操作には対応していません。' }, { Allow: 'GET, POST, PATCH' });
@@ -150,7 +166,7 @@ export function createSharedVideosHandler({ store, fetchImpl = globalThis.fetch,
         if (!rate.allowed) return json(429, { error: '短時間に編集が集中しています。少し待ってから再度お試しください。' }, { 'Retry-After': String(Math.max(1, Math.ceil(rate.retryAfter || rateWindowSeconds))) });
         const savedVideo = withVideoAuthor(identity, existing);
         const updated = await store.updateVideo(savedVideo, parsed.input.revision);
-        return updated ? json(200, { video: updated }) : conflict();
+        return updated ? respondToSavedVideo(200, updated) : conflict();
       } catch (error) { return error?.code === 'duplicate_clip' ? duplicate() : json(503, { error: databaseMessage }); }
     }
     let sourceExists;
@@ -170,7 +186,7 @@ export function createSharedVideosHandler({ store, fetchImpl = globalThis.fetch,
       let candidate = sourceExists ? { ...savedVideo, id: `clip_${randomBytes(16).toString('hex')}` } : savedVideo;
       for (let attempt = 0; attempt < 3; attempt++) {
         const inserted = await store.insertVideo(candidate);
-        if (inserted) return json(201, { video: inserted });
+        if (inserted) return respondToSavedVideo(201, inserted);
         if (await store.hasClip(savedVideo)) return duplicate();
         // 別区間の同時登録で旧IDを先に使われても、曲ごとのIDで保存し直す。
         candidate = { ...savedVideo, id: `clip_${randomBytes(16).toString('hex')}` };

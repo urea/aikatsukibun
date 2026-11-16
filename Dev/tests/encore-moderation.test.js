@@ -38,6 +38,27 @@ function fixture(overrides = {}) {
   return { calls, outputs, errors, run };
 }
 
+test('管理操作の適用後に公開JSONを更新し、同期失敗を安全に報告する', async () => {
+  let publishes = 0;
+  const cli = fixture({
+    async publish(connection) {
+      assert.equal(connection, fakeConnection);
+      publishes++;
+      if (publishes === 2) throw new Error(fakeConnection);
+      return { publication: { publishedAt: at.toISOString() }, changed: true };
+    },
+  });
+  assert.equal(await cli.run(['hide', sourceId]), 0);
+  assert.equal(publishes, 0);
+  assert.equal(await cli.run(['hide', sourceId, '--apply']), 0);
+  assert.equal(publishes, 1);
+  assert.match(cli.outputs.join('\n'), /公開一覧 更新/);
+  assert.equal(await cli.run(['restore', sourceId, '--apply']), 1);
+  assert.equal(publishes, 2);
+  assert.match(cli.errors.join('\n'), /DBの操作は完了しました。公開一覧への反映に失敗/);
+  assert.doesNotMatch(cli.errors.join('\n'), /secret-marker/);
+});
+
 test('a hide or restore preview uses only the explicitly scoped Encore environment and lists its candidates', async () => {
   for (const action of ['hide', 'restore']) {
     const cli = fixture();

@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { parseEnv } from 'node:util';
 import { categoryLabel, extractVideoId, isEntryId, isVideoCategory } from '../model.js';
 import { createModerationStore } from '../server/moderation.js';
+import { publishConfiguredPublication } from './publish-publication.mjs';
 
 const ENV_FILE = new URL('../.env.local', import.meta.url);
 const USAGE = `Encore 共有曲の管理
@@ -113,7 +114,7 @@ async function runMisc(store, { entryId, apply, restoreWithdrawn }, observedAt, 
   if (!apply && affected) output(`反映するには: node Encore/tools/moderate-videos.mjs misc ${entryId}${restoreWithdrawn ? ' --restore-withdrawn' : ''} --apply`);
 }
 
-export async function runModerationCli(args, { read = readFile, makeStore = createModerationStore, now = () => new Date(), output = console.log, error = console.error } = {}) {
+export async function runModerationCli(args, { read = readFile, makeStore = createModerationStore, publish, now = () => new Date(), output = console.log, error = console.error } = {}) {
   const options = parseArgs(args);
   if (options?.help) { output(USAGE); return 0; }
   if (!options) {
@@ -130,14 +131,25 @@ export async function runModerationCli(args, { read = readFile, makeStore = crea
   }
 
   const { action, sourceId, apply } = options;
+  async function finish(code = 0) {
+    if (code || !apply || !publish) return code;
+    try {
+      const result = await publish(connectionString);
+      if (result) output(`公開一覧 ${result.changed ? '更新' : '一致'}｜${result.publication.publishedAt}`);
+      return 0;
+    } catch {
+      error('DBの操作は完了しました。公開一覧への反映に失敗しました。publish-publication.mjs で再試行できます。');
+      return 1;
+    }
+  }
   const label = action === 'hide' ? '非表示' : action === 'restore' ? '復元' : '一覧';
   try {
     const observedAt = now();
     const store = makeStore(connectionString);
-    if (action === 'classify') return await runClassify(store, options, observedAt, output);
+    if (action === 'classify') return await finish(await runClassify(store, options, observedAt, output));
     if (action === 'misc') {
       await runMisc(store, options, observedAt, output);
-      return 0;
+      return await finish();
     }
     const result = apply
       ? await store.changeVisibility(action, sourceId, observedAt)
@@ -150,7 +162,7 @@ export async function runModerationCli(args, { read = readFile, makeStore = crea
     if (!rows.length) output('対象の共有曲は見つかりませんでした。');
     printRows(rows, output);
     if (!apply && action !== 'list' && affected) output(`反映するには: node Encore/tools/moderate-videos.mjs ${action} ${sourceId} --apply`);
-    return 0;
+    return await finish();
   } catch {
     error(apply
       ? options.entryId
@@ -162,5 +174,5 @@ export async function runModerationCli(args, { read = readFile, makeStore = crea
 }
 
 if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))) {
-  process.exitCode = await runModerationCli(process.argv.slice(2));
+  process.exitCode = await runModerationCli(process.argv.slice(2), { publish: publishConfiguredPublication });
 }
