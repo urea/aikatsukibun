@@ -26,7 +26,7 @@ function playerHarness(data = clip, entryId = id) {
   const playbackSession = createPlaybackSession();
   const controls = new Map();
   const $ = name => {
-    if (!controls.has(name)) controls.set(name, { value: '0', textContent: '', attributes: new Map(), listeners: new Map(), setAttribute(key, value) { this.attributes.set(key, value); }, removeAttribute(key) { this.attributes.delete(key); }, addEventListener(event, listener) { this.listeners.set(event, listener); } });
+    if (!controls.has(name)) controls.set(name, { value: '0', textContent: '', dataset: {}, attributes: new Map(), listeners: new Map(), setAttribute(key, value) { this.attributes.set(key, value); }, removeAttribute(key) { this.attributes.delete(key); }, addEventListener(event, listener) { this.listeners.set(event, listener); } });
     return controls.get(name);
   };
   const player = {
@@ -81,6 +81,16 @@ function playerHarness(data = clip, entryId = id) {
     seek(percent, state) { $('seek').value = String(percent); player.state = state; $('seek').listeners.get('change')(); },
   };
 }
+
+test('縦動画の表示は現在の動画にだけ適用し、向きが未登録の動画では標準に戻す', () => {
+  const harness = playerHarness({ ...clip, orientation: 'portrait' });
+  harness.context.updateCurrent();
+  assert.equal(harness.$('app').dataset.videoOrientation, 'portrait');
+  const nextId = 'tJAcDG-eS-Q';
+  harness.entries.set(nextId, clip);
+  harness.context.selectVideo(nextId);
+  assert.equal(harness.$('app').dataset.videoOrientation, 'standard');
+});
 
 test('元動画が不明の曲は再生とシークを無効にし、直接イベントを呼んでも旧動画を操作しない', () => {
   const harness = playerHarness();

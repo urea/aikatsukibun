@@ -304,6 +304,23 @@ test('新規登録・編集ではプレイ可否をシリーズと独立して�
   }
 });
 
+test('縦動画の指定を旧編集で保持し、標準を明示した編集で解除する', async () => {
+  const { handler, store } = fixture();
+  const added = await handler(post({ ...input, category: 'encore', orientation: 'portrait' }));
+  assert.equal(added.status, 201);
+  assert.equal((await added.json()).video.orientation, 'portrait');
+
+  const oldEdit = await handler(patch(editInput(store.videos.get(apiVideo.id), { category: 'other' })));
+  assert.equal(oldEdit.status, 200);
+  assert.equal((await oldEdit.json()).video.orientation, 'portrait');
+
+  const reset = await handler(patch(editInput(store.videos.get(apiVideo.id), { orientation: 'standard' })));
+  assert.equal(reset.status, 200);
+  assert.equal((await reset.json()).video.orientation, 'standard');
+  const listed = await handler(new Request(`${endpoint}?classification=series`));
+  assert.equal((await listed.json()).videos[0].orientation, 'standard');
+});
+
 test('旧版の未分類レコードを後から分類でき、空または不正なPOSTとPATCHは保存せず400を返す', async () => {
   const { handler, store, requests } = fixture();
   const legacy = await handler(post());
@@ -793,21 +810,22 @@ test('Neon storeは明示nullの境界を正規化して保持しUPDATE JSONで�
   }
 });
 
-test('Neon storeは分類を欠く旧PATCHのJSONマージで既存分類を保持する', async () => {
+test('Neon storeは旧PATCHのJSONマージで既存分類・プレイ可否・動画の向きを保持する', async () => {
   const revision = 'a'.repeat(32);
-  let data = { ...apiVideo, category: 'encore', playable: false };
+  let data = { ...apiVideo, category: 'encore', playable: false, orientation: 'portrait' };
   const sql = { async query(text, values) {
     if (text.startsWith('UPDATE')) {
       assert.match(text, /SET data = data \|\| \$2::jsonb/);
       const submitted = JSON.parse(values[1]);
       assert.equal(Object.hasOwn(submitted, 'category'), false);
       assert.equal(Object.hasOwn(submitted, 'playable'), false);
+      assert.equal(Object.hasOwn(submitted, 'orientation'), false);
       data = { ...data, ...submitted };
     }
     return [{ video_id: apiVideo.id, data, revision }];
   } };
   const store = createNeonStore(undefined, { sql });
-  const expected = { ...apiVideo, title: '旧版で曲名を編集', category: 'encore', playable: false, revision };
+  const expected = { ...apiVideo, title: '旧版で曲名を編集', category: 'encore', playable: false, orientation: 'portrait', revision };
   assert.deepEqual(await store.updateVideo({ ...apiVideo, title: expected.title }, revision), expected);
   assert.deepEqual(await store.listVideos(), [expected]);
 });

@@ -7,6 +7,7 @@ export const DEFAULT_SETTINGS = Object.freeze({ sound: true, soundVolume: 35, vi
 export const VIDEO_CATEGORIES = Object.freeze({ encore: 'アイカツE', other: 'その他アイカツ', misc: 'その他の動画' });
 export const isVideoCategory = value => typeof value === 'string' && Object.hasOwn(VIDEO_CATEGORIES, value);
 export const categoryLabel = value => isVideoCategory(value) ? VIDEO_CATEGORIES[value] : '未分類';
+export const isVideoOrientation = value => value === 'standard' || value === 'portrait';
 
 export function isPlayableVideo(video) {
   if (!video || typeof video !== 'object' || Array.isArray(video)) return false;
@@ -62,6 +63,7 @@ export function normalizeVideoMetadata(value) {
   if (isVideoId(value.videoId)) data.videoId = value.videoId;
   if (isVideoCategory(value.category)) data.category = value.category;
   if (typeof value.playable === 'boolean') data.playable = value.playable;
+  if (isVideoOrientation(value.orientation)) data.orientation = value.orientation;
   const limits = { title: 500, mode: 100, difficulty: 40, idol: 100, author: 200, authorHandle: 200 };
   for (const [key, limit] of Object.entries(limits)) {
     if (typeof value[key] === 'string') data[key] = value[key].slice(0, limit);

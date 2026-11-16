@@ -1,4 +1,4 @@
-import { extractVideoId, isPlayableVideo, isVideoCategory, normalizeVideoMetadata, videoIdFor, VIDEO_CATEGORIES } from './model.js';
+import { extractVideoId, isPlayableVideo, isVideoCategory, isVideoOrientation, normalizeVideoMetadata, videoIdFor, VIDEO_CATEGORIES } from './model.js';
 
 export const VIDEO_MODES = Object.freeze(['-', 'テレビアニメアイカツ！モード', 'アイカツ！オールスターモード', 'じゆうにアイカツ！モード', 'きかんげんていライブ！モード']);
 export const VIDEO_DIFFICULTIES = Object.freeze(['-', 'かんたん', 'ふつう', 'むずかしい', 'すごくむずかしい', 'とてもむずかしい']);
@@ -21,6 +21,7 @@ export function videoToInput(video) {
     url: videoId ? `https://www.youtube.com/watch?v=${videoId}` : '',
     category: isVideoCategory(video.category) ? video.category : '',
     playable: isPlayableVideo(video) ? 'yes' : 'no',
+    orientation: isVideoOrientation(video.orientation) ? video.orientation : 'standard',
     ...Object.fromEntries(['title', 'mode', 'difficulty', 'idol', 'result'].map(field => [field, video[field] || ''])),
     start: time(video.startSeconds), end: time(video.endSeconds),
   };
@@ -75,6 +76,9 @@ export function validateVideoInput(input) {
   const hasPlayable = Object.hasOwn(source, 'playable');
   const playable = source.playable === 'yes' ? true : source.playable === 'no' ? false : source.playable;
   if (hasPlayable && typeof playable !== 'boolean') errors.playable = 'このアプリで遊べるかを選択してください。';
+  const hasOrientation = Object.hasOwn(source, 'orientation');
+  const orientation = source.orientation;
+  if (hasOrientation && !isVideoOrientation(orientation)) errors.orientation = '標準または縦動画を選択してください。';
   const startSeconds = readTime(source, 'start', errors);
   const endSeconds = readTime(source, 'end', errors);
   const id = errors.url ? null : readVideoId(values.url);
@@ -87,6 +91,7 @@ export function validateVideoInput(input) {
     id,
     ...(hasCategory ? { category } : {}),
     ...(hasPlayable ? { playable } : {}),
+    ...(hasOrientation ? { orientation } : {}),
     title: values.title,
     startSeconds,
     endSeconds,

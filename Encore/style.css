@@ -157,6 +157,30 @@ kbd { font:inherit; border:1px solid var(--line); background:var(--raised); padd
   .side-panel { border-radius:22px 22px 0 0; border-bottom:0; }
   .sheet-grip { display:block; width:34px; height:4px; margin:9px auto 0; border-radius:6px; background:var(--line); flex-shrink:0; }
   .control-slot.panel-open { min-height:420px; }
+
+  .app-shell[data-video-orientation=portrait] {
+    --portrait-bottom: max(8px, env(safe-area-inset-bottom));
+    --portrait-pad-min: 164px;
+    /* パネルと下部メニューの高さを確保して、残りを動画枠に配分する。 */
+    --portrait-controls-min: calc(var(--portrait-pad-min) + 79px + var(--portrait-bottom));
+  }
+  .app-shell[data-video-orientation=portrait] .studio { gap:6px; }
+  .app-shell[data-video-orientation=portrait] .video-box {
+    aspect-ratio:auto;
+    height:clamp(200px, 82vw, calc(100dvh - 75px - var(--portrait-controls-min)));
+  }
+  .app-shell[data-video-orientation=portrait] .seek-row { margin:6px 0 3px; }
+  .app-shell[data-video-orientation=portrait] .control-slot:not(.panel-open) { min-height:var(--portrait-controls-min); }
+  .app-shell[data-video-orientation=portrait] .controller { min-height:0; padding-block:0 var(--portrait-bottom); gap:6px; }
+  .app-shell[data-video-orientation=portrait] .pad-area {
+    flex:1 0 auto;
+    aspect-ratio:auto;
+    max-width:520px;
+    min-height:var(--portrait-pad-min);
+    max-height:min(390px, calc((100vw - 24px) * 3 / 4));
+    margin-block:0 auto;
+  }
+  .app-shell[data-video-orientation=portrait] .pad-symbol { max-height:72%; }
 }
 @media(max-height:540px) and (min-aspect-ratio:1/1) {
   .app-shell { padding:8px max(8px,env(safe-area-inset-right)) 8px max(8px,env(safe-area-inset-left)); }

@@ -14,7 +14,7 @@ const input = {
   idol: 'マイキャラ',
   result: 'フルコンボ',
 };
-const classifiedInput = { ...input, category: 'encore', playable: 'yes' };
+const classifiedInput = { ...input, category: 'encore', playable: 'yes', orientation: 'standard' };
 
 test('編集用の入力は保存された区間・自由入力を復元し、時間形式も再検証できる', () => {
   for (const [start, end] of [['0:00', '1:36'], ['7:31', '9:57'], ['1:02:03', '1:04:05'], ['98:59:59', '99:59:59']]) {
@@ -75,7 +75,7 @@ test('分類は3値だけを保存・復元し、旧入力のキー省略は未�
     const [saved] = normalizeCustomVideos(JSON.parse(JSON.stringify([video])));
     const restored = videoToInput(saved);
     assert.equal(restored.category, category);
-    assert.deepEqual(validateVideoInput(restored).video, { ...video, playable: category !== 'misc' });
+    assert.deepEqual(validateVideoInput(restored).video, { ...video, playable: category !== 'misc', orientation: 'standard' });
   }
   const legacy = validateVideoInput(input).video;
   assert.equal(Object.hasOwn(legacy, 'category'), false);
@@ -102,7 +102,7 @@ test('遊べるかの入力は分類と独立し、フォーム値とAPIの真�
       const [saved] = normalizeCustomVideos(JSON.parse(JSON.stringify([video])));
       const restored = videoToInput(saved);
       assert.equal(restored.playable, expected ? 'yes' : 'no');
-      assert.deepEqual(validateVideoInput(restored).video, video);
+      assert.deepEqual(validateVideoInput(restored).video, { ...video, orientation: 'standard' });
     }
   }
   assert.equal(Object.hasOwn(validateVideoInput(input).video, 'playable'), false);
@@ -110,6 +110,28 @@ test('遊べるかの入力は分類と独立し、フォーム値とAPIの真�
     const { video, errors } = validateVideoInput({ ...input, playable });
     assert.equal(video, null);
     assert.deepEqual(errors, { playable: 'このアプリで遊べるかを選択してください。' });
+  }
+});
+
+test('動画の向きは標準と縦動画を保存・復元し、旧入力の省略を受け入れる', () => {
+  for (const orientation of ['standard', 'portrait']) {
+    const { video, errors } = validateVideoInput({ ...classifiedInput, orientation });
+    assert.deepEqual(errors, {});
+    assert.equal(video.orientation, orientation);
+    const [saved] = normalizeCustomVideos(JSON.parse(JSON.stringify([video])));
+    const restored = videoToInput(saved);
+    assert.equal(restored.orientation, orientation);
+    assert.deepEqual(validateVideoInput(restored).video, video);
+  }
+  const legacy = validateVideoInput(input).video;
+  assert.equal(Object.hasOwn(legacy, 'orientation'), false);
+  assert.equal(videoToInput(legacy).orientation, 'standard');
+  for (const orientation of ['', 'landscape', ' portrait', null, true, ['portrait']]) {
+    const result = validateVideoInput({ ...input, orientation });
+    assert.equal(result.video, null);
+    assert.match(result.errors.orientation, /標準または縦動画/);
+    const [saved] = normalizeCustomVideos([{ ...legacy, orientation }]);
+    assert.equal(Object.hasOwn(saved, 'orientation'), false);
   }
 });
 

@@ -119,6 +119,8 @@ function updateFavorite(button, id) {
 }
 function updateCurrent() {
   const hasVideo = Boolean(youtubeIdFor(currentId));
+  const video = metadata.get(currentId);
+  $('app').dataset.videoOrientation = hasVideo && video?.orientation === 'portrait' ? 'portrait' : 'standard';
   $('play-toggle').disabled = !hasVideo || !playerReady;
   $('youtube-player').hidden = !hasVideo;
   $('video-empty').hidden = hasVideo;
@@ -126,7 +128,7 @@ function updateCurrent() {
   $('shuffle').disabled = allIds().length === 0;
   $('replay').disabled = !hasVideo;
   $('youtube-link').hidden = !hasVideo;
-  $('share-current').disabled = !hasVideo || !metadata.get(currentId)?.title || !publishedIds().includes(currentId);
+  $('share-current').disabled = !hasVideo || !video?.title || !publishedIds().includes(currentId);
   if (!hasVideo) {
     $('seek').disabled = true;
     $('current-details').hidden = true;
@@ -410,7 +412,7 @@ $('video-sort').addEventListener('change', () => {
   renderLibrary();
 });
 
-const addFields = ['url', 'category', 'playable', 'title', 'start', 'end', 'mode', 'difficulty', 'idol', 'result'];
+const addFields = ['url', 'category', 'playable', 'title', 'start', 'end', 'mode', 'difficulty', 'idol', 'result', 'orientation'];
 const customChoiceValue = '__custom__';
 const customChoiceFields = ['title', 'idol'];
 for (const [value, label] of Object.entries(VIDEO_CATEGORIES)) {
@@ -461,7 +463,7 @@ function setAddInput(input = {}) {
   $('add-form').reset();
   for (const field of addFields) {
     const control = $(`add-${field}`);
-    const value = input[field] || '';
+    const value = input[field] ?? (field === 'orientation' ? 'standard' : '');
     if (customChoiceFields.includes(field) && value && !Array.from(control.options).some(option => option.value === value)) {
       control.value = customChoiceValue;
       $(`add-${field}-custom`).value = value;
