@@ -1,12 +1,11 @@
 import { readFile } from 'node:fs/promises';
 import { realpathSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { parseEnv } from 'node:util';
 import { categoryLabel, extractVideoId, isEntryId, isVideoCategory } from '../model.js';
 import { createModerationStore } from '../server/moderation.js';
+import { createConfiguredModerationStore, usesD1 } from '../server/configured-store.js';
 import { publishConfiguredPublication } from './publish-publication.mjs';
-
-const ENV_FILE = new URL('../.env.local', import.meta.url);
+import { readStoreConfig } from './store-config.mjs';
 const USAGE = `Encore 共有曲の管理
   node Encore/tools/moderate-videos.mjs list [YouTube ID/URL]
   node Encore/tools/moderate-videos.mjs hide <YouTube ID/URL> [--apply]
@@ -18,7 +17,7 @@ hide / restore / misc / classify はまず --apply を付けずに実行し、�
 変更する場合は、同じコマンドに --apply を付けて再実行してください。
 misc は指定の曲1件を「その他の動画」に移します。非表示の曲を復元して移す場合は --restore-withdrawn を指定します。
 classify は曲1件の分類とプレイ可否を変更します。unchanged はプレイ可否を維持し、非表示の曲は変更しません。
-接続先には Encore/.env.local の DATABASE_URL を使います。`;
+Neonの接続先は Encore/.env.local、D1の試験設定は実行時の環境変数でも指定できます。`;
 
 function parseArgs(args) {
   const [action, target, flag, ...rest] = args;
@@ -39,15 +38,6 @@ function parseArgs(args) {
   const sourceId = target === undefined ? null : extractVideoId(target);
   if (!sourceId && (action !== 'list' || target !== undefined)) return null;
   return { action, sourceId, apply: flag === '--apply' };
-}
-
-async function readConnectionString(read = readFile) {
-  const connectionString = parseEnv(await read(ENV_FILE, 'utf8')).DATABASE_URL;
-  const url = new URL(connectionString);
-  if (!['postgresql:', 'postgres:'].includes(url.protocol) || !url.hostname || !url.username || url.pathname.length < 2) {
-    throw new Error('Invalid DATABASE_URL');
-  }
-  return connectionString;
 }
 
 const date = new Intl.DateTimeFormat('ja-JP', { dateStyle: 'short', timeStyle: 'medium', timeZone: 'Asia/Tokyo' });
@@ -114,7 +104,7 @@ async function runMisc(store, { entryId, apply, restoreWithdrawn }, observedAt, 
   if (!apply && affected) output(`反映するには: node Encore/tools/moderate-videos.mjs misc ${entryId}${restoreWithdrawn ? ' --restore-withdrawn' : ''} --apply`);
 }
 
-export async function runModerationCli(args, { read = readFile, makeStore = createModerationStore, publish, now = () => new Date(), output = console.log, error = console.error } = {}) {
+export async function runModerationCli(args, { read = readFile, env = process.env, makeStore = createModerationStore, publish, now = () => new Date(), output = console.log, error = console.error } = {}) {
   const options = parseArgs(args);
   if (options?.help) { output(USAGE); return 0; }
   if (!options) {
@@ -123,8 +113,8 @@ export async function runModerationCli(args, { read = readFile, makeStore = crea
     return 2;
   }
 
-  let connectionString;
-  try { connectionString = await readConnectionString(read); }
+  let config;
+  try { config = await readStoreConfig(read, env); }
   catch {
     error('Encore/.env.local の DATABASE_URL を読み込めません。有効なNeon接続URLを設定してください。');
     return 1;
@@ -134,7 +124,7 @@ export async function runModerationCli(args, { read = readFile, makeStore = crea
   async function finish(code = 0) {
     if (code || !apply || !publish) return code;
     try {
-      const result = await publish(connectionString);
+      const result = await publish(usesD1(config) ? config : config.DATABASE_URL);
       if (result) output(`公開一覧 ${result.changed ? '更新' : '一致'}｜${result.publication.publishedAt}`);
       return 0;
     } catch {
@@ -145,7 +135,7 @@ export async function runModerationCli(args, { read = readFile, makeStore = crea
   const label = action === 'hide' ? '非表示' : action === 'restore' ? '復元' : '一覧';
   try {
     const observedAt = now();
-    const store = makeStore(connectionString);
+    const store = usesD1(config) ? createConfiguredModerationStore(config) : makeStore(config.DATABASE_URL);
     if (action === 'classify') return await finish(await runClassify(store, options, observedAt, output));
     if (action === 'misc') {
       await runMisc(store, options, observedAt, output);

@@ -1,7 +1,6 @@
-import { BlobPreconditionFailedError, get, put } from '@vercel/blob';
+import { BlobPreconditionFailedError, get, head, put } from '@vercel/blob';
 import { normalizeCustomVideos, uniqueIds, videoIdFor } from '../model.js';
 
-const pathname = 'encore-publication.json';
 const attempts = 3;
 const readTimeoutMs = 8_000;
 const publishTimeoutMs = 6_000;
@@ -46,7 +45,8 @@ async function loadWithinDeadline(loadPublication, signal) {
 }
 
 export function createPublicationSnapshot({
-  token, storeId, oidcToken, now = () => new Date(), readBlob = get, writeBlob = put,
+  pathname = 'encore-publication.json',
+  token, storeId, oidcToken, now = () => new Date(), readBlob = get, readBlobMetadata = head, writeBlob = put,
   isWriteConflict = error => error instanceof BlobPreconditionFailedError,
 } = {}) {
   const options = { access: 'private', token, storeId, oidcToken };
@@ -57,7 +57,7 @@ export function createPublicationSnapshot({
     if (current.statusCode !== 200 || !current.stream || !current.blob?.etag) {
       throw new Error('公開一覧のファイル情報を確認できません。');
     }
-    return { etag: current.blob.etag, body: await new Response(current.stream).text() };
+    return { etag: current.blob.etag, url: current.blob.url, body: await new Response(current.stream).text() };
   }
 
   async function read() {
@@ -69,9 +69,16 @@ export function createPublicationSnapshot({
     const abortSignal = AbortSignal.timeout(publishTimeoutMs);
     for (let attempt = 0; attempt < attempts; attempt++) {
       const current = await getCurrent(abortSignal);
+      // GET can return a weak ETag. Conditional writes need the strong storage ETag.
+      const etag = current?.etag.startsWith('W/')
+        ? (await readBlobMetadata(current.url, { ...options, abortSignal })).etag
+        : current?.etag;
+      if (current && (!etag || etag.startsWith('W/'))) {
+        throw new Error('公開一覧の書き込み用ETagを確認できません。');
+      }
       // 競合した場合も、Blobの更新対象を読んでからDBの最新内容を取得する。
       const latest = normalizePublication(await loadWithinDeadline(loadPublication, abortSignal));
-      if (current) {
+      if (current && current.etag.replace(/^W\//, '') === etag) {
         let previous;
         try { previous = decodeSnapshot(JSON.parse(current.body)); }
         catch { /* 壊れた一覧をDBの有効なデータで更新できるようにする。 */ }
@@ -86,7 +93,7 @@ export function createPublicationSnapshot({
         await writeBlob(pathname, JSON.stringify(publication), {
           ...options,
           allowOverwrite: Boolean(current),
-          ...(current ? { ifMatch: current.etag } : {}),
+          ...(current ? { ifMatch: etag } : {}),
           contentType: 'application/json; charset=utf-8',
           abortSignal,
         });

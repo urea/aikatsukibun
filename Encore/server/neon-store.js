@@ -1,18 +1,9 @@
 import { neon } from '@neondatabase/serverless';
-import { isEntryId, isVideoId, videoIdFor, normalizeVideoMetadata } from '../model.js';
+import { isEntryId, isVideoId, videoIdFor } from '../model.js';
+import { videoFromRow } from './shared-video-row.js';
 
 const sourceIdSql = alias => `COALESCE(${alias}.data->>'videoId', ${alias}.video_id)`;
 const withdrawalSql = source => `EXISTS (SELECT 1 FROM public.encore_shared_videos withdrawn WHERE ${sourceIdSql('withdrawn')} = ${source} AND withdrawn.data ? 'withdrawnAt')`;
-
-function videoFromRow(row) {
-  if (row?.data && Object.hasOwn(row.data, 'withdrawnAt')) return null;
-  if (!isEntryId(row?.video_id) || !isVideoId(videoIdFor(row.video_id, row.data))) return null;
-  const metadata = normalizeVideoMetadata(row.data);
-  if (!metadata.title?.trim() || !metadata.author?.trim() || metadata.startSeconds === undefined || metadata.endSeconds === undefined) return null;
-  const video = { id: row.video_id, ...metadata };
-  if (typeof row.revision === 'string' && /^[0-9a-f]{32}$/.test(row.revision)) video.revision = row.revision;
-  return video;
-}
 
 export function createNeonStore(connectionString, { sql } = {}) {
   let client = sql;

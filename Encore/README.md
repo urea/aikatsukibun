@@ -17,7 +17,7 @@
 - 登録した楽曲位置で再生・再再生・シークします。進行表示は楽曲区間内の0:00〜曲の長さ。シーク後も終了位置を越えて再生しないようにします。
 - 動画内のYouTube標準操作バーから、CCのオン・オフや字幕・画質設定を変更できます。標準バーで楽曲開始より前へ移動して再生した場合は、登録された開始位置に戻ります。
 - 曲がない場合は「楽曲準備中」を表示し、YouTubeプレーヤーを読み込みません。
-- 新規追加動画はNeonの専用テーブル `encore_shared_videos` へ保存し、全利用者で共有します。YouTube動画本体は保存しません。
+- 新規追加動画は共有DBの `encore_shared_videos` へ保存し、全利用者で共有します。YouTube動画本体は保存しません。
 - 同じYouTube動画でも、開始・終了位置が異なる曲を個別に登録・選択できます。曲IDと元動画の`videoId`を分け、既存の11文字IDと共有URLは維持します。追加区間には`clip_`に32桁の小文字hexを続けた曲IDを使い、選曲・お気に入り・履歴・編集・X共有は曲ごと、YouTube再生・画像・外部リンクは元動画ごとに扱います。同じ元動画・開始位置（空欄と0:00は同じ）・終了位置の重複は登録できません。自動チャプター取得は行いません。
 - 既存DBは`server/migrations/20261023_multiple_video_clips.sql`を適用します。既存行のID・JSON・登録日時を変更せず、曲IDと元動画の組合せ検証と、区間の重複を防ぐ一意インデックスを追加します。
 - 履歴・お気に入り・設定・最終動画・曲名キャッシュ・共有一覧の表示用キャッシュは、`aikatsu_encore:` から始まるブラウザー保存キーを使います。従来のローカル追加動画も保持しますが、自動で公開しません。
@@ -28,6 +28,32 @@
 このフォルダーで `npm.cmd ci` を実行後、`.env.local` にサーバー用 `DATABASE_URL` を設定し、プロジェクトルートで `npm.cmd run dev:encore -- --host 127.0.0.1 --port 18743 --strictPort` を実行します。確認URLは `http://127.0.0.1:18743/` です。ローカルでも同じ登録API・DBを使うため、テストは専用DBを使用してください。ポートを変更する場合は `D:\Archive\WEB_PORTS.md` と使用状況を確認してください。
 
 ビルドはプロジェクトルートの `npm.cmd run build:encore`。公開用ファイルは `Encore/dist/` に出力されます。
+
+### D1での試験移行
+
+試験にはCloudflare WranglerのローカルD1を使います。プロジェクトルートで、既存ファイルと重ならない出力先と空のDBディレクトリを指定します。出力SQLには管理用のデータも含まれるため、Git管理外の `output/encore-db-backup/` に置きます。
+
+```powershell
+node Encore/tools/export-d1-seed.mjs --out output/encore-db-backup/d1-input.sql
+$trialDb = 'output/encore-db-backup/d1-local'
+npx.cmd wrangler d1 execute ENCORE_DB --config Encore/cloudflare/wrangler.trial.jsonc --local --persist-to $trialDb --file Encore/cloudflare/schema.sql
+npx.cmd wrangler d1 execute ENCORE_DB --config Encore/cloudflare/wrangler.trial.jsonc --local --persist-to $trialDb --file output/encore-db-backup/d1-input.sql
+npx.cmd wrangler dev --config Encore/cloudflare/wrangler.trial.jsonc --persist-to $trialDb --ip 127.0.0.1 --port 18745 --var ENCORE_D1_TOKEN:local-store-test --var ENCORE_D1_ADMIN_TOKEN:local-admin-test
+```
+
+別のPowerShellをプロジェクトルートで開き、試験アプリを起動します。管理ツールは同じ環境設定で実行できます。
+
+```powershell
+$env:ENCORE_VIDEO_STORE = 'd1'
+$env:ENCORE_D1_URL = 'http://127.0.0.1:18745'
+$env:ENCORE_D1_TOKEN = 'local-store-test'
+$env:ENCORE_D1_ADMIN_TOKEN = 'local-admin-test'
+$env:ENCORE_RATE_LIMIT_SALT = 'local-trial'
+node Encore/tools/moderate-videos.mjs list
+npm.cmd run dev:encore -- --host 127.0.0.1 --port 18743 --strictPort
+```
+
+クラウドで試す場合は試験専用のD1・Worker・Vercel Previewを用意し、Workerには追加・編集用と管理用で別々のシークレットを設定します。公開一覧は専用の非公開Vercel BlobをPreviewに接続し、環境変数の接頭辞を `ENCORE_D1_BLOB` にします。Vercelの実行時は `ENCORE_D1_BLOB_STORE_ID` とOIDCで接続します。管理用トークンはWorkerと管理ツールに設定し、管理ツールから一覧を更新する場合は専用Blobの `ENCORE_D1_BLOB_READ_WRITE_TOKEN` も設定します。
 
 ## 楽曲追加と公開
 
@@ -66,8 +92,8 @@
 
 ## 共有APIの設定
 
-- Vercelのサーバー用環境変数 `DATABASE_URL` にNeon接続URLを設定します。`VITE_` は付けません。接続情報はGitやフロントのビルドへ含めません。
-- 初回のみ `server/schema.sql` を実行します。既存の通常版データには触れず、アンコール専用の動画・登録頻度テーブルを作ります。
+- D1を使う環境では、Vercelのサーバー用に `ENCORE_VIDEO_STORE=d1`、 `ENCORE_D1_URL`、`ENCORE_D1_TOKEN`、`ENCORE_RATE_LIMIT_SALT` を設定します。公開一覧の保存先には `ENCORE_D1_BLOB_STORE_ID` と `ENCORE_D1_BLOB_PATHNAME` を使います。移行元のNeonを使う環境は `DATABASE_URL` で接続します。いずれも `VITE_` を付けず、Gitやフロントのビルドへ含めません。
+- D1の初回セットアップは `cloudflare/schema.sql`、Neonのスキーマは `server/schema.sql` です。通常版と独立したアンコール専用のテーブルを使います。
 - `GET /api/videos?includeMisc=1&classification=series` は全分類の公開登録とプレイ可否を返します。`classification=series` を省略した一覧は旧版向けの表示を維持します。`POST /api/videos` は分類・プレイ可否を含む登録入力を受け取ります。旧版クライアントで省略した項目は編集時に保存値を保持します。投稿者情報はサーバー側で取得し、入力内容を再検証します。重複はDBの一意制約でも拒否し、既存データを上書きしません。
 - `PATCH /api/videos` はフォーム入力と `id`・`revision` を受け取り、既存の共有動画だけを更新します。投稿者を保持し、DBの単一UPDATEでrevisionを照合します。入力・同一サイトからの送信・サイズ・頻度の制限は登録時と同様に適用します。
 - 登録APIは匿名利用できます。JSONのサイズ制限・同一端末からの短時間の大量登録を制限します。保存する識別子はハッシュ化し、IPアドレスをそのまま保存しません。
@@ -75,7 +101,7 @@
 
 ## 管理者による取り下げ・復元
 
-公開画面や公開APIに取り下げ操作はありません。アンコールのDB接続設定（`Encore/.env.local` の `DATABASE_URL`）を持つ管理者が、リポジトリのルートで操作します。接続情報は公開・共有しません。
+取り下げと復元は、`Encore/.env.local` に管理用の接続設定を持つ管理者がリポジトリのルートで操作します。D1では `ENCORE_D1_ADMIN_TOKEN` と、公開一覧を再生成するためのD1用Blob設定も使います。
 
 ```powershell
 node Encore/tools/moderate-videos.mjs list

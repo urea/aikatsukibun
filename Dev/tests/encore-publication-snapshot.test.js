@@ -108,3 +108,24 @@ test('取り下げ済みの動画を含む一覧は公開しない', async () =>
   await assert.rejects(snapshot.publish(() => ({ videos: [video], withdrawnIds: [video.id] })), /無効な動画情報/);
   assert.equal(mock.writes.length, 0);
 });
+
+test('Blob GETが弱いETagを返す場合はメタデータの強いETagで更新する', async () => {
+  const mock = mockBlob({ ...makePublication(), publishedAt: date });
+  let metadataReads = 0;
+  const snapshot = createPublicationSnapshot({
+    ...mock,
+    readBlob(path, options) {
+      const response = mock.readBlob(path, options);
+      return { ...response, blob: { url: 'https://store.example/encore-publication.json', etag: `W/${response.blob.etag}` } };
+    },
+    readBlobMetadata(url) {
+      assert.equal(url, 'https://store.example/encore-publication.json');
+      return { etag: String(++metadataReads) };
+    },
+  });
+  const updated = makePublication([{ ...video, title: '編集後' }]);
+  assert.equal((await snapshot.publish(() => updated)).changed, true);
+  assert.equal(mock.writes[0].options.ifMatch, '1');
+  assert.equal((await snapshot.publish(() => updated)).changed, false);
+  assert.equal(mock.writes.length, 1);
+});

@@ -19,3 +19,4 @@ Thumbs.db
 output/playwright/
 output/encore-dev.log
 output/encore-dev-error.log
+Encore/cloudflare/.wrangler/

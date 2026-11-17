@@ -1,6 +1,6 @@
 import { defineConfig, loadEnv } from 'vite';
 import { createSharedVideosHandler } from './server/shared-videos.js';
-import { createNeonStore } from './server/neon-store.js';
+import { createConfiguredStore, rateLimitSaltFor } from './server/configured-store.js';
 import videoIds from './videos.json' with { type: 'json' };
 
 // ローカルも公開版と同じAPIを使う。接続情報はフロントへ渡さない。
@@ -11,9 +11,9 @@ export default defineConfig(({ mode }) => {
       name: 'encore-shared-api',
       configureServer(server) {
         const handler = createSharedVideosHandler({
-          store: createNeonStore(env.DATABASE_URL),
+          store: createConfiguredStore(env),
           reservedIds: videoIds,
-          rateLimitSalt: env.DATABASE_URL,
+          rateLimitSalt: rateLimitSaltFor(env),
           getClientAddress: request => request.headers.get('x-encore-dev-address') || 'local',
         });
         server.middlewares.use('/api/videos', async (request, response, next) => {
