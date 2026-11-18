@@ -9,6 +9,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible { 
 svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; display:block; flex-shrink:0; }
 .app-shell { --bg:#0b1020; --panel:#121b2d; --raised:#1b273e; --text:#edf1fb; --muted:#a8b7ce; --line:#2b3850; --accent:#af9af4; --on-accent:#21143e; --red:#f56489; --green:#3aceaa; --yellow:#f3cc75; background:var(--bg); color:var(--text); min-height:100dvh; padding:clamp(12px,2vw,28px); font-size:14px; line-height:1.5; }
 .app-shell[data-appearance=light] { color-scheme:light; --bg:#f0f3f9; --panel:#fff; --raised:#e9edf5; --text:#152139; --muted:#5a6880; --line:#d9e0ec; --accent:#7958ca; --on-accent:#fff; }
+.app-shell[data-appearance=pink] { color-scheme:light; --bg:#fff1f7; --panel:#fff; --raised:#ffe3ef; --text:#381529; --muted:#754f64; --line:#ebb3cb; --accent:#bd2066; --on-accent:#fff; --red:#b62356; --favorite:#916000; }
 @media(prefers-color-scheme:light) { .app-shell[data-appearance=system] { color-scheme:light; --bg:#f0f3f9; --panel:#fff; --raised:#e9edf5; --text:#152139; --muted:#5a6880; --line:#d9e0ec; --accent:#7958ca; --on-accent:#fff; } }
 .studio { --control-column-width:clamp(272px,24vw,348px); display:grid; flex:1 0 auto; grid-template-columns:minmax(0,1fr) var(--control-column-width); grid-template-areas:'video controls'; gap:clamp(16px,2vw,28px); }
 .watch { grid-area:video; min-width:0; width:100%; max-width:calc(max(160px, min(100dvh - 252px, var(--play-area-height) - var(--playback-height))) * 16 / 9); justify-self:center; align-self:center; }
@@ -22,7 +23,7 @@ input[type=range] { accent-color:var(--accent); cursor:pointer; }
 .icon-button { width:40px; height:40px; flex-shrink:0; border:0; border-radius:10px; color:var(--text); background:transparent; display:inline-flex; align-items:center; justify-content:center; padding:8px; }
 .icon-button:hover:not(:disabled) { background:var(--raised); }
 #share-current { color:#fff; }
-.app-shell[data-appearance=light] #share-current { color:#000; }
+.app-shell:is([data-appearance=light],[data-appearance=pink]) #share-current { color:#000; }
 @media(prefers-color-scheme:light) { .app-shell[data-appearance=system] #share-current { color:#000; } }
 .transport-play { width:44px; height:44px; }
 .now-playing { flex:1; min-width:0; padding:0 3px; }

@@ -91,7 +91,7 @@ export function normalizeSettings(value) {
   else if (settings.libraryShowMisc) settings.libraryCategory = 'misc';
   for (const key of ['soundVolume', 'videoVolume']) if (typeof source[key] === 'number' && Number.isFinite(source[key])) settings[key] = Math.round(Math.max(0, Math.min(100, source[key])));
   if (source.controlSide === 'left' || source.controlSide === 'right') settings.controlSide = source.controlSide;
-  if (['dark', 'light', 'system'].includes(source.appearance)) settings.appearance = source.appearance;
+  if (['dark', 'light', 'pink', 'system'].includes(source.appearance)) settings.appearance = source.appearance;
   return settings;
 }
 
