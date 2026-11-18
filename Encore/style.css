@@ -218,22 +218,42 @@ kbd { font:inherit; border:1px solid var(--line); background:var(--raised); padd
   .app-shell:not([data-video-orientation=portrait]) .controller { padding:6px 12px 10px; gap:8px; }
   .app-shell[data-video-orientation=portrait] { --portrait-pad-min:160px; }
 }
-@media(max-height:540px) and (min-aspect-ratio:1/1) {
-  .app-shell { --shell-padding-block:8px; --play-banner-height:24px; --play-banner-gap:1px; padding:8px max(8px,env(safe-area-inset-right)) 8px max(8px,env(safe-area-inset-left)); }
-  .studio { grid-template-columns:minmax(0,1fr) 215px; gap:12px; }
-  .watch { max-width:calc(max(120px, min(100dvh - 110px, var(--play-area-height) - var(--playback-height))) * 16 / 9); }
+@media(max-height:540px) and (orientation:landscape) {
+  .app-shell {
+    --shell-padding-block:max(6px,env(safe-area-inset-top));
+    --play-banner-height:24px;
+    --play-banner-gap:4px;
+    --landscape-gap:clamp(8px,1.5vw,16px);
+    --controller-inset:8px;
+    --controller-gap:6px;
+    --controller-action-height:40px;
+    --controller-fixed-height:calc(2 * (var(--controller-inset) + 1px) + var(--play-banner-height) + var(--play-banner-gap) + var(--controller-action-height) + var(--controller-gap));
+    --landscape-pad-width:clamp(144px, calc((var(--play-area-height) - var(--controller-fixed-height)) * 4 / 3), 440px);
+    --landscape-controller-width:calc(var(--landscape-pad-width) + 2 * (var(--controller-inset) + 1px));
+    --landscape-watch-width:calc(max(120px, var(--play-area-height) - var(--playback-height)) * 16 / 9);
+    padding:var(--shell-padding-block) max(8px,env(safe-area-inset-right)) var(--shell-padding-block) max(8px,env(safe-area-inset-left));
+  }
+  .studio {
+    width:100%;
+    max-width:calc(var(--landscape-watch-width) + var(--landscape-controller-width) + var(--landscape-gap));
+    margin-inline:auto;
+    grid-template-columns:minmax(0,1fr) min(42%,var(--landscape-controller-width));
+    gap:var(--landscape-gap);
+  }
+  .watch { max-width:var(--landscape-watch-width); }
   .video-box { max-width:none; }
+  #current-details { display:none; }
   .control-slot { min-height:0; }
-  .controller { padding:10px; min-height:0; gap:4px; border-radius:12px; }
-  .pad-area { max-width:min(100%,max(120px,calc((var(--play-area-height) - 87px) * 4 / 3))); border-width:3px; border-radius:10px; }
+  .controller { padding:var(--controller-inset); min-height:0; gap:var(--controller-gap); border-radius:12px; }
+  .pad-area { max-width:var(--landscape-pad-width); border-width:3px; border-radius:10px; }
   .controller-footer .affiliate-product { padding-block:1px; }
   .controller-footer .affiliate-product img { width:24px; height:18px; }
-  .main-actions { gap:5px; grid-template-columns:1fr 1fr 30px; }
-  .main-actions .action-button { padding:6px 3px; gap:4px; font-size:11px; min-height:36px; }
+  .main-actions { gap:5px; grid-template-columns:minmax(0,1.12fr) minmax(0,1fr) 34px; }
+  .main-actions .action-button { padding:6px 3px; gap:4px; font-size:12px; min-height:var(--controller-action-height); }
   .main-actions svg { width:13px; height:13px; }
-  .more-button { width:30px; height:36px; }
+  .more-button { width:34px; height:var(--controller-action-height); }
   .transport { gap:2px; }
-  .transport .icon-button { width:32px; height:34px; }
+  .transport .icon-button { width:34px; height:38px; }
   .seek-row { margin-top:5px; }
   #current-title { font-size:12px; }
   #playback-status { font-size:10px; }
