@@ -46,36 +46,36 @@
             <nav class="main-actions" aria-label="選曲と設定">
               <button id="shuffle" class="action-button" type="button" disabled><span data-icon="shuffle"></span>おまかせ</button>
               <button id="open-library" class="action-button" type="button" aria-controls="library-dialog" aria-haspopup="dialog" aria-expanded="false"><span data-icon="list"></span>選ぶ</button>
-              <button id="open-settings" class="action-button" type="button" aria-label="設定・遊び方" aria-controls="settings-panel" aria-expanded="false"><span data-icon="settings"></span>設定</button>
+              <button id="open-settings" class="action-button" type="button" aria-label="設定・遊び方" aria-controls="settings-dialog" aria-haspopup="dialog" aria-expanded="false"><span data-icon="settings"></span>設定</button>
             </nav>
           </div>
-        </section>
-        <section id="settings-panel" class="side-panel" aria-labelledby="settings-heading" hidden>
-          <div class="sheet-grip" aria-hidden="true"></div>
-          <header class="panel-header"><h2 id="settings-heading">設定</h2><button type="button" class="icon-button" data-close aria-label="設定を閉じる"><span data-icon="close"></span></button></header>
-          <div class="panel-content settings-content">
-            <a id="related-site" class="related-site" hidden>アイカツ！気分へ</a>
-            <label class="setting-row range-setting"><span>動画の音量 <output id="video-volume-value">70%</output></span><input id="video-volume" type="range" min="0" max="100" value="70" aria-label="動画の音量" /></label>
-            <label class="setting-row"><span>YouTubeの操作メニュー</span><input id="youtube-controls" class="switch" type="checkbox" role="switch" checked /></label>
-            <label class="setting-row"><span>タップ効果音</span><input id="sound-enabled" class="switch" type="checkbox" checked /></label>
-            <label class="setting-row range-setting"><span>効果音の音量 <output id="sound-volume-value">35%</output></span><input id="sound-volume" type="range" min="0" max="100" value="35" aria-label="効果音の音量" /></label>
-            <label class="setting-row"><span>タップ時の振動<small id="vibration-support"></small></span><input id="vibration-enabled" class="switch" type="checkbox" checked /></label>
-            <label class="setting-row"><span>タップ時の光</span><input id="effects-enabled" class="switch" type="checkbox" checked /></label>
-            <label class="setting-row"><span>おまかせの対象</span><select id="shuffle-category"><option value="all">すべての分類</option><option value="encore">アイカツE</option><option value="other">その他アイカツ</option><option value="misc">その他の動画</option></select></label>
-            <label class="setting-row"><span>配色</span><select id="appearance" aria-label="配色"><option value="dark">ダーク</option><option value="light">ライト</option><option value="system">端末に合わせる</option></select></label>
-            <button id="replay" class="action-button wide-button" type="button"><span data-icon="replay"></span>最初から再生</button><button id="open-help" class="action-button wide-button" type="button"><span data-icon="help"></span>遊び方</button>
-            <div class="saved-data"><p class="secondary">このブラウザーの保存データ</p><button id="clear-history" class="text-button" type="button">再生履歴を消去</button><button id="clear-favorites" class="text-button" type="button">お気に入りをすべて外す</button></div>
-          </div>
-        </section>
-        <section id="help-panel" class="side-panel" aria-labelledby="help-heading" hidden>
-          <div class="sheet-grip" aria-hidden="true"></div>
-          <header class="panel-header"><div class="panel-heading-group"><button type="button" class="icon-button" data-back="settings-panel" aria-label="設定に戻る"><span data-icon="back"></span></button><h2 id="help-heading">遊び方</h2></div><button type="button" class="icon-button" data-close aria-label="遊び方を閉じる"><span data-icon="close"></span></button></header>
-          <div class="panel-content help-content"><p>好きな動画を再生して、リズムに合わせて3色のパネルを自由にタップ。</p><div class="key-guide"><span><kbd>W</kbd>赤・上</span><span><kbd>A</kbd>緑・左</span><span><kbd>D</kbd>黄・右</span></div><p>色のついた面全体を押せます。複数の指で同時に押したり、指を隣の色へ滑らせたりして遊べます。</p><p>PCでは W・A・D キーでも操作できます。</p><p>「おまかせ」で次の動画へ。「選ぶ」では、お気に入りや履歴から探せます。</p><p>音量・効果音・振動は設定から調整できます。</p><p class="secondary">お気に入りや設定は、このブラウザーに保存されます。</p></div>
         </section>
       </aside>
     </div>
     <footer class="affiliate-disclosure">Amazonのアソシエイトとして、アイカツ！アンコール気分は適格販売により収入を得ています。</footer>
-    <dialog id="library-dialog" class="library-dialog" aria-labelledby="library-heading">
+    <dialog id="settings-dialog" class="full-screen-dialog settings-dialog" aria-labelledby="settings-heading">
+      <section id="settings-panel" class="side-panel" aria-labelledby="settings-heading" hidden>
+        <header class="panel-header"><h2 id="settings-heading">設定</h2><button type="button" class="icon-button" data-close aria-label="設定を閉じる"><span data-icon="close"></span></button></header>
+        <div class="panel-content settings-content">
+          <a id="related-site" class="related-site" hidden>アイカツ！気分へ</a>
+          <label class="setting-row range-setting"><span>動画の音量 <output id="video-volume-value">70%</output></span><input id="video-volume" type="range" min="0" max="100" value="70" aria-label="動画の音量" /></label>
+          <label class="setting-row"><span>YouTubeの操作メニュー</span><input id="youtube-controls" class="switch" type="checkbox" role="switch" checked /></label>
+          <label class="setting-row"><span>タップ効果音</span><input id="sound-enabled" class="switch" type="checkbox" checked /></label>
+          <label class="setting-row range-setting"><span>効果音の音量 <output id="sound-volume-value">35%</output></span><input id="sound-volume" type="range" min="0" max="100" value="35" aria-label="効果音の音量" /></label>
+          <label class="setting-row"><span>タップ時の振動<small id="vibration-support"></small></span><input id="vibration-enabled" class="switch" type="checkbox" checked /></label>
+          <label class="setting-row"><span>タップ時の光</span><input id="effects-enabled" class="switch" type="checkbox" checked /></label>
+          <label class="setting-row"><span>おまかせの対象</span><select id="shuffle-category"><option value="all">すべての分類</option><option value="encore">アイカツE</option><option value="other">その他アイカツ</option><option value="misc">その他の動画</option></select></label>
+          <label class="setting-row"><span>配色</span><select id="appearance" aria-label="配色"><option value="dark">ダーク</option><option value="light">ライト</option><option value="system">端末に合わせる</option></select></label>
+          <button id="replay" class="action-button wide-button" type="button"><span data-icon="replay"></span>最初から再生</button><button id="open-help" class="action-button wide-button" type="button"><span data-icon="help"></span>遊び方</button>
+          <div class="saved-data"><p class="secondary">このブラウザーの保存データ</p><button id="clear-history" class="text-button" type="button">再生履歴を消去</button><button id="clear-favorites" class="text-button" type="button">お気に入りをすべて外す</button></div>
+        </div>
+      </section>
+      <section id="help-panel" class="side-panel" aria-labelledby="help-heading" hidden>
+        <header class="panel-header"><div class="panel-heading-group"><button type="button" class="icon-button" data-back="settings-panel" aria-label="設定に戻る"><span data-icon="back"></span></button><h2 id="help-heading">遊び方</h2></div><button type="button" class="icon-button" data-close aria-label="遊び方を閉じる"><span data-icon="close"></span></button></header>
+        <div class="panel-content help-content"><p>好きな動画を再生して、リズムに合わせて3色のパネルを自由にタップ。</p><div class="key-guide"><span><kbd>W</kbd>赤・上</span><span><kbd>A</kbd>緑・左</span><span><kbd>D</kbd>黄・右</span></div><p>色のついた面全体を押せます。複数の指で同時に押したり、指を隣の色へ滑らせたりして遊べます。</p><p>PCでは W・A・D キーでも操作できます。</p><p>「おまかせ」で次の動画へ。「選ぶ」では、お気に入りや履歴から探せます。</p><p>音量・効果音・振動は設定から調整できます。</p><p class="secondary">お気に入りや設定は、このブラウザーに保存されます。</p></div>
+      </section>
+    </dialog>
+    <dialog id="library-dialog" class="full-screen-dialog library-dialog" aria-labelledby="library-heading">
       <section id="library-panel" class="side-panel" aria-labelledby="library-heading" hidden>
         <header class="panel-header">
           <h2 id="library-heading">曲を選ぶ</h2>

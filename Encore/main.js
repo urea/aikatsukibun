@@ -41,8 +41,8 @@ try { storage = createEncoreStorage(window.localStorage); } catch { /* 保存不
 let saveWarningShown = false;
 let toastTimer;
 function toast(message) {
-  // 全画面の選曲中も、お気に入りなどの通知を手前に表示する。
-  ($('library-dialog').open ? $('library-dialog') : $('app')).append($('toast'));
+  // ダイアログを開いている間も、通知をその手前に表示する。
+  (document.querySelector('.full-screen-dialog[open]') ?? playLayout).append($('toast'));
   $('toast').textContent = message;
   $('toast').hidden = false;
   clearTimeout(toastTimer);
@@ -192,6 +192,7 @@ function toggleFavorite(id) {
 $('favorite-current').addEventListener('click', () => toggleFavorite(currentId));
 
 const libraryDialog = $('library-dialog');
+const settingsDialog = $('settings-dialog');
 let previousAffiliateAsin;
 const affiliateBanners = [...document.querySelectorAll('.affiliate-product')].map(link => {
   const image = link.querySelector('img');
@@ -217,26 +218,26 @@ showAffiliateProduct();
 
 function closePanel() {
   document.querySelectorAll('.side-panel').forEach(panel => { panel.hidden = true; });
-  $('controller').hidden = false;
-  $('control-slot').classList.remove('panel-open');
   $('open-library').setAttribute('aria-expanded', 'false');
   $('open-settings').setAttribute('aria-expanded', 'false');
   panelId = null;
-  $('app').append($('toast'));
+  playLayout.append($('toast'));
   if (libraryDialog.open) libraryDialog.close();
-  document.body.classList.remove('library-open');
-  $('app').classList.remove('library-open');
+  if (settingsDialog.open) settingsDialog.close();
+  document.documentElement.classList.remove('dialog-open');
   panelOpener?.focus({ preventScroll: true });
 }
 function openPanel(id, opener) {
   clearPads();
   if (!panelId) panelOpener = opener || document.activeElement;
   panelId = id;
+  const isLibrary = id === 'library-panel' || id === 'add-panel';
+  const panel = $(id);
+  const dialog = isLibrary ? libraryDialog : settingsDialog;
+  const otherDialog = isLibrary ? settingsDialog : libraryDialog;
   document.querySelectorAll('.side-panel').forEach(panel => { panel.hidden = panel.id !== id; });
-  $('controller').hidden = true;
-  $('control-slot').classList.add('panel-open');
-  $('open-library').setAttribute('aria-expanded', String(['library-panel', 'add-panel'].includes(id)));
-  $('open-settings').setAttribute('aria-expanded', String(['settings-panel', 'help-panel'].includes(id)));
+  $('open-library').setAttribute('aria-expanded', String(isLibrary));
+  $('open-settings').setAttribute('aria-expanded', String(!isLibrary));
   if (id === 'library-panel') {
     if (!libraryDialog.open) showAffiliateProduct();
     renderLibrary();
@@ -244,22 +245,24 @@ function openPanel(id, opener) {
     refreshSharedVideos();
   }
   if (id === 'settings-panel') syncSettings();
-  const isLibrary = ['library-panel', 'add-panel'].includes(id);
-  document.body.classList.toggle('library-open', isLibrary);
-  $('app').classList.toggle('library-open', isLibrary);
   if (isLibrary) {
     // 選曲・動画追加の画面で隠れる動画は再生しない。
     queuedAutoplay = false;
     if (playerReady) player.pauseVideo();
-    libraryDialog.setAttribute('aria-labelledby', id === 'library-panel' ? 'library-heading' : 'add-heading');
-    if (!libraryDialog.open) libraryDialog.showModal();
-  } else if (libraryDialog.open) libraryDialog.close();
-  const focusTarget = id === 'library-panel' ? $('video-search') : id === 'add-panel' ? $(editingVideo ? 'add-title' : 'add-url') : $(id).querySelector('[data-close]');
+  }
+  document.documentElement.classList.add('dialog-open');
+  if (otherDialog.open) otherDialog.close();
+  dialog.setAttribute('aria-labelledby', panel.getAttribute('aria-labelledby'));
+  if (!dialog.open) dialog.showModal();
+  const closeButton = panel.querySelector('[data-close]');
+  const focusTarget = id === 'library-panel' ? $('video-search') : id === 'add-panel' ? $(editingVideo ? 'add-title' : 'add-url') : closeButton;
   // スマホで自動的にキーボードを開かず、動画の位置も維持する。
   const pointerIsCoarse = matchMedia('(pointer: coarse)').matches;
-  (pointerIsCoarse && focusTarget.tagName === 'INPUT' ? $(id).querySelector('[data-close]') : focusTarget).focus({ preventScroll: true });
+  (pointerIsCoarse && focusTarget.tagName === 'INPUT' ? closeButton : focusTarget).focus({ preventScroll: true });
 }
-libraryDialog.addEventListener('cancel', event => { event.preventDefault(); closePanel(); });
+for (const dialog of [libraryDialog, settingsDialog]) {
+  dialog.addEventListener('cancel', event => { event.preventDefault(); closePanel(); });
+}
 $('open-library').addEventListener('click', event => openPanel('library-panel', event.currentTarget));
 $('open-settings').addEventListener('click', event => openPanel('settings-panel', event.currentTarget));
 $('open-help').addEventListener('click', () => openPanel('help-panel'));
