@@ -11,7 +11,7 @@ const paths = {
   sparkle: '<path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5Z"/>',
   shuffle: '<path d="M3 6h3c4 0 8 12 12 12h3m-4-4 4 4-4 4M3 18h3c1 0 2-1 3-2m6-8 3-2h3m-4-4 4 4-4 4"/>',
   list: '<path d="M9 6h12M9 12h12M9 18h12M3 6h1M3 12h1M3 18h1"/>',
-  more: '<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',
+  settings: '<path d="M4 6h6m4 0h6M4 12h11m4 0h1M4 18h2m4 0h10M10 4v4m5 2v4M6 16v4"/>',
   close: '<path d="m6 6 12 12M6 18 18 6"/>',
   search: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>',
   plus: '<path d="M12 4v16M4 12h16"/>',
