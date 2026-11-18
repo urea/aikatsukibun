@@ -55,6 +55,7 @@ function playerHarness(data = clip, entryId = id) {
     metadata: { get: key => entries.get(key) }, settings: normalizeSettings({}), SETTINGS_KEY: 'test-settings',
     rangeFor: key => getPlaybackRange(entries.get(key), player.duration), getClipPosition, seekTimeForPercent, youtubeVideoOptions, isVideoId, isEntryId, formatTime, displayTitle,
     playbackSession, youtubeIdFor: key => videoIdFor(key, entries.get(key)),
+    hasEditableVideo: key => entries.has(key),
     allIds: () => [...entries.keys()], publishedIds: () => [id], isWithdrawn: () => false, pendingSharedVideoId: null,
     titleFor: key => entries.get(key)?.title || `動画 (${key})`, renderDetails: () => {}, updateFavorite: () => {},
     setIcon: (control, value) => { control.icon = value; }, setStatus: value => { $('status').textContent = value; },
@@ -102,12 +103,15 @@ test('縦動画の表示は現在の動画にだけ適用し、向きが未登�
 
 test('元動画が不明の曲は再生とシークを無効にし、直接イベントを呼んでも旧動画を操作しない', () => {
   const harness = playerHarness();
+  harness.context.updateCurrent();
+  assert.equal(harness.$('edit-current').hidden, false);
   harness.tick(480, 2);
   assert.equal(harness.$('seek').disabled, false);
   harness.context.selectVideo(`clip_${'f'.repeat(32)}`);
   assert.equal(harness.$('play-toggle').disabled, true);
   assert.equal(harness.$('seek').disabled, true);
   assert.equal(harness.$('youtube-player').hidden, true);
+  assert.equal(harness.$('edit-current').hidden, true);
   assert.match(harness.$('notice').textContent, /楽曲情報を取得できません/);
   harness.click();
   harness.$('seek').listeners.get('input')();

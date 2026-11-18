@@ -86,6 +86,7 @@ const requestedVideoId = readSharedVideoId(location.href);
 let pendingSharedVideoId = requestedVideoId && !initialSharedIds.includes(requestedVideoId) ? requestedVideoId : null;
 let currentId = initialSharedIds.includes(requestedVideoId) ? requestedVideoId : pendingSharedVideoId ? null : initialIds.includes(lastVideo) ? lastVideo : initialIds[0] ?? null;
 let panelId = null;
+let panelVersion = 0;
 let panelOpener;
 let libraryTab = 'all';
 let librarySort = normalizeLibrarySort(readSaved(storage, 'library_sort', 'posted'));
@@ -103,6 +104,7 @@ const playbackSession = createPlaybackSession();
 const unplayable = new Set();
 const titleFor = id => metadata.get(id)?.title || `動画 (${id})`;
 const youtubeIdFor = id => isWithdrawn(id) ? null : videoIdFor(id, metadata.get(id));
+const hasEditableVideo = id => sharedVideos.some(video => video.id === id) || customVideos.some(video => video.id === id);
 const rangeFor = id => getPlaybackRange(metadata.get(id), playerReady ? player.getDuration() : 0);
 const authorFor = data => [data?.author, data?.authorHandle].filter(Boolean).join('');
 function detailsFor(id) {
@@ -154,6 +156,7 @@ function updateCurrent() {
   $('favorite-current').disabled = !hasVideo;
   $('shuffle').disabled = allIds().length === 0;
   $('replay').disabled = !hasVideo;
+  $('edit-current').hidden = !hasVideo || !hasEditableVideo(currentId);
   $('youtube-link').hidden = !hasVideo;
   $('share-current').disabled = !hasVideo || !video?.title || !publishedIds().includes(currentId);
   if (!hasVideo) {
@@ -217,6 +220,7 @@ function showAffiliateProduct() {
 showAffiliateProduct();
 
 function closePanel() {
+  panelVersion++;
   document.querySelectorAll('.side-panel').forEach(panel => { panel.hidden = true; });
   $('open-library').setAttribute('aria-expanded', 'false');
   $('open-settings').setAttribute('aria-expanded', 'false');
@@ -231,6 +235,7 @@ function openPanel(id, opener) {
   clearPads();
   if (!panelId) panelOpener = opener || document.activeElement;
   panelId = id;
+  panelVersion++;
   const isLibrary = id === 'library-panel' || id === 'add-panel';
   const panel = $(id);
   const dialog = isLibrary ? libraryDialog : settingsDialog;
@@ -265,6 +270,7 @@ for (const dialog of [libraryDialog, settingsDialog]) {
 }
 $('open-library').addEventListener('click', event => openPanel('library-panel', event.currentTarget));
 $('open-settings').addEventListener('click', event => openPanel('settings-panel', event.currentTarget));
+$('edit-current').addEventListener('click', () => openEditForm(currentId));
 $('open-help').addEventListener('click', () => openPanel('help-panel'));
 $('open-add').addEventListener('click', openAddForm);
 document.querySelectorAll('[data-close]').forEach(button => button.addEventListener('click', closePanel));
@@ -332,7 +338,7 @@ function renderLibrary() {
     entry.subtitle.hidden = !entry.subtitle.textContent;
     entry.row.classList.toggle('is-current', id === currentId);
     updateFavorite(entry.favorite, id);
-    entry.edit.hidden = ![...sharedVideos, ...customVideos].some(video => video.id === id);
+    entry.edit.hidden = !hasEditableVideo(id);
     entry.edit.setAttribute('aria-label', `${displayTitle(titleFor(id))}の情報を編集`);
     // メタデータの更新時も、フォーカスとスクロール位置を保つ。
     const expected = $('video-list').children[index];
@@ -603,6 +609,9 @@ function syncFormMode() {
   $('edit-author').textContent = editing ? `投稿者：${authorFor(editingVideo)}` : '';
   $('add-submit-icon').innerHTML = icon(editing ? 'save' : 'plus');
   $('add-submit-label').textContent = editing ? '変更を保存' : '追加して再生';
+  const backButton = $('add-panel').querySelector('[data-back]');
+  backButton.dataset.back = editingVideo?.returnToPlayer ? 'settings-panel' : 'library-panel';
+  backButton.setAttribute('aria-label', editingVideo?.returnToPlayer ? '設定に戻る' : '選曲に戻る');
   $('add-panel').querySelector('[data-close]').setAttribute('aria-label', editing ? '動画編集を閉じて再生画面に戻る' : '動画追加を閉じて再生画面に戻る');
   $('reload-edit').hidden = true;
   $('add-submit').disabled = false;
@@ -623,6 +632,9 @@ function openAddForm() {
 async function openEditForm(id) {
   if (isWithdrawn(id)) return;
   if (formSaving || editOpening) { toast('処理が終わるまでお待ちください'); return; }
+  const returnToPlayer = panelId === 'settings-panel';
+  if (!returnToPlayer && panelId !== 'library-panel') return;
+  const version = panelVersion;
   editOpening = true;
   try {
     let shared = sharedVideos.find(video => video.id === id);
@@ -631,32 +643,34 @@ async function openEditForm(id) {
       shared = sharedVideos.find(video => video.id === id);
     }
     // 取得を待つ間に戻る・再生などを選んだ場合は、その画面を維持する。
-    if (panelId !== 'library-panel') return;
+    if (panelVersion !== version || isWithdrawn(id) || (returnToPlayer && currentId !== id)) return;
     const local = customVideos.find(video => video.id === id);
     const video = shared || (local && { ...metadata.get(id), ...local });
     if (!video || (shared && !shared.revision)) throw new Error('この動画を編集できません。一覧を再読み込みしてください。');
     if (!editingVideo) addDraft = readAddInput();
-    editingVideo = { ...video, local: !shared };
+    editingVideo = { ...video, local: !shared, returnToPlayer };
     setAddInput(videoToInput(video));
     syncFormMode();
     openPanel('add-panel');
-  } catch (error) { toast(error.message); }
+  } catch (error) { if (panelVersion === version) toast(error.message); }
   finally { editOpening = false; }
 }
 $('reload-edit').addEventListener('click', async () => {
   if (!editingVideo || formSaving || editOpening) return;
-  const id = editingVideo.id;
+  const { id, returnToPlayer } = editingVideo;
+  const version = panelVersion;
   editOpening = true;
   $('reload-edit').disabled = true;
   try {
     if (!await refreshSharedVideos({ fresh: true })) throw new Error('最新の情報を取得できませんでした。通信を確認して再度お試しください。');
+    if (panelVersion !== version) return;
     const video = sharedVideos.find(item => item.id === id);
     if (!video?.revision) throw new Error('動画が見つかりません。一覧に戻って確認してください。');
-    editingVideo = { ...video, local: false };
+    editingVideo = { ...video, local: false, returnToPlayer };
     setAddInput(videoToInput(video));
     syncFormMode();
     $('add-message').textContent = '最新の情報を読み込みました。内容を確認してから保存してください。';
-  } catch (error) { $('add-message').textContent = error.message; }
+  } catch (error) { if (panelVersion === version) $('add-message').textContent = error.message; }
   finally { editOpening = false; $('reload-edit').disabled = false; }
 });
 function showAddErrors(errors) {
@@ -741,7 +755,8 @@ $('add-form').addEventListener('submit', async event => {
     if (panelId === 'library-panel') renderLibrary();
     // 確認中に別画面へ移動した場合は、再生中の曲を切り替えない。
     if (panelId === 'add-panel') {
-      if (editing) openPanel('library-panel');
+      if (editing?.returnToPlayer) closePanel();
+      else if (editing) openPanel('library-panel');
       else selectVideo(savedId);
     }
     toast(publicationPending

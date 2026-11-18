@@ -57,6 +57,7 @@
       <section id="settings-panel" class="side-panel" aria-labelledby="settings-heading" hidden>
         <header class="panel-header"><h2 id="settings-heading">設定</h2><button type="button" class="icon-button" data-close aria-label="設定を閉じる"><span data-icon="close"></span></button></header>
         <div class="panel-content settings-content">
+          <button id="edit-current" class="action-button wide-button" type="button" aria-haspopup="dialog" aria-controls="library-dialog" hidden><span data-icon="edit"></span>この動画を編集</button>
           <a id="related-site" class="related-site" hidden>アイカツ！気分へ</a>
           <label class="setting-row range-setting"><span>動画の音量 <output id="video-volume-value">70%</output></span><input id="video-volume" type="range" min="0" max="100" value="70" aria-label="動画の音量" /></label>
           <label class="setting-row"><span>YouTubeの操作メニュー</span><input id="youtube-controls" class="switch" type="checkbox" role="switch" checked /></label>
