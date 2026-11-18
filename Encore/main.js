@@ -93,6 +93,7 @@ $('video-sort').value = librarySort;
 let player;
 let playerReady = false;
 let queuedAutoplay = false;
+let playerRestore = null;
 let playerFailed = false;
 let seeking = false;
 let lastRecordedId;
@@ -174,6 +175,7 @@ function updateCurrent() {
 }
 function syncEditedRange(id, previous, video) {
   if (id !== currentId || !previous || (previous.startSeconds === video.startSeconds && previous.endSeconds === video.endSeconds)) return;
+  playerRestore = null;
   clipEnded = false;
   $('seek').value = '0'; $('current-time').textContent = '0:00';
   if (playerReady) requestPlayback(youtubeVideoOptions(id, video));
@@ -357,6 +359,7 @@ function reconcilePublishedSelection(replaceImplicitVideo) {
   currentId = requested && publishedIds().includes(requested) ? requested : candidates.includes(lastVideo) ? lastVideo : candidates[0] ?? null;
   if (wasWithdrawn || replaceImplicitVideo) {
     queuedAutoplay = false;
+    playerRestore = null;
     clipEnded = false;
     playerFailed = false;
     lastRecordedId = null;
@@ -747,11 +750,11 @@ $('add-form').addEventListener('submit', async event => {
 });
 
 function iframeUrl(id) {
-  const parameters = new URLSearchParams({ enablejsapi: '1', playsinline: '1', rel: '0', controls: '1', origin: location.origin });
+  const parameters = new URLSearchParams({ enablejsapi: '1', playsinline: '1', rel: '0', controls: settings.youtubeControls ? '1' : '0', origin: location.origin });
   const options = youtubeVideoOptions(id, metadata.get(id));
   parameters.set('start', String(options.startSeconds));
   if (options.endSeconds !== undefined) parameters.set('end', String(options.endSeconds));
-  // 字幕などの標準設定を使えるようにし、キー操作はアプリ側で受ける。
+  // 区間付き動画ではキー操作をアプリ側で受ける。
   if (options.endSeconds !== undefined) parameters.set('disablekb', '1');
   return `https://www.youtube.com/embed/${options.videoId}?${parameters}`;
 }
@@ -787,6 +790,7 @@ function selectVideo(id) {
   if (!isEntryId(id) || isWithdrawn(id)) return;
   pendingSharedVideoId = null;
   currentId = id;
+  playerRestore = null;
   lastRecordedId = null;
   clipEnded = false;
   playerFailed = false;
@@ -866,6 +870,7 @@ $('seek').addEventListener('blur', () => { seeking = false; });
 $('retry-player').addEventListener('click', () => location.reload());
 $('replay').addEventListener('click', () => {
   if (!youtubeIdFor(currentId)) return;
+  playerRestore = null;
   clipEnded = false;
   if (playerReady) requestPlayback(youtubeVideoOptions(currentId, metadata.get(currentId)), true);
   else selectVideo(currentId);
@@ -891,29 +896,80 @@ function preparePlayer() {
   setStatus('プレーヤーを準備中…');
   $('youtube-player').src = iframeUrl(currentId);
   playerTimeout = setTimeout(() => {
-    if (!playerReady) { setStatus('動画内の再生ボタンを押してください'); notice('再生操作の読み込みに時間がかかっています。', true); }
+    if (!playerReady) {
+      setStatus(settings.youtubeControls ? '動画内の再生ボタンを押してください' : '再生操作を読み込めませんでした');
+      notice('再生操作の読み込みに時間がかかっています。', true);
+    }
   }, 15000);
   if (window.YT?.Player) createPlayer();
   else if (!playerScriptRequested) {
     playerScriptRequested = true;
     const script = document.createElement('script'); script.src = 'https://www.youtube.com/iframe_api'; script.async = true;
-    script.onerror = () => { clearTimeout(playerTimeout); setStatus('動画内の再生ボタンを押してください'); notice('再生操作を読み込めませんでした。通信を確認してください。', true); };
+    script.onerror = () => {
+      clearTimeout(playerTimeout);
+      setStatus(settings.youtubeControls ? '動画内の再生ボタンを押してください' : '再生操作を読み込めませんでした');
+      notice('再生操作を読み込めませんでした。通信を確認してください。', true);
+    };
     document.head.append(script);
   }
 }
+function reloadPlayerControls() {
+  const iframe = $('youtube-player');
+  if (!iframe.hasAttribute('src') || !youtubeIdFor(currentId)) return;
+  if (playerReady) {
+    const state = player.getPlayerState();
+    queuedAutoplay = !playerFailed && (state === 1 || state === 3);
+    if (!playerFailed && !playbackSession.pending && player.getVideoData()?.video_id === youtubeIdFor(currentId)) {
+      const { start, end, duration } = rangeFor(currentId);
+      const ended = clipEnded || state === 0;
+      const time = player.getCurrentTime();
+      const startSeconds = ended && duration > 0
+        ? end - Math.min(0.01, duration / 2)
+        : Number.isFinite(time) ? Math.max(start, Math.min(time, end || Infinity)) : start;
+      playerRestore = { id: currentId, startSeconds, ended };
+    }
+  }
+  // controlsはプレーヤーの読み込み時に指定するため、同じ曲を新しいiframeで開く。
+  const replacement = iframe.cloneNode(false);
+  replacement.removeAttribute('src');
+  const previousPlayer = player;
+  player = undefined;
+  playerReady = false;
+  playerFailed = false;
+  seeking = false;
+  clearTimeout(playerTimeout);
+  playerTimeout = undefined;
+  previousPlayer?.destroy();
+  iframe.remove();
+  videoBox.append(replacement);
+  $('seek').disabled = true;
+  $('player-notice').hidden = true;
+  updateCurrent();
+  preparePlayer();
+}
 function onPlayerReady(event) {
-  player = event.target;
+  if (event.target !== player) return;
   playerReady = true;
   clearTimeout(playerTimeout);
-  const autoplay = queuedAutoplay;
+  const restore = playerRestore?.id === currentId ? playerRestore : null;
+  playerRestore = null;
+  const autoplay = queuedAutoplay && !libraryDialog.open && !restore?.ended;
   queuedAutoplay = false;
-  requestPlayback(youtubeVideoOptions(currentId, metadata.get(currentId)), autoplay);
+  const options = youtubeVideoOptions(currentId, metadata.get(currentId));
+  if (restore) options.startSeconds = restore.startSeconds;
+  if (restore?.ended) clipEnded = true;
   if (libraryDialog.open || !youtubeIdFor(currentId)) player.pauseVideo();
   $('play-toggle').disabled = !youtubeIdFor(currentId); $('mute-toggle').disabled = false;
   applyVideoVolume();
-  if (!playerFailed) { $('player-notice').hidden = true; setStatus(''); }
+  if (!playerFailed) {
+    $('player-notice').hidden = true;
+    updatePlayButton(false);
+    setStatus(clipEnded ? '楽曲の再生が終了しました' : '');
+  }
+  requestPlayback(options, autoplay);
 }
 function onPlayerStateChange(event) {
+  if (event.target !== player || !playerReady) return;
   const state = event.data;
   // 読み込み完了が画面を開いた後になった場合も、裏で再生させない。
   if (libraryDialog.open && (state === 1 || state === 3)) {
@@ -926,8 +982,7 @@ function onPlayerStateChange(event) {
   if (state === 1) clipEnded = false;
   if (state === 2 && clipEnded && player.getCurrentTime() < rangeFor(currentId).end - 0.1) clipEnded = false;
   const finished = clipEnded || state === 0;
-  setIcon($('play-toggle'), state === 1 ? 'pause' : finished ? 'replay' : 'play');
-  $('play-toggle').setAttribute('aria-label', state === 1 ? '一時停止' : finished ? 'もう一度再生' : '再生');
+  updatePlayButton(state === 1);
   if (playerFailed) return;
   setStatus(state === 1 ? '再生中' : finished ? '楽曲の再生が終了しました' : state === 2 ? '一時停止中' : state === 3 ? '動画を読み込み中…' : '');
   if (state === 1) {
@@ -945,19 +1000,27 @@ function onPlayerStateChange(event) {
     }
   }
 }
+function updatePlayButton(playing) {
+  setIcon($('play-toggle'), playing ? 'pause' : clipEnded ? 'replay' : 'play');
+  $('play-toggle').setAttribute('aria-label', playing ? '一時停止' : clipEnded ? 'もう一度再生' : '再生');
+}
 function createPlayer() {
   if (!youtubeIdFor(currentId) || player || !window.YT?.Player) return;
   player = new window.YT.Player('youtube-player', {
-    playerVars: { controls: 1, disablekb: metadata.get(currentId)?.endSeconds ? 1 : 0 },
     events: {
       onReady: onPlayerReady, onStateChange: onPlayerStateChange,
       onError: event => {
+        if (event.target !== player) return;
         playerFailed = true;
         unplayable.add(currentId);
         setStatus('この動画を再生できません');
         notice([101, 150].includes(event.data) ? 'この動画は埋め込み再生が許可されていません。別の動画を選ぶか、YouTubeで開いてください。' : event.data === 100 ? '動画が非公開、または削除されています。別の動画を選んでください。' : '動画を読み込めませんでした。別の動画を選ぶか、YouTubeで開いてください。');
       },
-      onAutoplayBlocked: () => setStatus('再生ボタンを押してスタート')
+      onAutoplayBlocked: event => {
+        if (event.target !== player) return;
+        updatePlayButton(false);
+        setStatus('再生ボタンを押してスタート');
+      }
     }
   });
 }
@@ -1018,6 +1081,7 @@ function syncSettings() {
   $('sound-volume-value').value = `${settings.soundVolume}%`;
   $('video-volume').value = String(settings.videoVolume);
   $('video-volume-value').value = `${settings.videoVolume}%`;
+  $('youtube-controls').checked = settings.youtubeControls;
   $('vibration-enabled').checked = settings.vibration && vibrationSupported;
   $('vibration-enabled').disabled = !vibrationSupported;
   $('vibration-support').textContent = vibrationSupported ? '' : 'この端末では利用できません';
@@ -1025,6 +1089,11 @@ function syncSettings() {
   $('shuffle-category').value = settings.shuffleCategory;
   $('appearance').value = settings.appearance;
 }
+$('youtube-controls').addEventListener('change', () => {
+  settings.youtubeControls = $('youtube-controls').checked;
+  save(SETTINGS_KEY, settings);
+  reloadPlayerControls();
+});
 for (const [id, key] of [['sound-enabled', 'sound'], ['vibration-enabled', 'vibration'], ['effects-enabled', 'effects']]) {
   $(id).addEventListener('change', () => { settings[key] = $(id).checked; save(SETTINGS_KEY, settings); syncSettings(); });
 }

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { getPlaybackRange, getClipPosition, seekTimeForPercent, youtubeVideoOptions } from '../../Encore/clip.js';
-import { isVideoId, isEntryId, videoIdFor, formatTime, displayTitle } from '../../Encore/model.js';
+import { isVideoId, isEntryId, videoIdFor, formatTime, displayTitle, normalizeSettings } from '../../Encore/model.js';
 import { createPlaybackSession } from '../../Encore/playback-session.js';
 
 const source = readFileSync(new URL('../../Encore/main.js', import.meta.url), 'utf8');
@@ -42,12 +42,17 @@ function playerHarness(data = clip, entryId = id) {
     pauseVideo() { commands.push({ type: 'pause' }); this.state = 2; },
     playVideo() { commands.push({ type: 'play' }); this.state = 1; },
     seekTo(time, allowSeekAhead) { commands.push({ type: 'seek', time, allowSeekAhead }); this.time = time; },
+    destroy() { commands.push({ type: 'destroy' }); },
   };
+  const iframe = $('youtube-player');
+  iframe.hasAttribute = name => name === 'src';
+  iframe.cloneNode = () => ({ removeAttribute() {} });
+  iframe.remove = () => {};
   let timer;
   const context = vm.createContext({
-    $, player, currentId: entryId, playerReady: true, playerFailed: false, queuedAutoplay: false, playerTimeout: undefined,
+    $, player, currentId: entryId, playerReady: true, playerFailed: false, queuedAutoplay: false, playerTimeout: undefined, playerRestore: null,
     clipEnded: false, seeking: false, lastRecordedId: undefined, history: [], panelId: null, libraryTab: 'all', libraryDialog: { open: false },
-    metadata: { get: key => entries.get(key) }, settings: { muted: false, videoVolume: 70 }, SETTINGS_KEY: 'test-settings',
+    metadata: { get: key => entries.get(key) }, settings: normalizeSettings({}), SETTINGS_KEY: 'test-settings',
     rangeFor: key => getPlaybackRange(entries.get(key), player.duration), getClipPosition, seekTimeForPercent, youtubeVideoOptions, isVideoId, isEntryId, formatTime, displayTitle,
     playbackSession, youtubeIdFor: key => videoIdFor(key, entries.get(key)),
     allIds: () => [...entries.keys()], publishedIds: () => [id], isWithdrawn: () => false, pendingSharedVideoId: null,
@@ -56,17 +61,20 @@ function playerHarness(data = clip, entryId = id) {
     notice: value => { $('notice').textContent = value; },
     save: (key, value) => saved.push({ key, value: structuredClone(value) }), syncMute: () => {}, syncSettings: () => {}, renderLibrary: () => {}, closePanel: () => {}, applyVideoVolume: () => {}, clearTimeout: () => {},
     setInterval(callback, milliseconds) { assert.equal(milliseconds, 300); timer = callback; },
+    location: { origin: 'http://localhost' }, URLSearchParams, videoBox: { append() {} }, preparePlayer: () => {},
   });
   const timerStart = source.indexOf('setInterval(() => {');
   const timerEnd = source.indexOf('}, 300);', timerStart) + '}, 300);'.length;
   assert.ok(timerStart >= 0 && timerEnd > timerStart);
   vm.runInContext([
     section('function updateCurrent()', 'function syncEditedRange('),
+    section('function iframeUrl(', 'function setStatus('),
     section('function finishClip()', 'function notice('),
     section('function selectVideo(', "$('shuffle').addEventListener"),
     section("$('play-toggle').addEventListener('click'", "$('seek').addEventListener('input'"),
     section("$('seek').addEventListener('input'", "$('seek').addEventListener('change'"),
     section("$('seek').addEventListener('change'", "$('seek').addEventListener('blur'"),
+    section('function reloadPlayerControls()', 'function onPlayerReady('),
     section('function onPlayerReady(', 'function onPlayerStateChange('),
     section('function onPlayerStateChange(', 'function createPlayer()'),
     source.slice(timerStart, timerEnd),
@@ -320,6 +328,35 @@ test('準備時のcue、選曲時のload、自動再生のloadは開始435秒・
   autoplay.context.queuedAutoplay = true;
   autoplay.context.onPlayerReady({ target: autoplay.player });
   assert.deepEqual(autoplay.commands, [{ type: 'load', options: expected }]);
+});
+
+test('YouTubeの標準操作は既存設定でも表示し、明示的な非表示だけを保存できる', () => {
+  const { context } = playerHarness();
+  for (const [saved, expected] of [[{}, '1'], [{ youtubeControls: 'false' }, '1'], [{ youtubeControls: false }, '0'], [{ youtubeControls: true }, '1']]) {
+    context.settings = normalizeSettings(saved);
+    const params = new URL(context.iframeUrl(id)).searchParams;
+    assert.equal(params.get('controls'), expected);
+    assert.equal(params.get('start'), '435');
+    assert.equal(params.get('end'), '531');
+  }
+});
+
+test('標準操作の切替は曲の位置と再生・停止を維持し、旧プレーヤーの通知を無視する', () => {
+  for (const [state, type] of [[1, 'load'], [2, 'cue']]) {
+    const { context, commands, player } = playerHarness();
+    player.time = 480;
+    player.state = state;
+    context.reloadPlayerControls();
+    context.onPlayerReady({ target: player });
+    context.onPlayerStateChange({ data: 1, target: player });
+    assert.equal(context.playerReady, false);
+    assert.deepEqual(commands, [{ type: 'destroy' }]);
+
+    const replacement = { ...player, time: 435, state: -1 };
+    context.player = replacement;
+    context.onPlayerReady({ target: replacement });
+    assert.deepEqual(commands.at(-1), { type, options: { videoId: id, startSeconds: 480, endSeconds: 531 } });
+  }
 });
 
 test('一時停止と再開は同じ動画を維持し、終了後の再生は区間指定で開始する', () => {
