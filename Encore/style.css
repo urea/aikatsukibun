@@ -185,38 +185,36 @@ kbd { font:inherit; border:1px solid var(--line); background:var(--raised); padd
   .control-slot.panel-open { min-height:420px; }
 
   .app-shell[data-video-orientation=portrait] {
-    --portrait-bottom: 8px;
-    --portrait-pad-min: 164px;
+    --portrait-gap:6px;
+    --portrait-bottom:8px;
+    --portrait-controller-fixed-height:calc(44px + var(--play-banner-gap) + var(--portrait-gap) + var(--portrait-bottom));
+    --mobile-controls-height:calc(var(--playback-height) + var(--portrait-gap) + var(--portrait-controller-fixed-height));
     --mobile-video-height:82vw;
-    --mobile-controls-height:calc(var(--playback-height) + 60px + var(--portrait-bottom));
-    /* パネルと下部メニューの高さを確保して、残りを動画枠に配分する。 */
-    --portrait-controls-min: calc(var(--portrait-pad-min) + var(--play-banner-height) + var(--play-banner-gap) + 50px + var(--portrait-bottom));
+    /* 4:3のタップ面に必要な高さを確保し、残りを動画枠に配分する。 */
+    --portrait-pad-min:clamp(160px, calc(var(--play-area-height) * .30), var(--mobile-pad-height));
+    --portrait-video-and-pad-height:calc(var(--play-area-height) - var(--mobile-controls-height) - var(--play-banner-height));
+    --portrait-video-height:max(112px, min(var(--mobile-video-height), calc(var(--portrait-video-and-pad-height) - var(--portrait-pad-min))));
+    --portrait-controls-min:calc(var(--portrait-pad-min) + var(--play-banner-height) + var(--portrait-controller-fixed-height));
   }
-  .app-shell[data-video-orientation=portrait] .studio { gap:6px; }
+  .app-shell[data-video-orientation=portrait] .studio { gap:var(--portrait-gap); }
   .app-shell[data-video-orientation=portrait] .video-box {
     max-width:none;
     aspect-ratio:auto;
-    height:clamp(200px, var(--mobile-video-height), calc(var(--play-area-height) - var(--playback-height) - 6px - var(--portrait-controls-min)));
+    height:var(--portrait-video-height);
   }
   .app-shell[data-video-orientation=portrait] .seek-row { margin:6px 0 3px; }
   .app-shell[data-video-orientation=portrait] .control-slot:not(.panel-open) { min-height:var(--portrait-controls-min); }
-  .app-shell[data-video-orientation=portrait] .controller { min-height:0; padding-block:0 var(--portrait-bottom); gap:6px; }
+  .app-shell[data-video-orientation=portrait] .controller { padding-block:0 var(--portrait-bottom); gap:var(--portrait-gap); }
   .app-shell[data-video-orientation=portrait] .pad-area {
-    flex:1 0 auto;
-    aspect-ratio:auto;
-    max-width:520px;
-    min-height:var(--portrait-pad-min);
-    max-height:var(--mobile-pad-height);
+    max-width:clamp(calc(var(--portrait-pad-min) * 4 / 3), calc((var(--portrait-video-and-pad-height) - var(--portrait-video-height)) * 4 / 3), 520px);
     margin-block:0 auto;
   }
-  .app-shell[data-video-orientation=portrait] .pad-symbol { max-height:72%; }
 }
 @media(max-width:899px) and (max-height:660px) and (max-aspect-ratio:1/1) {
   .app-shell:not([data-video-orientation=portrait]) { --mobile-controls-height:calc(var(--playback-height) + 80px); }
   .app-shell:not([data-video-orientation=portrait]) .studio { gap:8px; }
   .app-shell:not([data-video-orientation=portrait]) .seek-row { margin-block:8px 4px; }
   .app-shell:not([data-video-orientation=portrait]) .controller { padding:6px 12px 10px; gap:8px; }
-  .app-shell[data-video-orientation=portrait] { --portrait-pad-min:160px; }
 }
 @media(max-height:540px) and (orientation:landscape) {
   .app-shell {
