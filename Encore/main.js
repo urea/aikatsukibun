@@ -17,6 +17,20 @@ import { createPlaybackSession } from './playback-session.js';
 import { pickAffiliateProduct } from './affiliate-products.js';
 
 const $ = id => document.getElementById(id);
+const playLayout = $('app');
+const disclosure = document.querySelector('.affiliate-disclosure');
+const playbackControls = document.querySelector('.playback');
+const videoBox = document.querySelector('.video-box');
+function updatePlayAreaMeasurements() {
+  const playbackHeight = playbackControls.getBoundingClientRect().bottom - videoBox.getBoundingClientRect().bottom;
+  playLayout.style.setProperty('--playback-height', `${Math.ceil(playbackHeight)}px`);
+  playLayout.style.setProperty('--affiliate-disclosure-height', `${Math.ceil(disclosure.getBoundingClientRect().height)}px`);
+}
+updatePlayAreaMeasurements();
+const playAreaObserver = new ResizeObserver(updatePlayAreaMeasurements);
+playAreaObserver.observe(disclosure, { box: 'border-box' });
+playAreaObserver.observe(playbackControls, { box: 'border-box' });
+
 if (import.meta.env.PROD && location.hostname === 'aikatsu-encore-kibun.vercel.app') {
   inject({ mode: 'production', disableAutoTrack: true });
   pageview({ path: location.pathname });
