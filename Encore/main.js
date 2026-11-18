@@ -1102,6 +1102,7 @@ const vibrationSupported = typeof navigator.vibrate === 'function';
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 function syncSettings() {
   $('app').dataset.appearance = settings.appearance;
+  $('app').dataset.controlSide = settings.controlSide;
   $('app').classList.toggle('no-effects', !settings.effects || reducedMotion.matches);
   $('sound-enabled').checked = settings.sound;
   $('sound-volume').value = String(settings.soundVolume);
@@ -1114,6 +1115,7 @@ function syncSettings() {
   $('vibration-enabled').disabled = !vibrationSupported;
   $('vibration-support').textContent = vibrationSupported ? '' : 'この端末では利用できません';
   $('effects-enabled').checked = settings.effects;
+  $('control-side').value = settings.controlSide;
   $('shuffle-category').value = settings.shuffleCategory;
   $('appearance').value = settings.appearance;
 }
@@ -1138,6 +1140,7 @@ for (const [id, key] of [['sound-volume', 'soundVolume'], ['video-volume', 'vide
   $(id).addEventListener('change', () => save(SETTINGS_KEY, settings));
 }
 $('appearance').addEventListener('change', () => { settings.appearance = $('appearance').value; save(SETTINGS_KEY, settings); syncSettings(); });
+$('control-side').addEventListener('change', () => { settings.controlSide = $('control-side').value; save(SETTINGS_KEY, settings); syncSettings(); });
 $('clear-history').addEventListener('click', () => {
   if (!history.length) { toast('再生履歴はありません'); return; }
   if (!window.confirm('このブラウザーの再生履歴をすべて消去しますか？')) return;
