@@ -14,6 +14,7 @@ import { getYouTubeAuthorVideosUrl } from './youtube-author.js';
 import { readSharedVideoId, buildXShareUrl } from './share.js';
 import { normalizeLibrarySort, sortVideoIds } from './library-sort.js';
 import { createPlaybackSession } from './playback-session.js';
+import { pickAffiliateProduct } from './affiliate-products.js';
 
 const $ = id => document.getElementById(id);
 if (import.meta.env.PROD && location.hostname === 'aikatsu-encore-kibun.vercel.app') {
@@ -175,6 +176,29 @@ function toggleFavorite(id) {
 $('favorite-current').addEventListener('click', () => toggleFavorite(currentId));
 
 const libraryDialog = $('library-dialog');
+let previousAffiliateAsin;
+const affiliateBanners = [...document.querySelectorAll('.affiliate-product')].map(link => {
+  const image = link.querySelector('img');
+  image.addEventListener('error', () => { image.hidden = true; });
+  return { link, image, title: link.querySelector('.affiliate-product-title') };
+});
+
+function showAffiliateProduct() {
+  const product = pickAffiliateProduct(previousAffiliateAsin);
+  if (!product) return;
+  previousAffiliateAsin = product.asin;
+  for (const { link, image, title } of affiliateBanners) {
+    link.href = product.url;
+    link.title = `${product.title}をAmazonで見る`;
+    title.textContent = product.title;
+    if (image.src !== product.imageUrl) {
+      image.src = product.imageUrl;
+      image.hidden = false;
+    }
+  }
+}
+showAffiliateProduct();
+
 function closePanel() {
   document.querySelectorAll('.side-panel').forEach(panel => { panel.hidden = true; });
   $('controller').hidden = false;
@@ -197,7 +221,12 @@ function openPanel(id, opener) {
   $('control-slot').classList.add('panel-open');
   $('open-library').setAttribute('aria-expanded', String(['library-panel', 'add-panel'].includes(id)));
   $('open-settings').setAttribute('aria-expanded', String(['settings-panel', 'help-panel'].includes(id)));
-  if (id === 'library-panel') { renderLibrary(); hydrateMissingTitles(); refreshSharedVideos(); }
+  if (id === 'library-panel') {
+    if (!libraryDialog.open) showAffiliateProduct();
+    renderLibrary();
+    hydrateMissingTitles();
+    refreshSharedVideos();
+  }
   if (id === 'settings-panel') syncSettings();
   const isLibrary = ['library-panel', 'add-panel'].includes(id);
   document.body.classList.toggle('library-open', isLibrary);

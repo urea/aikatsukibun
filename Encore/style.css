@@ -76,9 +76,17 @@ input[type=range] { accent-color:var(--accent); cursor:pointer; }
 #sparkles { position:absolute; z-index:3; inset:0; pointer-events:none; overflow:hidden; }
 .sparkle { position:absolute; color:var(--sparkle-color); font-size:15px; z-index:2; animation:tap-sparkle .5s ease-out forwards; }
 @keyframes tap-sparkle { from { opacity:1; transform:translate(-50%,-50%) scale(.8); } to { opacity:0; transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(.2); } }
-.controller-footer { flex-shrink:0; width:100%; border-top:1px solid var(--line); }
-.affiliate-link { display:flex; align-items:center; justify-content:center; gap:3px; width:fit-content; min-height:28px; margin-inline:auto; color:var(--muted); font-size:12px; text-decoration:none; white-space:nowrap; }
-.affiliate-link:hover { color:var(--text); text-decoration:underline; text-underline-offset:3px; }
+.app-shell { --play-banner-height:32px; --play-banner-gap:4px; }
+.controller-footer { display:grid; gap:var(--play-banner-gap); flex-shrink:0; width:100%; }
+.affiliate-product { display:flex; align-items:center; gap:7px; min-width:0; height:38px; padding:3px 9px 3px 4px; border:1px solid var(--line); border-radius:7px; color:var(--text); background:color-mix(in srgb, var(--accent) 9%, var(--raised)); text-decoration:none; white-space:nowrap; }
+.affiliate-product:hover { border-color:var(--accent); }
+.affiliate-product img { flex-shrink:0; object-fit:contain; border-radius:3px; background:#fff; }
+.affiliate-product-label { flex-shrink:0; color:var(--muted); border:1px solid var(--line); border-radius:3px; padding:0 3px; font-size:10px; line-height:1.2; }
+.affiliate-product-title { flex:1; min-width:0; overflow:hidden; font-size:12px; font-weight:600; text-overflow:ellipsis; }
+.affiliate-product-destination { flex-shrink:0; color:var(--muted); font-size:11px; }
+.controller-footer .affiliate-product { height:var(--play-banner-height); gap:5px; }
+.controller-footer .affiliate-product-title { font-size:11px; }
+.controller-footer .affiliate-product-destination { font-size:10px; }
 .affiliate-disclosure { padding:8px 12px; color:var(--muted); font-size:11px; text-align:center; }
 .main-actions { display:grid; grid-template-columns:minmax(0,1.12fr) minmax(0,1fr) 40px; gap:7px; }
 .action-button { border:1px solid var(--line); border-radius:10px; color:var(--text); background:var(--raised); min-height:44px; padding:9px 10px; display:inline-flex; align-items:center; justify-content:center; gap:7px; font-size:13px; white-space:nowrap; }
@@ -139,7 +147,14 @@ kbd { font:inherit; border:1px solid var(--line); background:var(--raised); padd
 @media(max-width:899px) { #current-details { display:none; } }
 @media(max-width:899px) and (min-aspect-ratio:1/1) { .studio { grid-template-columns:minmax(0,1fr) 248px; } }
 @media(max-width:899px) and (max-aspect-ratio:1/1) {
-  .app-shell { padding:0; }
+  .app-shell {
+    --mobile-video-height:56.25vw;
+    --mobile-pad-height:min(390px, calc((100vw - 24px) * 3 / 4));
+    /* 再生操作、下部ボタン、余白を先に確保する。 */
+    --mobile-controls-height:calc(162px + max(18px, env(safe-area-inset-bottom)));
+    --play-banner-height:clamp(28px, calc(100dvh - var(--mobile-video-height) - var(--mobile-pad-height) - var(--mobile-controls-height)), 60px);
+    padding:0;
+  }
   .studio { grid-template-columns:minmax(0,1fr); gap:14px; min-height:100dvh; grid-template-rows:auto 1fr; }
   .watch { max-width:none; align-self:start; }
   .video-box { border-radius:0; }
@@ -153,6 +168,7 @@ kbd { font:inherit; border:1px solid var(--line); background:var(--raised); padd
   .controller { border:0; border-radius:0; background:transparent; min-height:280px; padding:10px 12px max(18px,env(safe-area-inset-bottom)); gap:12px; }
   .pad-area { max-width:min(520px,max(240px,calc((100dvh - 56.25vw - 212px) * 4 / 3))); }
   .controller-footer { max-width:520px; align-self:center; }
+  .controller-footer .affiliate-product img { width:calc(var(--play-banner-height) + 2px); height:calc(var(--play-banner-height) - 8px); }
   .main-actions { grid-template-columns:1fr 1fr 42px; }
   .side-panel { border-radius:22px 22px 0 0; border-bottom:0; }
   .sheet-grip { display:block; width:34px; height:4px; margin:9px auto 0; border-radius:6px; background:var(--line); flex-shrink:0; }
@@ -161,13 +177,15 @@ kbd { font:inherit; border:1px solid var(--line); background:var(--raised); padd
   .app-shell[data-video-orientation=portrait] {
     --portrait-bottom: max(8px, env(safe-area-inset-bottom));
     --portrait-pad-min: 164px;
+    --mobile-video-height:82vw;
+    --mobile-controls-height:calc(129px + var(--portrait-bottom));
     /* パネルと下部メニューの高さを確保して、残りを動画枠に配分する。 */
-    --portrait-controls-min: calc(var(--portrait-pad-min) + 79px + var(--portrait-bottom));
+    --portrait-controls-min: calc(var(--portrait-pad-min) + var(--play-banner-height) + var(--play-banner-gap) + 50px + var(--portrait-bottom));
   }
   .app-shell[data-video-orientation=portrait] .studio { gap:6px; }
   .app-shell[data-video-orientation=portrait] .video-box {
     aspect-ratio:auto;
-    height:clamp(200px, 82vw, calc(100dvh - 75px - var(--portrait-controls-min)));
+    height:clamp(200px, var(--mobile-video-height), calc(100dvh - 75px - var(--portrait-controls-min)));
   }
   .app-shell[data-video-orientation=portrait] .seek-row { margin:6px 0 3px; }
   .app-shell[data-video-orientation=portrait] .control-slot:not(.panel-open) { min-height:var(--portrait-controls-min); }
@@ -177,19 +195,20 @@ kbd { font:inherit; border:1px solid var(--line); background:var(--raised); padd
     aspect-ratio:auto;
     max-width:520px;
     min-height:var(--portrait-pad-min);
-    max-height:min(390px, calc((100vw - 24px) * 3 / 4));
+    max-height:var(--mobile-pad-height);
     margin-block:0 auto;
   }
   .app-shell[data-video-orientation=portrait] .pad-symbol { max-height:72%; }
 }
 @media(max-height:540px) and (min-aspect-ratio:1/1) {
-  .app-shell { padding:8px max(8px,env(safe-area-inset-right)) 8px max(8px,env(safe-area-inset-left)); }
+  .app-shell { --play-banner-height:24px; --play-banner-gap:1px; padding:8px max(8px,env(safe-area-inset-right)) 8px max(8px,env(safe-area-inset-left)); }
   .studio { grid-template-columns:minmax(0,1fr) 215px; gap:12px; min-height:calc(100dvh - 16px); }
   .watch { max-width:calc((100dvh - 110px) * 16 / 9); }
   .control-slot { min-height:0; max-height:calc(100dvh - 16px); }
   .controller { padding:10px; min-height:0; gap:4px; border-radius:12px; }
   .pad-area { max-width:min(100%,calc((100dvh - 78px) * 4 / 3)); border-width:3px; border-radius:10px; }
-  .affiliate-link { min-height:24px; font-size:11px; }
+  .controller-footer .affiliate-product { padding-block:1px; }
+  .controller-footer .affiliate-product img { width:24px; height:18px; }
   .main-actions { gap:5px; grid-template-columns:1fr 1fr 30px; }
   .main-actions .action-button { padding:6px 3px; gap:4px; font-size:11px; min-height:36px; }
   .main-actions svg { width:13px; height:13px; }
@@ -221,7 +240,7 @@ body.library-open,.app-shell.library-open:fullscreen { overflow:hidden; }
 .list-meta { display:flex; align-items:center; flex-wrap:wrap; padding:8px 2px 6px; gap:4px 8px; color:var(--muted); font-size:12px; flex-shrink:0; }
 .library-select { max-width:100%; }
 .library-select select { min-height:36px; max-width:100%; padding:6px 8px; border:1px solid var(--line); border-radius:6px; color:var(--text); background:var(--raised); font-size:12px; }
-.list-meta .affiliate-link { min-height:20px; margin:0 0 0 auto; }
+.affiliate-product-library { flex-shrink:0; margin:0 4px 5px 2px; }
 #shared-status { margin-left:auto; }
 .library-results { flex:1; overflow-y:auto; min-height:0; padding:2px 4px 8px 2px; overscroll-behavior:contain; scrollbar-width:thin; scrollbar-color:var(--line) transparent; }
 .video-list { display:grid; grid-template-columns:minmax(0,1fr); align-items:start; gap:8px; list-style:none; margin:0; padding:0; }
