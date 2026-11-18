@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { validateVideoInput, videoToInput, withVideoAuthor, VIDEO_INPUT_LIMITS, VIDEO_RESULTS, VIDEO_MODES, VIDEO_DIFFICULTIES } from '../../Encore/add-video.js';
+import { validateVideoInput, readVideoIdFromUrl, videoToInput, withVideoAuthor, VIDEO_INPUT_LIMITS, VIDEO_RESULTS, VIDEO_MODES, VIDEO_DIFFICULTIES } from '../../Encore/add-video.js';
 import { normalizeCustomVideos } from '../../Encore/model.js';
 import { VIDEO_IDOLS, VIDEO_SONGS } from '../../Encore/registration-options.js';
 
@@ -43,6 +43,15 @@ test('同じ元動画の複数曲を編集しても曲IDをYouTube URLに使わ�
     assert.deepEqual(validateVideoInput(restored).video, original);
   }
   assert.equal(videoToInput({ id: 'tJAcDG-eS-Q', videoId: 'tJAcDG-eS-Q' }).url, input.url);
+});
+
+test('URLだけで元動画を判定するときも、登録フォームと同じYouTube動画IDになる', () => {
+  for (const url of [input.url, ' https://youtu.be/tJAcDG-eS-Q?t=451 ', 'youtube.com/shorts/tJAcDG-eS-Q', `${input.url}&list=RDtJAcDG-eS-Q&index=2`]) {
+    assert.equal(readVideoIdFromUrl(url), 'tJAcDG-eS-Q');
+    assert.equal(readVideoIdFromUrl(url), validateVideoInput({ ...input, url }).video.id);
+  }
+  assert.equal(readVideoIdFromUrl(''), null);
+  assert.equal(readVideoIdFromUrl('https://user@youtube.com/watch?v=tJAcDG-eS-Q'), null);
 });
 
 test('元動画不明のclipや旧IDの食い違いから不正な編集用YouTube URLを作らない', () => {

@@ -7,7 +7,7 @@ import { createPadInput, PAD_KEYS } from './pad-input.js';
 import { createMetadata } from './metadata.js';
 import { createEncoreStorage } from './storage.js';
 import { getPlaybackRange, getClipPosition, seekTimeForPercent, youtubeVideoOptions } from './clip.js';
-import { validateVideoInput, videoToInput, difficultyLabel, VIDEO_MODES, VIDEO_DIFFICULTIES } from './add-video.js';
+import { validateVideoInput, readVideoIdFromUrl, videoToInput, difficultyLabel, VIDEO_MODES, VIDEO_DIFFICULTIES } from './add-video.js';
 import { VIDEO_IDOLS, VIDEO_SONGS } from './registration-options.js';
 import { createSharedVideosClient } from './shared-videos.js';
 import { getYouTubeAuthorVideosUrl } from './youtube-author.js';
@@ -438,6 +438,7 @@ async function refreshSharedVideos({ fresh = false } = {}) {
       if (currentVideo && previousId === currentId) syncEditedRange(currentId, previous, currentVideo);
       if (currentId && !player) preparePlayer();
       if (panelId === 'library-panel') renderLibrary();
+      if (panelId === 'add-panel') updateAddUrlWarning();
       showSharedReadStatus();
       return true;
     } catch {
@@ -561,6 +562,14 @@ let addDraft = null;
 let formSaving = false;
 let editOpening = false;
 let editConflict = false;
+function updateAddUrlWarning() {
+  const sourceId = editingVideo ? null : readVideoIdFromUrl($('add-url').value);
+  const count = sourceId ? uniqueIds(publishedIds()).filter(id => videoIdFor(id, metadata.get(id)) === sourceId).length : 0;
+  const message = count ? `このYouTube動画は登録済みです（${count}件）。楽曲位置が異なる場合は追加できます。` : '';
+  const warning = $('add-url-warning');
+  if (warning.textContent !== message) warning.textContent = message;
+}
+$('add-url').addEventListener('input', updateAddUrlWarning);
 function setAddInput(input = {}) {
   $('add-form').reset();
   for (const field of addFields) {
@@ -586,6 +595,7 @@ function syncFormMode() {
     : '開始・終了時刻は任意です。その他の項目は必須です。追加した動画と楽曲情報は公開され、すべての利用者の一覧に表示されます。';
   $('add-url').readOnly = editing;
   $('add-url-hint').textContent = editing ? 'YouTube URLと投稿者は変更できません。' : '共有URL・Shortsにも対応。投稿者は追加時に自動取得します。';
+  updateAddUrlWarning();
   $('edit-author').hidden = !editingVideo?.author;
   $('edit-author').textContent = editing ? `投稿者：${authorFor(editingVideo)}` : '';
   $('add-submit-icon').innerHTML = icon(editing ? 'save' : 'plus');

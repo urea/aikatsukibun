@@ -51,9 +51,11 @@ function readTime(source, field, errors) {
   return null;
 }
 
-function readVideoId(value) {
+export function readVideoIdFromUrl(value) {
+  if (typeof value !== 'string') return null;
+  const input = value.trim();
   try {
-    const url = new URL(/^https?:\/\//i.test(value) ? value : `https://${value}`);
+    const url = new URL(/^https?:\/\//i.test(input) ? input : `https://${input}`);
     if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) return null;
     return extractVideoId(url.href);
   } catch { return null; }
@@ -81,7 +83,7 @@ export function validateVideoInput(input) {
   if (hasOrientation && !isVideoOrientation(orientation)) errors.orientation = '標準または縦動画を選択してください。';
   const startSeconds = readTime(source, 'start', errors);
   const endSeconds = readTime(source, 'end', errors);
-  const id = errors.url ? null : readVideoId(values.url);
+  const id = errors.url ? null : readVideoIdFromUrl(values.url);
   if (!errors.url && !id) errors.url = '有効なYouTube動画のURLを入力してください。';
   if (!errors.mode && !VIDEO_MODES.includes(values.mode)) errors.mode = 'モードはリストから選択してください。不明な場合は「-」を選択してください。';
   if (!errors.difficulty && !VIDEO_DIFFICULTIES.includes(values.difficulty)) errors.difficulty = '難易度は☆１〜☆５、または判別できない場合は「‐」を選択してください。';

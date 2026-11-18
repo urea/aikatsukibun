@@ -133,6 +133,8 @@ input::placeholder { color:var(--muted); opacity:1; }
 .add-form [aria-invalid=true] { border-color:var(--red); }
 .add-form input[readonly] { color:var(--muted); }
 .field-error { color:var(--red); font-size:12px; overflow-wrap:anywhere; }
+.field-warning { padding:6px 8px; border-inline-start:2px solid var(--yellow); border-radius:4px; background:var(--raised); font-size:12px; }
+.field-warning:empty { position:absolute; padding:0; border:0; }
 .result-guide { display:flex; flex-direction:column; gap:2px; margin:0; font-size:11px; color:var(--muted); }
 .result-guide > div { display:flex; flex-wrap:wrap; gap:0 6px; }
 .result-guide dt { color:var(--text); }
