@@ -2,7 +2,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { isIP } from 'node:net';
 import { validateVideoInput, withVideoAuthor } from '../add-video.js';
 import { readYouTubeAuthor } from '../youtube-author.js';
-import { isEntryId, videoIdFor, SHARED_BROWSE_CACHE_SECONDS } from '../model.js';
+import { isEntryId, videoIdFor, SHARED_BROWSE_CACHE_SECONDS, SHARED_STATUS_CACHE_SECONDS } from '../model.js';
 
 export const MAX_JSON_BYTES = 16 * 1024;
 const databaseMessage = '共有データを利用できません。時間をおいて、もう一度お試しください。';
@@ -104,6 +104,7 @@ async function fetchAuthor(id, fetchImpl, timeoutMs) {
 
 export function createSharedVideosHandler({ store, fetchImpl = globalThis.fetch, reservedIds = [], timeoutMs = 8000, rateLimit = 10, rateWindowSeconds = 60, getClientAddress, rateLimitSalt = 'encore-shared-videos', snapshot } = {}) {
   const reserved = new Set(reservedIds);
+  const statusVideoId = reserved.values().next().value ?? '___________';
   async function respondToSavedVideo(status, video) {
     if (snapshot) {
       try { await snapshot.publish(() => store.listPublication()); }
@@ -118,6 +119,15 @@ export function createSharedVideosHandler({ store, fetchImpl = globalThis.fetch,
   return async request => {
     if (request.method === 'GET') {
       const url = new URL(request.url);
+      if (url.search === '?view=status') {
+        let available = false;
+        try {
+          // 「該当動画なし」でも、DBから応答があれば接続できている。
+          await store.hasVideo(statusVideoId);
+          available = true;
+        } catch { /* 接続できない結果も短時間共有し、Workerへの再試行を抑える。 */ }
+        return json(200, { available }, { 'Vercel-CDN-Cache-Control': `public, s-maxage=${SHARED_STATUS_CACHE_SECONDS}` });
+      }
       const browse = url.search === browseQuery;
       const useSnapshot = browse && snapshot;
       try {

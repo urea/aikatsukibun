@@ -12,6 +12,7 @@ const publication = { videos: [{ id: 'fU7y5KElNiw', title: 'あるがまま' }],
 function createRefreshHarness(respond) {
   const requests = [];
   const saved = [];
+  const availability = [];
   const controls = new Map();
   const $ = id => {
     if (!controls.has(id)) controls.set(id, {});
@@ -44,12 +45,13 @@ function createRefreshHarness(respond) {
     publicationReady: true,
     metadata: { get: () => null, seed() {} },
     savePublication() { saved.push(context.sharedVideos); },
+    setSharedAvailability(available) { availability.push(available); },
     reconcilePublishedSelection() {},
     updateCurrent() {},
   });
   assert.ok(refreshStart >= 0 && refreshEnd > refreshStart);
   vm.runInContext(main.slice(refreshStart, refreshEnd), context);
-  return { context, requests, saved, $, resolve, advance: ms => { now += ms; } };
+  return { context, requests, saved, availability, $, resolve, advance: ms => { now += ms; } };
 }
 
 test('選曲を短時間で開き直す場合は再利用し、手動更新では最新一覧を取得する', async () => {
@@ -90,6 +92,19 @@ test('最新一覧の取得に失敗すると保存済み一覧を維持して�
   assert.equal(saved.length, 1);
   assert.match($('shared-status').textContent, /最新の共有一覧を取得できません。保存済みの一覧を表示中（最終取得/);
   assert.equal($('retry-shared').disabled, false);
+});
+
+test('公開JSONは登録先の障害表示を解除せず、最新一覧の再取得成功で解除する', async () => {
+  const { context, availability, advance } = createRefreshHarness(async requestCount => {
+    if (requestCount === 1) throw Object.assign(new Error('Database unavailable'), { status: 503 });
+    return publication;
+  });
+  assert.equal(await context.refreshSharedVideos({ fresh: true }), false);
+  advance(21_000);
+  assert.equal(await context.refreshSharedVideos(), true);
+  assert.deepEqual(availability, [false]);
+  assert.equal(await context.refreshSharedVideos({ fresh: true }), true);
+  assert.deepEqual(availability, [false, true]);
 });
 
 test('最新確認のエラーは公開JSONを読み込んでも表示し、古いJSONで直前の編集を戻さない', async () => {

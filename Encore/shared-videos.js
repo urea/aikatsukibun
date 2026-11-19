@@ -11,6 +11,7 @@ export function createSharedVideosClient(fetchImpl = fetch) {
       const data = await response.json();
       if (!response.ok) {
         const error = new Error(typeof data?.error === 'string' ? data.error : '共有データに接続できませんでした。もう一度お試しください。');
+        error.status = response.status;
         error.errors = data?.errors;
         error.code = data?.code;
         throw error;
@@ -24,6 +25,10 @@ export function createSharedVideosClient(fetchImpl = fetch) {
     } finally { clearTimeout(timeout); }
   }
   return {
+    async availability() {
+      const data = await request({ cache: 'default' }, '/api/videos?view=status');
+      return typeof data?.available === 'boolean' ? data.available : null;
+    },
     async list({ includeMisc = false, classification, browse = false } = {}) {
       const params = new URLSearchParams();
       if (includeMisc === true) params.set('includeMisc', '1');

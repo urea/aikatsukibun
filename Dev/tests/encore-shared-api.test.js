@@ -90,6 +90,37 @@ test('GETは別端末でも保存済みの一覧を返し、キャッシュさ�
   assert.deepEqual(await response.json(), { videos: [apiVideo], withdrawnIds: [] });
 });
 
+test('登録サービスの接続状態だけを短時間共有し、停止中も閲覧用JSONを返す', async () => {
+  let online = false;
+  let lookups = 0;
+  const { handler } = fixture({
+    reservedIds: [apiVideo.id],
+    store: {
+      async hasVideo(id) {
+        assert.equal(id, apiVideo.id);
+        lookups++;
+        if (!online) throw new Error('DB unavailable');
+        return false;
+      },
+    },
+    snapshot: { read: async () => ({ videos: [apiVideo], withdrawnIds: [] }) },
+  });
+
+  const down = await handler(new Request(`${endpoint}?view=status`));
+  assert.equal(down.status, 200);
+  assert.equal(down.headers.get('vercel-cdn-cache-control'), 'public, s-maxage=60');
+  assert.deepEqual(await down.json(), { available: false });
+  const browse = await handler(new Request(`${endpoint}${browseQuery}`));
+  assert.equal(browse.status, 200);
+  assert.deepEqual((await browse.json()).videos, [apiVideo]);
+  assert.equal(lookups, 1);
+
+  online = true;
+  const recovered = await handler(new Request(`${endpoint}?view=status`));
+  assert.deepEqual(await recovered.json(), { available: true });
+  assert.equal(lookups, 2);
+});
+
 test('GETはその他の動画を明示指定で含め、通常一覧と取り下げ情報の互換性を保つ', async () => {
   const { store, handler } = fixture();
   const encore = { ...apiVideo, category: 'encore' };

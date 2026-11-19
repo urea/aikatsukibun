@@ -288,6 +288,7 @@ html.dialog-open,html.dialog-open body,.dialog-open .app-shell:fullscreen { over
 .library-select select { min-height:36px; max-width:100%; padding:6px 8px; border:1px solid var(--line); border-radius:6px; color:var(--text); background:var(--raised); font-size:12px; }
 .affiliate-product-library { flex-shrink:0; margin:0 4px 5px 2px; }
 #shared-status { margin-left:auto; }
+.shared-service-error { flex-shrink:0; margin:0 0 8px; padding:6px 8px; border-inline-start:3px solid var(--red); border-radius:4px; background:var(--raised); color:var(--text); font-size:12px; }
 .library-results { flex:1; overflow-y:auto; min-height:0; padding:2px 4px 8px 2px; overscroll-behavior:contain; scrollbar-width:thin; scrollbar-color:var(--line) transparent; }
 .video-list { display:grid; grid-template-columns:minmax(0,1fr); align-items:start; gap:8px; list-style:none; margin:0; padding:0; }
 .video-row { display:grid; grid-template-columns:minmax(0,1fr) 44px; align-items:start; min-width:0; border:1px solid var(--line); border-radius:10px; background:var(--panel); }

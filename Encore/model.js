@@ -4,6 +4,7 @@ import { normalizeAuthorUrl } from './youtube-author.js';
 export const DEFAULT_VIDEO_ID = null;
 export const SETTINGS_KEY = 'aikatsu_settings_v2';
 export const SHARED_BROWSE_CACHE_SECONDS = 300;
+export const SHARED_STATUS_CACHE_SECONDS = 60;
 export const DEFAULT_SETTINGS = Object.freeze({ sound: true, soundVolume: 35, videoVolume: 70, muted: false, youtubeControls: true, vibration: true, effects: true, controlSide: 'right', appearance: 'dark', shuffleCategory: 'all', libraryExcludeOther: false, libraryShowMisc: false, libraryCategory: 'encore' });
 export const VIDEO_CATEGORIES = Object.freeze({ encore: 'アイカツE', other: 'その他アイカツ', misc: 'その他の動画' });
 export const isVideoCategory = value => typeof value === 'string' && Object.hasOwn(VIDEO_CATEGORIES, value);

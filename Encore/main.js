@@ -1,6 +1,6 @@
 import videoIds from './videos.json';
 import { inject, pageview } from '@vercel/analytics';
-import { SETTINGS_KEY, SHARED_BROWSE_CACHE_SECONDS, VIDEO_CATEGORIES, categoryLabel, isVideoCategory, isPlayableVideo, isVideoId, isEntryId, videoIdFor, uniqueIds, readSaved, normalizeCustomVideos, normalizeSettings, chooseRandom, formatTime, displayTitle } from './model.js';
+import { SETTINGS_KEY, SHARED_BROWSE_CACHE_SECONDS, SHARED_STATUS_CACHE_SECONDS, VIDEO_CATEGORIES, categoryLabel, isVideoCategory, isPlayableVideo, isVideoId, isEntryId, videoIdFor, uniqueIds, readSaved, normalizeCustomVideos, normalizeSettings, chooseRandom, formatTime, displayTitle } from './model.js';
 import { icon, setIcon, mountIcons } from './icons.js';
 import { createTapAudio } from './tap-audio.js';
 import { createPadInput, PAD_KEYS } from './pad-input.js';
@@ -251,6 +251,7 @@ function openPanel(id, opener) {
   }
   if (id === 'settings-panel') syncSettings();
   if (isLibrary) {
+    if (id === 'library-panel' || !editingVideo?.local) checkSharedAvailability();
     // 選曲・動画追加の画面で隠れる動画は再生しない。
     queuedAutoplay = false;
     if (playerReady) player.pauseVideo();
@@ -356,9 +357,34 @@ let sharedLoading;
 let sharedLoadingLive = false;
 let sharedRevision = 0;
 let nextSharedRefreshAt = 0;
+let sharedAvailable = null;
+let availabilityCheck;
+let availabilityRevision = 0;
+let nextAvailabilityCheckAt = 0;
 const sharedReuseMs = 20_000;
+const availabilityReuseMs = SHARED_STATUS_CACHE_SECONDS * 1000;
 // 更新前に始まった一覧取得が後からCDNに入る時間も見込む。
 const sharedLiveWindowMs = SHARED_BROWSE_CACHE_SECONDS * 1000 + 10_000;
+function renderSharedAvailability() {
+  $('library-service-error').hidden = sharedAvailable !== false;
+  $('add-service-error').hidden = sharedAvailable !== false || Boolean(editingVideo?.local);
+}
+function setSharedAvailability(available) {
+  sharedAvailable = available;
+  availabilityRevision++;
+  nextAvailabilityCheckAt = Date.now() + availabilityReuseMs;
+  renderSharedAvailability();
+}
+function checkSharedAvailability() {
+  if (availabilityCheck || Date.now() < nextAvailabilityCheckAt) return;
+  const revision = availabilityRevision;
+  nextAvailabilityCheckAt = Date.now() + availabilityReuseMs;
+  availabilityCheck = sharedClient.availability().then(available => {
+    if (revision === availabilityRevision && available !== null) setSharedAvailability(available);
+  }, error => {
+    if (revision === availabilityRevision && error.status === 503) setSharedAvailability(false);
+  }).finally(() => { availabilityCheck = null; });
+}
 function reconcilePublishedSelection(replaceImplicitVideo) {
   const wasWithdrawn = isWithdrawn(currentId);
   const requested = pendingSharedVideoId;
@@ -435,6 +461,7 @@ async function refreshSharedVideos({ fresh = false } = {}) {
         sharedLiveSince = now;
         sharedLiveUntil = sharedFetchedAt + sharedLiveWindowMs;
         sharedLiveFailed = false;
+        setSharedAvailability(true);
       }
       sharedVideos.forEach(video => metadata.seed(video.id, video, { replace: true }));
       savePublication();
@@ -450,8 +477,11 @@ async function refreshSharedVideos({ fresh = false } = {}) {
       if (panelId === 'add-panel') updateAddUrlWarning();
       showSharedReadStatus();
       return true;
-    } catch {
-      if (fresh) sharedLiveFailed = true;
+    } catch (error) {
+      if (fresh) {
+        sharedLiveFailed = true;
+        if (error.status === 503) setSharedAvailability(false);
+      }
       showSharedReadStatus(true);
       nextSharedRefreshAt = 0;
       if (pendingSharedVideoId) setStatus('共有された曲を取得できません。「選ぶ」から再試行してください。');
@@ -618,6 +648,7 @@ function syncFormMode() {
   editConflict = false;
   $('add-message').textContent = '';
   $('add-message').classList.remove('is-error');
+  renderSharedAvailability();
 }
 function openAddForm() {
   if (formSaving || editOpening) { toast('処理が終わるまでお待ちください'); return; }
@@ -733,6 +764,7 @@ $('add-form').addEventListener('submit', async event => {
       const saveStartedAt = Date.now();
       const { publicationUpdated, ...saved } = editing ? await sharedClient.update(editing.id, editing.revision, input) : await sharedClient.add(input);
       savedVideo = saved;
+      setSharedAvailability(true);
       publicationPending = publicationUpdated === false;
       sharedSyncPending = publicationPending;
       sharedRevision++;
@@ -764,7 +796,12 @@ $('add-form').addEventListener('submit', async event => {
       : editing ? editing.local ? 'このブラウザーの動画情報を更新しました' : '共有一覧の動画情報を更新しました' : '共有一覧と、この端末のお気に入りに追加しました');
   } catch (error) {
     if (error.errors && typeof error.errors === 'object') showAddErrors(error.errors);
-    message.textContent = error.name === 'AbortError' || error instanceof TypeError ? '動画情報を取得できませんでした。通信を確認して、もう一度お試しください。' : error.message;
+    if (error.status === 503) {
+      setSharedAvailability(false);
+      message.textContent = '共有一覧への保存結果を確認できませんでした。時間をおいて再度お試しください。';
+    } else {
+      message.textContent = error.name === 'AbortError' || error instanceof TypeError ? '動画情報を取得できませんでした。通信を確認して、もう一度お試しください。' : error.message;
+    }
     message.classList.add('is-error');
     if (editing && error.code === 'conflict') {
       editConflict = true;

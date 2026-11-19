@@ -107,6 +107,19 @@ test('閲覧指定のシリーズ全件GETだけが共有CDN用URLを使う', as
   ]);
 });
 
+test('登録サービスの接続確認は専用GETを使い、旧APIの一覧を停止とみなさない', async () => {
+  const payloads = [{ available: false }, { available: true }, { videos: [video] }];
+  const client = createSharedVideosClient(async (url, options) => {
+    assert.equal(url, '/api/videos?view=status');
+    assert.equal(options.method ?? 'GET', 'GET');
+    assert.equal(options.cache, 'default');
+    return response(payloads.shift());
+  });
+  assert.equal(await client.availability(), false);
+  assert.equal(await client.availability(), true);
+  assert.equal(await client.availability(), null);
+});
+
 test('共有一覧の不正なIDや重複を除外し、秘密や余分なレスポンス項目を取り込まない', async () => {
   const client = createSharedVideosClient(async () => response({
     videos: [null, { ...video, id: 'invalid' }, { ...video, privateToken: 'server-only' }, video],
@@ -195,7 +208,7 @@ test('重複登録などAPIが返した説明を保持する', async () => {
 
 test('APIに説明がないHTTPエラーは再試行できる日本語で伝える', async () => {
   const client = createSharedVideosClient(async () => response({}, 503));
-  await assert.rejects(client.list(), /共有データに接続できませんでした。もう一度お試しください。/);
+  await assert.rejects(client.list(), { status: 503, message: '共有データに接続できませんでした。もう一度お試しください。' });
 });
 
 test('ネットワーク失敗・中断・非JSON応答は生の例外を利用者に出さない', async () => {
