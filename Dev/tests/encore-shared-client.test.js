@@ -108,15 +108,16 @@ test('閲覧指定のシリーズ全件GETだけが共有CDN用URLを使う', as
 });
 
 test('登録サービスの接続確認は専用GETを使い、旧APIの一覧を停止とみなさない', async () => {
-  const payloads = [{ available: false }, { available: true }, { videos: [video] }];
+  const unavailable = { available: false, code: 'daily_request_limit' };
+  const payloads = [unavailable, { available: true }, { videos: [video] }];
   const client = createSharedVideosClient(async (url, options) => {
     assert.equal(url, '/api/videos?view=status');
     assert.equal(options.method ?? 'GET', 'GET');
     assert.equal(options.cache, 'default');
     return response(payloads.shift());
   });
-  assert.equal(await client.availability(), false);
-  assert.equal(await client.availability(), true);
+  assert.deepEqual(await client.availability(), unavailable);
+  assert.deepEqual(await client.availability(), { available: true });
   assert.equal(await client.availability(), null);
 });
 

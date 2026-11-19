@@ -2,7 +2,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { isIP } from 'node:net';
 import { validateVideoInput, withVideoAuthor } from '../add-video.js';
 import { readYouTubeAuthor } from '../youtube-author.js';
-import { isEntryId, videoIdFor, SHARED_BROWSE_CACHE_SECONDS, SHARED_STATUS_CACHE_SECONDS } from '../model.js';
+import { isEntryId, videoIdFor, SHARED_BROWSE_CACHE_SECONDS, SHARED_STATUS_CACHE_SECONDS, SHARED_DAILY_LIMIT } from '../model.js';
 
 export const MAX_JSON_BYTES = 16 * 1024;
 const databaseMessage = '共有データを利用できません。時間をおいて、もう一度お試しください。';
@@ -12,6 +12,14 @@ const browseQuery = '?includeMisc=1&classification=series&view=browse';
 
 function json(status, body, headers = {}) {
   return Response.json(body, { status, headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', ...headers } });
+}
+
+function databaseStatus(error) {
+  return error?.code === SHARED_DAILY_LIMIT ? { code: SHARED_DAILY_LIMIT } : {};
+}
+
+function databaseUnavailable(error) {
+  return json(503, { error: databaseMessage, ...databaseStatus(error) });
 }
 
 function duplicate() {
@@ -120,13 +128,13 @@ export function createSharedVideosHandler({ store, fetchImpl = globalThis.fetch,
     if (request.method === 'GET') {
       const url = new URL(request.url);
       if (url.search === '?view=status') {
-        let available = false;
+        let status;
         try {
           // 「該当動画なし」でも、DBから応答があれば接続できている。
           await store.hasVideo(statusVideoId);
-          available = true;
-        } catch { /* 接続できない結果も短時間共有し、Workerへの再試行を抑える。 */ }
-        return json(200, { available }, { 'Vercel-CDN-Cache-Control': `public, s-maxage=${SHARED_STATUS_CACHE_SECONDS}` });
+          status = { available: true };
+        } catch (error) { status = { available: false, ...databaseStatus(error) }; }
+        return json(200, status, { 'Vercel-CDN-Cache-Control': `public, s-maxage=${SHARED_STATUS_CACHE_SECONDS}` });
       }
       const browse = url.search === browseQuery;
       const useSnapshot = browse && snapshot;
@@ -144,7 +152,7 @@ export function createSharedVideosHandler({ store, fetchImpl = globalThis.fetch,
           : {};
         return json(200, { ...publication, videos: includeMisc ? videos : videos.filter(video => video.category !== 'misc') }, headers);
       }
-      catch { return json(503, { error: useSnapshot ? publicationMessage : databaseMessage }); }
+      catch (error) { return useSnapshot ? json(503, { error: publicationMessage }) : databaseUnavailable(error); }
     }
     const editing = request.method === 'PATCH';
     if (request.method !== 'POST' && !editing) return json(405, { error: 'この操作には対応していません。' }, { Allow: 'GET, POST, PATCH' });
@@ -177,7 +185,7 @@ export function createSharedVideosHandler({ store, fetchImpl = globalThis.fetch,
         const savedVideo = withVideoAuthor(identity, existing);
         const updated = await store.updateVideo(savedVideo, parsed.input.revision);
         return updated ? respondToSavedVideo(200, updated) : conflict();
-      } catch (error) { return error?.code === 'duplicate_clip' ? duplicate() : json(503, { error: databaseMessage }); }
+      } catch (error) { return error?.code === 'duplicate_clip' ? duplicate() : databaseUnavailable(error); }
     }
     let sourceExists;
     try {
@@ -188,7 +196,7 @@ export function createSharedVideosHandler({ store, fetchImpl = globalThis.fetch,
       const hash = clientHash(request, getClientAddress, rateLimitSalt);
       const rate = await store.consumeRateLimit(hash, rateLimit, rateWindowSeconds);
       if (!rate.allowed) return json(429, { error: '短時間に追加が集中しています。少し待ってから再度お試しください。' }, { 'Retry-After': String(Math.max(1, Math.ceil(rate.retryAfter || rateWindowSeconds))) });
-    } catch { return json(503, { error: databaseMessage }); }
+    } catch (error) { return databaseUnavailable(error); }
     let savedVideo;
     try { savedVideo = withVideoAuthor({ ...video, videoId: video.id }, await fetchAuthor(video.id, fetchImpl, timeoutMs)); }
     catch { return json(502, { error: upstreamMessage }); }
@@ -201,7 +209,7 @@ export function createSharedVideosHandler({ store, fetchImpl = globalThis.fetch,
         // 別区間の同時登録で旧IDを先に使われても、曲ごとのIDで保存し直す。
         candidate = { ...savedVideo, id: `clip_${randomBytes(16).toString('hex')}` };
       }
-      return json(503, { error: databaseMessage });
-    } catch (error) { return error?.code === 'withdrawn' ? withdrawn() : json(503, { error: databaseMessage }); }
+      return databaseUnavailable();
+    } catch (error) { return error?.code === 'withdrawn' ? withdrawn() : databaseUnavailable(error); }
   };
 }

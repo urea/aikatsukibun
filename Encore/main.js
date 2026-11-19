@@ -1,6 +1,6 @@
 import videoIds from './videos.json';
 import { inject, pageview } from '@vercel/analytics';
-import { SETTINGS_KEY, SHARED_BROWSE_CACHE_SECONDS, SHARED_STATUS_CACHE_SECONDS, VIDEO_CATEGORIES, categoryLabel, isVideoCategory, isPlayableVideo, isVideoId, isEntryId, videoIdFor, uniqueIds, readSaved, normalizeCustomVideos, normalizeSettings, chooseRandom, formatTime, displayTitle } from './model.js';
+import { SETTINGS_KEY, SHARED_BROWSE_CACHE_SECONDS, SHARED_STATUS_CACHE_SECONDS, SHARED_DAILY_LIMIT, VIDEO_CATEGORIES, categoryLabel, isVideoCategory, isPlayableVideo, isVideoId, isEntryId, videoIdFor, uniqueIds, readSaved, normalizeCustomVideos, normalizeSettings, chooseRandom, formatTime, displayTitle } from './model.js';
 import { icon, setIcon, mountIcons } from './icons.js';
 import { createTapAudio } from './tap-audio.js';
 import { createPadInput, PAD_KEYS } from './pad-input.js';
@@ -358,6 +358,7 @@ let sharedLoadingLive = false;
 let sharedRevision = 0;
 let nextSharedRefreshAt = 0;
 let sharedAvailable = null;
+let sharedErrorCode;
 let availabilityCheck;
 let availabilityRevision = 0;
 let nextAvailabilityCheckAt = 0;
@@ -366,11 +367,19 @@ const availabilityReuseMs = SHARED_STATUS_CACHE_SECONDS * 1000;
 // 更新前に始まった一覧取得が後からCDNに入る時間も見込む。
 const sharedLiveWindowMs = SHARED_BROWSE_CACHE_SECONDS * 1000 + 10_000;
 function renderSharedAvailability() {
+  if (sharedAvailable === false) {
+    const reason = sharedErrorCode === SHARED_DAILY_LIMIT
+      ? 'Cloudflareの1日のリクエスト上限に達したため、'
+      : '共有データに接続できないため、';
+    $('library-service-error-reason').textContent = reason;
+    $('add-service-error-reason').textContent = reason;
+  }
   $('library-service-error').hidden = sharedAvailable !== false;
   $('add-service-error').hidden = sharedAvailable !== false || Boolean(editingVideo?.local);
 }
-function setSharedAvailability(available) {
+function setSharedAvailability(available, code) {
   sharedAvailable = available;
+  sharedErrorCode = code;
   availabilityRevision++;
   nextAvailabilityCheckAt = Date.now() + availabilityReuseMs;
   renderSharedAvailability();
@@ -379,10 +388,10 @@ function checkSharedAvailability() {
   if (availabilityCheck || Date.now() < nextAvailabilityCheckAt) return;
   const revision = availabilityRevision;
   nextAvailabilityCheckAt = Date.now() + availabilityReuseMs;
-  availabilityCheck = sharedClient.availability().then(available => {
-    if (revision === availabilityRevision && available !== null) setSharedAvailability(available);
+  availabilityCheck = sharedClient.availability().then(status => {
+    if (revision === availabilityRevision && status !== null) setSharedAvailability(status.available, status.code);
   }, error => {
-    if (revision === availabilityRevision && error.status === 503) setSharedAvailability(false);
+    if (revision === availabilityRevision && error.status === 503) setSharedAvailability(false, error.code);
   }).finally(() => { availabilityCheck = null; });
 }
 function reconcilePublishedSelection(replaceImplicitVideo) {
@@ -480,7 +489,7 @@ async function refreshSharedVideos({ fresh = false } = {}) {
     } catch (error) {
       if (fresh) {
         sharedLiveFailed = true;
-        if (error.status === 503) setSharedAvailability(false);
+        if (error.status === 503) setSharedAvailability(false, error.code);
       }
       showSharedReadStatus(true);
       nextSharedRefreshAt = 0;
@@ -797,7 +806,7 @@ $('add-form').addEventListener('submit', async event => {
   } catch (error) {
     if (error.errors && typeof error.errors === 'object') showAddErrors(error.errors);
     if (error.status === 503) {
-      setSharedAvailability(false);
+      setSharedAvailability(false, error.code);
       message.textContent = '共有一覧への保存結果を確認できませんでした。時間をおいて再度お試しください。';
     } else {
       message.textContent = error.name === 'AbortError' || error instanceof TypeError ? '動画情報を取得できませんでした。通信を確認して、もう一度お試しください。' : error.message;

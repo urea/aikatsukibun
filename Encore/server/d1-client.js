@@ -1,3 +1,5 @@
+import { SHARED_DAILY_LIMIT } from '../model.js';
+
 const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
 const STORE_ERROR_CODES = new Set(['withdrawn', 'duplicate_clip']);
 
@@ -15,22 +17,28 @@ function createCaller(url, token, path, fetchImpl) {
   const endpoint = new URL(path, origin).href;
   return async (method, args = []) => {
     let response;
-    let payload;
+    let body;
     try {
       response = await fetchImpl(endpoint, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify({ method, args }),
         signal: AbortSignal.timeout(8000),
         redirect: 'error',
       });
-      payload = await response.json();
+      body = await response.text();
     } catch {
       throw new Error('D1 Worker unavailable');
     }
+    let payload;
+    try { payload = JSON.parse(body); }
+    catch { /* Cloudflare can return a plain-text or HTML error page. */ }
     if (response.ok && payload && Object.hasOwn(payload, 'result')) return payload.result;
     const error = new Error('D1 Worker operation failed');
     if (response.status === 409 && STORE_ERROR_CODES.has(payload?.code)) error.code = payload.code;
+    if (!response.ok && (Number(payload?.error_code) === 1027 || (!payload && /\berror\s+(?:code:\s*)?1027\b/i.test(body)))) {
+      error.code = SHARED_DAILY_LIMIT;
+    }
     throw error;
   };
 }

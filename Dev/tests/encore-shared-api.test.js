@@ -4,6 +4,8 @@ import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { createSharedVideosHandler, MAX_JSON_BYTES } from '../../Encore/server/shared-videos.js';
 import { createNeonStore } from '../../Encore/server/neon-store.js';
+import { createD1Client } from '../../Encore/server/d1-client.js';
+import { SHARED_DAILY_LIMIT } from '../../Encore/model.js';
 
 const endpoint = 'https://encore.example/api/videos';
 const browseQuery = '?includeMisc=1&classification=series&view=browse';
@@ -119,6 +121,32 @@ test('登録サービスの接続状態だけを短時間共有し、停止中�
   const recovered = await handler(new Request(`${endpoint}?view=status`));
   assert.deepEqual(await recovered.json(), { available: true });
   assert.equal(lookups, 2);
+});
+
+test('Cloudflareの1027だけを日次上限として、状態確認・追加・編集に返す', async () => {
+  let workerResponse = () => new Response('error code: 1027', { status: 429 });
+  const store = createD1Client('https://worker.example', 'test-token', {
+    fetchImpl: async (_url, { headers }) => {
+      assert.equal(headers.Accept, 'application/json');
+      return workerResponse();
+    },
+  });
+  const { handler, requests } = fixture({ store });
+  const statusRequest = () => new Request(`${endpoint}?view=status`);
+  assert.deepEqual(await (await handler(statusRequest())).json(), { available: false, code: SHARED_DAILY_LIMIT });
+  for (const request of [new Request(endpoint), post(), patch(editInput())]) {
+    const failed = await handler(request);
+    assert.equal(failed.status, 503);
+    assert.equal((await failed.json()).code, SHARED_DAILY_LIMIT);
+  }
+  assert.equal(requests.length, 0);
+
+  workerResponse = () => Response.json({ error_code: 1027 }, { status: 429 });
+  assert.deepEqual(await (await handler(statusRequest())).json(), { available: false, code: SHARED_DAILY_LIMIT });
+  workerResponse = () => new Response('Too Many Requests', { status: 429 });
+  assert.deepEqual(await (await handler(statusRequest())).json(), { available: false });
+  workerResponse = () => Response.json({ result: false });
+  assert.deepEqual(await (await handler(statusRequest())).json(), { available: true });
 });
 
 test('GETはその他の動画を明示指定で含め、通常一覧と取り下げ情報の互換性を保つ', async () => {

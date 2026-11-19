@@ -27,7 +27,7 @@ export function createSharedVideosClient(fetchImpl = fetch) {
   return {
     async availability() {
       const data = await request({ cache: 'default' }, '/api/videos?view=status');
-      return typeof data?.available === 'boolean' ? data.available : null;
+      return typeof data?.available === 'boolean' ? data : null;
     },
     async list({ includeMisc = false, classification, browse = false } = {}) {
       const params = new URLSearchParams();

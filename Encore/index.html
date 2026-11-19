@@ -104,7 +104,7 @@
             <button type="button" class="action-button" data-close aria-label="選曲を閉じて再生画面に戻る"><span data-icon="close"></span>戻る</button>
           </div>
         </header>
-        <p id="library-service-error" class="shared-service-error" role="status" hidden>現在、動画の追加・編集ができません。取得済みの動画は選曲できます。</p>
+        <p id="library-service-error" class="shared-service-error" role="status" hidden><span id="library-service-error-reason"></span>動画の追加・編集ができません。保存済みの動画は選曲できます。</p>
         <div class="library-toolbar">
           <label class="search-box"><span data-icon="search"></span><input id="video-search" type="search" placeholder="曲名やキーワードで検索" aria-label="曲名やキーワードで検索" autocomplete="off" /></label>
           <div class="library-tabs" role="tablist" aria-label="動画の分類"><button id="tab-all" type="button" role="tab" aria-selected="true" aria-controls="library-results" data-library="all">すべて</button><button id="tab-favorites" type="button" role="tab" aria-selected="false" aria-controls="library-results" data-library="favorites">お気に入り</button><button id="tab-history" type="button" role="tab" aria-selected="false" aria-controls="library-results" data-library="history">履歴</button></div>
@@ -133,7 +133,7 @@
       <section id="add-panel" class="side-panel" aria-labelledby="add-heading" hidden>
         <header class="panel-header"><div class="panel-heading-group"><button type="button" class="icon-button" data-back="library-panel" aria-label="選曲に戻る"><span data-icon="back"></span></button><h2 id="add-heading">動画を追加</h2></div><button type="button" class="action-button" data-close aria-label="動画追加を閉じて再生画面に戻る"><span data-icon="close"></span>戻る</button></header>
         <form id="add-form" class="panel-content add-form" novalidate>
-          <p id="add-service-error" class="shared-service-error" role="status" hidden>現在、共有一覧に保存できません。入力内容を残したまま、時間をおいて再度お試しください。</p>
+          <p id="add-service-error" class="shared-service-error" role="status" hidden><span id="add-service-error-reason"></span>共有一覧に保存できません。入力内容を残したまま、時間をおいて再度お試しください。</p>
           <p id="add-posting-guide" class="secondary">アプリの3ボタンで遊べる動画の投稿をお願いします。動画の内容によっては、管理人の判断で分類を変更する場合があります。</p>
           <p id="add-description" class="secondary">開始・終了時刻は任意です。その他の項目は必須です。追加した動画と楽曲情報は公開され、すべての利用者の一覧に表示されます。</p>
           <p id="edit-author" class="secondary" hidden></p>
