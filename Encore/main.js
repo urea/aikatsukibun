@@ -3,7 +3,8 @@ import { inject, pageview } from '@vercel/analytics';
 import { SETTINGS_KEY, SHARED_BROWSE_CACHE_SECONDS, SHARED_STATUS_CACHE_SECONDS, SHARED_DAILY_LIMIT, VIDEO_CATEGORIES, categoryLabel, isVideoCategory, isPlayableVideo, isVideoId, isEntryId, videoIdFor, uniqueIds, readSaved, normalizeCustomVideos, normalizeSettings, chooseRandom, formatTime, displayTitle } from './model.js';
 import { icon, setIcon, mountIcons } from './icons.js';
 import { createTapAudio } from './tap-audio.js';
-import { createPadInput, PAD_KEYS } from './pad-input.js';
+import { createPadInput, keysForLayout } from './pad-input.js';
+import './controller-layouts.css';
 import { createMetadata } from './metadata.js';
 import { createEncoreStorage } from './storage.js';
 import { getPlaybackRange, getClipPosition, seekTimeForPercent, youtubeVideoOptions } from './clip.js';
@@ -15,6 +16,7 @@ import { readSharedVideoId, buildXShareUrl } from './share.js';
 import { normalizeLibrarySort, sortVideoIds } from './library-sort.js';
 import { createPlaybackSession } from './playback-session.js';
 import { pickAffiliateProduct } from './affiliate-products.js';
+import { CONTROLLER_LAYOUTS, getControllerLayout, renderControllerPads } from './controller-layouts.js';
 
 const $ = id => document.getElementById(id);
 const playLayout = $('app');
@@ -1146,6 +1148,8 @@ document.addEventListener('fullscreenchange', () => {
 
 const vibrationSupported = typeof navigator.vibrate === 'function';
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+const padLayoutSelect = $('pad-layout');
+for (const layout of CONTROLLER_LAYOUTS) padLayoutSelect.add(new Option(layout.label, layout.id));
 function syncSettings() {
   $('app').dataset.appearance = settings.appearance;
   $('app').dataset.controlSide = settings.controlSide;
@@ -1161,6 +1165,7 @@ function syncSettings() {
   $('vibration-enabled').disabled = !vibrationSupported;
   $('vibration-support').textContent = vibrationSupported ? '' : 'この端末では利用できません';
   $('effects-enabled').checked = settings.effects;
+  padLayoutSelect.value = settings.padLayout;
   $('control-side').value = settings.controlSide;
   $('shuffle-category').value = settings.shuffleCategory;
   $('appearance').value = settings.appearance;
@@ -1186,6 +1191,11 @@ for (const [id, key] of [['sound-volume', 'soundVolume'], ['video-volume', 'vide
   $(id).addEventListener('change', () => save(SETTINGS_KEY, settings));
 }
 $('appearance').addEventListener('change', () => { settings.appearance = $('appearance').value; save(SETTINGS_KEY, settings); syncSettings(); });
+padLayoutSelect.addEventListener('change', () => {
+  settings.padLayout = padLayoutSelect.value;
+  applyPadLayout(settings.padLayout);
+  save(SETTINGS_KEY, settings);
+});
 $('control-side').addEventListener('change', () => { settings.controlSide = $('control-side').value; save(SETTINGS_KEY, settings); syncSettings(); });
 $('clear-history').addEventListener('click', () => {
   if (!history.length) { toast('再生履歴はありません'); return; }
@@ -1208,17 +1218,40 @@ refreshSharedVideos().then(() => {
 });
 
 const playTap = createTapAudio();
-const padInput = createPadInput();
+const padArea = document.querySelector('.pad-area');
+const keyNames = { ' ': 'Space', arrowup: '↑', arrowleft: '←', arrowright: '→', arrowdown: '↓' };
+let padInput;
+let controllerLayout;
+function applyPadLayout(layoutId) {
+  controllerLayout = getControllerLayout(layoutId);
+  padInput = createPadInput(keysForLayout(controllerLayout));
+  $('sparkles').replaceChildren();
+  renderControllerPads(padArea, controllerLayout.id);
+  // 設定を閉じた直後から、スペースキーでも新しいパネルを演奏できる。
+  if (panelId === 'settings-panel') panelOpener = padArea.querySelector('[data-pad]');
+  const guide = controllerLayout.pads.map(pad => {
+    const item = document.createElement('span');
+    const key = document.createElement('kbd');
+    key.textContent = pad.keys.map(value => keyNames[value] ?? value.toUpperCase()).join(' / ');
+    item.append(key, pad.label);
+    return item;
+  });
+  $('pad-key-guide').replaceChildren(...guide);
+  refreshPads();
+}
+applyPadLayout(settings.padLayout);
 function refreshPads() {
   const active = padInput.activeColors();
-  document.querySelectorAll('[data-pad]').forEach(button => button.classList.toggle('is-active', active.has(button.dataset.pad)));
+  padArea.querySelectorAll('[data-pad]').forEach(button => button.classList.toggle('is-active', active.has(button.dataset.pad)));
 }
 function clearPads() { padInput.clear(); refreshPads(); }
-function tap(color, point) {
-  if (settings.sound) playTap(settings.soundVolume);
+function tap(padId, point) {
+  const control = controllerLayout.pads.find(item => item.id === padId);
+  if (!control) return;
+  if (settings.sound) playTap(settings.soundVolume, control.sound);
   if (settings.vibration && vibrationSupported) { try { navigator.vibrate(12); } catch { /* 非対応端末では無視する。 */ } }
   if (!settings.effects || reducedMotion.matches) return;
-  const pad = $(`btn-${color}`).querySelector('.pad-symbol').getBoundingClientRect();
+  const pad = $(`btn-${padId}`).querySelector('.pad-symbol').getBoundingClientRect();
   const layer = $('sparkles').getBoundingClientRect();
   for (let i = 0; i < 6; i++) {
     const spark = document.createElement('span'); spark.className = 'sparkle'; spark.textContent = '✦';
@@ -1227,42 +1260,47 @@ function tap(color, point) {
     const angle = i / 6 * Math.PI * 2 + Math.random() * .4;
     spark.style.setProperty('--dx', `${Math.cos(angle) * pad.width * .5}px`);
     spark.style.setProperty('--dy', `${Math.sin(angle) * pad.width * .5}px`);
-    spark.style.setProperty('--sparkle-color', `var(--${color})`);
+    spark.style.setProperty('--sparkle-color', control.color);
     $('sparkles').append(spark);
     spark.addEventListener('animationend', () => spark.remove(), { once: true });
     setTimeout(() => spark.remove(), 650);
   }
 }
-document.querySelectorAll('[data-pad]').forEach(button => {
-  button.addEventListener('pointerdown', event => {
-    if (event.pointerType === 'mouse' && event.button !== 0) return;
-    event.preventDefault();
-    button.focus({ preventScroll: true });
-    button.setPointerCapture(event.pointerId);
-    padInput.updatePointer(event.pointerId, button.dataset.pad);
-    tap(button.dataset.pad, { x: event.clientX, y: event.clientY }); refreshPads();
-  });
-  button.addEventListener('pointermove', event => {
-    if (!padInput.hasPointer(event.pointerId)) return;
-    const target = document.elementFromPoint(event.clientX, event.clientY)?.closest('[data-pad]');
-    const color = target?.dataset.pad ?? null;
-    if (padInput.updatePointer(event.pointerId, color)) tap(color, { x: event.clientX, y: event.clientY });
-    refreshPads();
-  });
-  for (const name of ['pointerup', 'pointercancel', 'lostpointercapture']) button.addEventListener(name, event => { padInput.endPointer(event.pointerId); refreshPads(); });
-  button.addEventListener('click', event => {
-    if (event.detail !== 0) return;
-    tap(button.dataset.pad); button.classList.add('is-active'); setTimeout(refreshPads, 130);
-  });
+padArea.addEventListener('pointerdown', event => {
+  const button = event.target.closest('[data-pad]');
+  if (!button || (event.pointerType === 'mouse' && event.button !== 0)) return;
+  event.preventDefault();
+  button.focus({ preventScroll: true });
+  padArea.setPointerCapture(event.pointerId);
+  padInput.updatePointer(event.pointerId, button.dataset.pad);
+  tap(button.dataset.pad, { x: event.clientX, y: event.clientY });
+  refreshPads();
+});
+padArea.addEventListener('pointermove', event => {
+  if (!padInput.hasPointer(event.pointerId)) return;
+  const target = document.elementFromPoint(event.clientX, event.clientY)?.closest('[data-pad]');
+  const padId = target?.dataset.pad ?? null;
+  if (padInput.updatePointer(event.pointerId, padId)) tap(padId, { x: event.clientX, y: event.clientY });
+  refreshPads();
+});
+for (const name of ['pointerup', 'pointercancel', 'lostpointercapture']) {
+  padArea.addEventListener(name, event => { padInput.endPointer(event.pointerId); refreshPads(); });
+}
+padArea.addEventListener('click', event => {
+  const button = event.target.closest('[data-pad]');
+  if (!button || event.detail !== 0) return;
+  tap(button.dataset.pad); button.classList.add('is-active'); setTimeout(refreshPads, 130);
 });
 function isEditing(element) { return element instanceof Element && Boolean(element.closest('input, textarea, select, [contenteditable="true"]')); }
 document.addEventListener('keydown', event => {
   const key = event.key.toLowerCase();
-  if (!PAD_KEYS[key] || panelId || event.ctrlKey || event.altKey || event.metaKey || isEditing(event.target)) return;
+  if (!padInput.hasKey(key) || panelId || event.ctrlKey || event.altKey || event.metaKey || isEditing(event.target)) return;
+  // Space/Enter must still activate a focused navigation or playback button.
+  if ((key === ' ' || key === 'enter') && event.target.closest?.('a, button:not([data-pad])')) return;
   event.preventDefault();
   if (event.repeat) return;
-  const color = padInput.keyDown(key);
-  if (color) { tap(color); refreshPads(); }
+  const padId = padInput.keyDown(key);
+  if (padId) { tap(padId); refreshPads(); }
 });
 document.addEventListener('keyup', event => { padInput.keyUp(event.key.toLowerCase()); refreshPads(); });
 window.addEventListener('blur', clearPads);

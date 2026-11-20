@@ -124,6 +124,8 @@ input::placeholder { color:var(--muted); opacity:1; }
 .switch:checked::after { transform:translateX(15px); background:var(--on-accent); }
 .switch:disabled { opacity:.4; cursor:default; }
 .setting-row select { width:min(42%,148px); min-width:0; background:var(--raised); color:var(--text); border:1px solid var(--line); border-radius:7px; padding:7px; font-size:12px; }
+.pad-layout-setting { flex-wrap:wrap; }
+.pad-layout-setting select { width:auto; max-width:100%; }
 .settings-video-actions,.settings-data-actions,.settings-links { display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
 .settings-video-actions { padding-block:4px; }
 .settings-video-actions .action-button { flex:1 1 128px; min-height:40px; padding:6px 8px; }

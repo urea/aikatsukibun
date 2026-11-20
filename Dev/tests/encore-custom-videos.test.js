@@ -2,6 +2,19 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { VIDEO_CATEGORIES, SETTINGS_KEY, categoryLabel, isPlayableVideo, isVideoId, isEntryId, videoIdFor, uniqueIds, readSaved, normalizeSettings, normalizeCustomVideos, normalizeVideoMetadata } from '../../Encore/model.js';
 
+test('初回・旧設定・不明な操作パネルではアイカツを使い、選択済みのパネルを復元する', () => {
+  for (const padLayout of [undefined, null, 'unknown', '__proto__', ['taiko']]) {
+    const settings = normalizeSettings({ padLayout, controlSide: 'left', sound: false });
+    assert.equal(settings.padLayout, 'aikatsu');
+    assert.equal(settings.controlSide, 'left');
+    assert.equal(settings.sound, false);
+  }
+  for (const padLayout of ['aikatsu', 'taiko', 'konga', 'loveberry', 'pripara', 'prichan', 'prettyrhythm', 'shinytv', 'rhythmdoctor']) {
+    const storage = { getItem: () => JSON.stringify({ padLayout }) };
+    assert.equal(normalizeSettings(readSaved(storage, SETTINGS_KEY, {})).padLayout, padLayout);
+  }
+});
+
 test('おまかせの分類を復元し、旧設定のオンをアイカツE、オフをすべての分類に引き継ぐ', () => {
   for (const [stored, expected] of [
     [{}, 'all'],

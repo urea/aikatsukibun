@@ -1,10 +1,17 @@
-export const PAD_KEYS = Object.freeze({ w: 'red', a: 'green', d: 'yellow', arrowup: 'red', arrowleft: 'green', arrowright: 'yellow' });
+import { getControllerLayout } from './controller-layouts.js';
+
+export function keysForLayout(layout) {
+  return Object.fromEntries(layout.pads.flatMap(pad => pad.keys.map(key => [key, pad.id])));
+}
+
+export const PAD_KEYS = Object.freeze(keysForLayout(getControllerLayout('aikatsu')));
 
 // 指ごとに保持することで、指を離しても別の指やキーの入力を消さない。
-export function createPadInput() {
+export function createPadInput(bindings = PAD_KEYS) {
   const pointers = new Map();
   const keys = new Map();
   return {
+    hasKey: key => Object.hasOwn(bindings, key),
     hasPointer: id => pointers.has(id),
     updatePointer(id, color) {
       const changed = pointers.get(id) !== color;
@@ -13,10 +20,10 @@ export function createPadInput() {
     },
     endPointer: id => pointers.delete(id),
     keyDown(key) {
-      const color = PAD_KEYS[key];
-      if (!color || keys.has(key)) return null;
-      keys.set(key, color);
-      return color;
+      if (!Object.hasOwn(bindings, key) || keys.has(key)) return null;
+      const pad = bindings[key];
+      keys.set(key, pad);
+      return pad;
     },
     keyUp: key => keys.delete(key),
     activeColors: () => new Set([...pointers.values(), ...keys.values()].filter(Boolean)),

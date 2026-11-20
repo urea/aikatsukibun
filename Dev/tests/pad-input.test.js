@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createPadInput } from '../../App/pad-input.js';
-import { createPadInput as createEncorePadInput, PAD_KEYS as ENCORE_PAD_KEYS } from '../../Encore/pad-input.js';
+import { createPadInput as createEncorePadInput, keysForLayout, PAD_KEYS as ENCORE_PAD_KEYS } from '../../Encore/pad-input.js';
+import { CONTROLLER_LAYOUTS } from '../../Encore/controller-layouts.js';
 
 test('3本の指を同時に使い、1本を離しても残り2色は押されたまま', () => {
   const input = createPadInput();
@@ -91,4 +92,30 @@ test('アンコール版のclearは文字キー・方向キー・ポインター
     assert.equal(input.keyDown(arrow), color);
   }
   assert.deepEqual(input.activeColors(), new Set(['red', 'green', 'yellow']));
+});
+
+test('各操作パネルのキーは重複せず、すべての面を同時に押して個別に離せる', () => {
+  for (const layout of CONTROLLER_LAYOUTS) {
+    const allKeys = layout.pads.flatMap(pad => pad.keys);
+    assert.equal(new Set(allKeys).size, allKeys.length, layout.id);
+    const input = createEncorePadInput(keysForLayout(layout));
+    for (const pad of layout.pads) {
+      assert.ok(pad.keys.length, pad.id);
+      for (const key of pad.keys) {
+        assert.equal(input.hasKey(key), true);
+        assert.equal(input.keyDown(key), pad.id);
+        assert.equal(input.keyDown(key), null);
+      }
+    }
+    const expected = new Set(layout.pads.map(pad => pad.id));
+    assert.deepEqual(input.activeColors(), expected, layout.id);
+    for (const pad of layout.pads) {
+      input.updatePointer(17, pad.id);
+      pad.keys.forEach(key => input.keyUp(key));
+      assert.deepEqual(input.activeColors(), expected);
+      input.endPointer(17);
+      expected.delete(pad.id);
+      assert.deepEqual(input.activeColors(), expected);
+    }
+  }
 });

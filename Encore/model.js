@@ -1,4 +1,5 @@
 import { normalizeAuthorUrl } from './youtube-author.js';
+import { getControllerLayout } from './controller-layouts.js';
 
 // 保存データとURLの境界処理。保存領域はstorage.jsで通常版と分離する。
 export const DEFAULT_VIDEO_ID = null;
@@ -6,7 +7,7 @@ export const SETTINGS_KEY = 'aikatsu_settings_v2';
 export const SHARED_BROWSE_CACHE_SECONDS = 300;
 export const SHARED_STATUS_CACHE_SECONDS = 60;
 export const SHARED_DAILY_LIMIT = 'daily_request_limit';
-export const DEFAULT_SETTINGS = Object.freeze({ sound: true, soundVolume: 35, videoVolume: 70, muted: false, youtubeControls: true, vibration: true, effects: true, controlSide: 'right', appearance: 'dark', shuffleCategory: 'all', libraryExcludeOther: false, libraryShowMisc: false, libraryCategory: 'encore' });
+export const DEFAULT_SETTINGS = Object.freeze({ sound: true, soundVolume: 35, videoVolume: 70, muted: false, youtubeControls: true, vibration: true, effects: true, padLayout: 'aikatsu', controlSide: 'right', appearance: 'dark', shuffleCategory: 'all', libraryExcludeOther: false, libraryShowMisc: false, libraryCategory: 'encore' });
 export const VIDEO_CATEGORIES = Object.freeze({ encore: 'アイカツE', other: 'その他アイカツ', misc: 'その他の動画' });
 export const isVideoCategory = value => typeof value === 'string' && Object.hasOwn(VIDEO_CATEGORIES, value);
 export const categoryLabel = value => isVideoCategory(value) ? VIDEO_CATEGORIES[value] : '未分類';
@@ -92,6 +93,7 @@ export function normalizeSettings(value) {
   if (isVideoCategory(source.libraryCategory)) settings.libraryCategory = source.libraryCategory;
   else if (settings.libraryShowMisc) settings.libraryCategory = 'misc';
   for (const key of ['soundVolume', 'videoVolume']) if (typeof source[key] === 'number' && Number.isFinite(source[key])) settings[key] = Math.round(Math.max(0, Math.min(100, source[key])));
+  settings.padLayout = getControllerLayout(source.padLayout).id;
   if (source.controlSide === 'left' || source.controlSide === 'right') settings.controlSide = source.controlSide;
   if (['dark', 'light', 'pink', 'system'].includes(source.appearance)) settings.appearance = source.appearance;
   return settings;

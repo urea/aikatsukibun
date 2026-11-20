@@ -1,0 +1,271 @@
+/* The original .pad-area alone determines the size of every console. */
+.pad-area[data-controller]:not([data-controller="aikatsu"]) {
+  container-type: inline-size;
+  isolation: isolate;
+}
+
+.pad-area .console-pad {
+  --ink: #fff;
+  --case: #333e59;
+  --face-top: #a5c8ef;
+  --face-bottom: #507da8;
+  --lip: clamp(2px, 1cqw, 5px);
+  --name-size: 7cqw;
+  color: var(--ink);
+  font-family: inherit;
+  border-radius: 50%;
+  border: var(--lip) solid var(--case);
+  background: linear-gradient(155deg, var(--face-top), var(--face-bottom) 80%);
+  box-shadow: inset 0 2px 0 #fff9, inset 0 -3px 0 #0002, 0 3px 0 #0005;
+  clip-path: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.pad-area .console-pad::before,
+.pad-area .console-pad::after {
+  content: none;
+}
+.pad-area .console-pad .pad-symbol {
+  left: var(--legend-x, 50%);
+  top: var(--legend-y, 50%);
+  width: max-content;
+  max-width: 100%;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .6cqw;
+  color: inherit;
+  filter: none;
+  font-weight: 800;
+  line-height: 1.05;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.console-pad-name {
+  font-size: clamp(10px, var(--name-size), 42px);
+}
+.console-pad-key {
+  font-family: system-ui, sans-serif;
+  font-size: clamp(9px, 3.3cqw, 16px);
+  font-weight: 700;
+  line-height: 1;
+}
+.pad-area .console-pad:focus-visible .pad-symbol {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+.pad-area .console-pad.is-active .pad-symbol {
+  transform: translate(-50%, -50%) scale(.93);
+}
+
+/* Two halves of the same drum face float above the matching rim halves. */
+.pad-area[data-controller="taiko"] {
+  background: #335d6b;
+}
+[data-controller="taiko"] .console-pad {
+  --ink: #fff7dd;
+  --name-size: 6.4cqw;
+  border: 0;
+  box-shadow: inset 0 2px 0 #fffa;
+}
+[data-controller="taiko"] [data-pad^="rim"] {
+  top: 0;
+  width: 50%;
+  height: 100%;
+  border-radius: 0;
+  background: repeating-linear-gradient(120deg, #fff1 0 2%, transparent 2% 8%),
+    linear-gradient(160deg, #238c9f, #146477);
+}
+[data-controller="taiko"] [data-pad="rim-left"] { left: 0; --legend-x: 20%; }
+[data-controller="taiko"] [data-pad="rim-right"] { right: 0; --legend-x: 80%; }
+[data-controller="taiko"] [data-pad^="don"] {
+  top: 11%;
+  width: 30%;
+  height: 78%;
+  z-index: 1;
+  border: var(--lip) solid #9c4135;
+  background: linear-gradient(155deg, #ff9971, #df563f 65%, #bd4938);
+  box-shadow: inset 0 0 0 var(--lip) #ffd8ad, 0 3px 0 #293e4c;
+}
+[data-controller="taiko"] [data-pad="don-left"] {
+  left: 20%;
+  border-right: 1px solid #ac483b;
+  border-radius: 100% 0 0 100% / 50% 0 0 50%;
+  --legend-x: 57%;
+}
+[data-controller="taiko"] [data-pad="don-right"] {
+  right: 20%;
+  border-left: 1px solid #ac483b;
+  border-radius: 0 100% 100% 0 / 0 50% 50% 0;
+  --legend-x: 43%;
+}
+
+/* Drum skins, low wooden shells and a separate handclap button. */
+.pad-area[data-controller="konga"] {
+  background: repeating-linear-gradient(96deg, #ffffff0b 0 1.4%, transparent 1.4% 9%),
+    linear-gradient(180deg, #493b30 0 40%, #715038 41%, #8d5a38 74%, #52331f);
+}
+[data-controller="konga"] .console-pad:not([data-pad="clap"]) {
+  --ink: #583615;
+  --case: #794a2b;
+  top: 35%;
+  width: 47%;
+  height: 58%;
+  border: calc(var(--lip) * 1.4) solid var(--case);
+  background: radial-gradient(ellipse at 39% 30%, #ffe3a2, #e9b466 69%, #c78b48);
+  box-shadow: inset 0 0 0 var(--lip) #ffe3a3, 0 1.1cqw 0 #e4ba78, 0 2.4cqw 0 #573622;
+}
+[data-controller="konga"] [data-pad="left"] { left: 2%; }
+[data-controller="konga"] [data-pad="right"] { right: 2%; }
+[data-controller="konga"] [data-pad="clap"] {
+  --ink: #203f2b;
+  --case: #365338;
+  --face-top: #d4eea1;
+  --face-bottom: #88c77e;
+  --name-size: 5.7cqw;
+  top: 3%;
+  left: 31%;
+  width: 38%;
+  height: 31%;
+  border-radius: 28% / 50%;
+}
+
+/* One yellow dance button. A printed dot pattern belongs to the enclosure. */
+.pad-area[data-controller="loveberry"] {
+  background: radial-gradient(circle, #fff8 0 16%, transparent 19%) 0 0 / 4% 5.33%,
+    linear-gradient(125deg, #f8d5e7, #eea8cb 57%, #c889b1);
+}
+[data-controller="loveberry"] [data-pad="dance"] {
+  --case: #ad731b;
+  --ink: #715110;
+  --name-size: 17cqw;
+  left: 18%;
+  top: 7.3%;
+  width: 64%;
+  height: 85.4%;
+  background: radial-gradient(ellipse at 42% 25%, #fff6a3, #ffdc3c 60%, #eeb32c);
+  box-shadow: inset 0 0 0 var(--lip) #ffed93, 0 1.1cqw 0 #b77a27, 0 1.8cqw 0 #9d6986;
+}
+[data-controller="loveberry"] .console-pad-name,
+[data-controller="shinytv"] .console-pad-name {
+  font-size: clamp(18px, var(--name-size), 76px);
+}
+
+/* Actual rhythm buttons: green and blue above the larger red confirmation button. */
+.pad-area[data-controller="pripara"] {
+  background: repeating-linear-gradient(135deg, #fff4 0 2%, transparent 2% 7%),
+    linear-gradient(155deg, #ffe6f6, #edb2d6 65%, #d998c7);
+}
+.pad-area[data-controller="prichan"] {
+  background: radial-gradient(circle, #fff6 0 19%, transparent 21%) 0 0 / 6% 8%,
+    linear-gradient(90deg, #f6bdcd 0 37.5%, #bf7196 37.5% 38.5%, #fbe1f1 38.5% 100%);
+}
+:is([data-controller="pripara"], [data-controller="prichan"]) .console-pad {
+  --lip: clamp(2px, 1.1cqw, 5px);
+  --name-size: 6.2cqw;
+  --case: #756482;
+  box-shadow: inset 0 0 0 1px #fff9, inset 0 -2px 0 #0002, 0 2px 0 #6e566b, 0 0 0 1px #fffd;
+}
+:is([data-controller="pripara"], [data-controller="prichan"]) [data-pad="green"] {
+  --ink: #093c28; --face-top: #8ee9b5; --face-bottom: #29b976;
+}
+:is([data-controller="pripara"], [data-controller="prichan"]) [data-pad="blue"] {
+  --ink: #092b54; --face-top: #9edfff; --face-bottom: #4398dc;
+}
+:is([data-controller="pripara"], [data-controller="prichan"]) [data-pad="red"] {
+  --ink: #660d2c; --face-top: #ffadb5; --face-bottom: #ef637f;
+}
+[data-controller="pripara"] :is([data-pad="green"], [data-pad="blue"]) {
+  width: 35%;
+  height: 46.67%;
+  top: 4%;
+}
+[data-controller="pripara"] [data-pad="green"] { left: 5%; }
+[data-controller="pripara"] [data-pad="blue"] { right: 5%; }
+[data-controller="pripara"] [data-pad="red"] {
+  width: 42%; height: 56%; left: 29%; bottom: 3%;
+}
+[data-controller="prichan"] :is([data-pad="green"], [data-pad="blue"]) {
+  width: 27%; height: 36%; top: 12%;
+}
+[data-controller="prichan"] [data-pad="green"] { left: 40%; }
+[data-controller="prichan"] [data-pad="blue"] { right: 2%; }
+[data-controller="prichan"] [data-pad="red"] {
+  width: 36%; height: 48%; left: 51%; bottom: 6%;
+}
+[data-controller="prichan"] [data-pad="special"] {
+  --case: #a85d88; --ink: #7b2457; --name-size: 4.9cqw;
+  width: 34%; height: 45.33%; left: 2%; top: 27%;
+  background: linear-gradient(150deg, #fff1b0, #ffd6ed 42%, #ffbce7 73%, #b0eef9);
+  box-shadow: inset 0 0 0 var(--lip) #fff6eb, 0 var(--lip) 0 #b35f91;
+}
+
+/* A faceted face on each of the two colored prism buttons. */
+.pad-area[data-controller="prettyrhythm"] {
+  background: linear-gradient(142deg, transparent 0 26%, #fff5 26% 34%, transparent 34% 75%, #fff4 75% 82%, transparent 82%),
+    linear-gradient(115deg, #b6dfe9, #ecd7f0 54%, #f5bad5);
+}
+[data-controller="prettyrhythm"] .console-pad {
+  --ink: #102d4c;
+  top: 20%;
+  width: 45%;
+  height: 60%;
+  border: 0;
+  border-radius: 0;
+  clip-path: polygon(19% 1%, 81% 1%, 100% 33%, 94% 72%, 50% 100%, 6% 72%, 0 33%);
+  background: var(--case);
+  box-shadow: none;
+}
+[data-controller="prettyrhythm"] .console-pad::before {
+  content: '';
+  inset: 3%;
+  background: conic-gradient(from 25deg at 50% 46%, #fff2 0 48deg, transparent 48deg 118deg, #0001 118deg 188deg, #fff3 188deg 278deg, transparent 278deg),
+    linear-gradient(155deg, var(--face-top), var(--face-bottom));
+  box-shadow: none;
+}
+[data-controller="prettyrhythm"] [data-pad="left"] {
+  left: 3%; --case: #396b9d; --face-top: #c3f6ff; --face-bottom: #57a9e5;
+}
+[data-controller="prettyrhythm"] [data-pad="right"] {
+  right: 3%; --ink: #601a43; --case: #aa5284; --face-top: #ffdae5; --face-bottom: #ec81a7;
+}
+
+/* Two inward cues on a horizontal melody line. */
+.pad-area[data-controller="shinytv"] {
+  background: linear-gradient(transparent 49%, #f3ca7a 49% 50.5%, transparent 50.5%),
+    repeating-linear-gradient(150deg, transparent 0 8%, #ffffff08 8% 8.5%),
+    linear-gradient(135deg, #273749, #3f394e 70%, #242c40);
+}
+[data-controller="shinytv"] .console-pad {
+  --ink: white; --name-size: 10cqw;
+  top: 22%; width: 43%; height: 57.33%;
+  border-color: #e4ded9;
+  box-shadow: inset 0 0 0 var(--lip) #ffffff8c, 0 0 0 2px var(--case), 0 3px 0 #111b;
+  text-shadow: 0 1px 2px #142638;
+}
+[data-controller="shinytv"] [data-pad="left"] {
+  left: 4%; --case: #245d93; --face-top: #67c4ff; --face-bottom: #2177b2;
+}
+[data-controller="shinytv"] [data-pad="right"] {
+  right: 4%; --case: #9c4284; --face-top: #f291e0; --face-bottom: #bf459d;
+}
+
+/* Single large key set into a low-cost monitor-style housing. */
+.pad-area[data-controller="rhythmdoctor"] {
+  background: repeating-linear-gradient(0deg, transparent 0 10%, #c3ffdf15 10% 11%),
+    repeating-linear-gradient(90deg, transparent 0 8%, #c3ffdf15 8% 8.7%), #203f41;
+}
+[data-controller="rhythmdoctor"] [data-pad="beat"] {
+  --ink: #153e38; --case: #437368;
+  left: 8%; top: 17%; width: 84%; height: 66%;
+  border-radius: 6% / 11%;
+  background: linear-gradient(155deg, #b8f1bb, #7cd6a5);
+  box-shadow: inset 0 2px 0 #dffdd8, inset 0 -4px 0 #52947c, 0 var(--lip) 0 #132e30;
+}
+[data-controller="rhythmdoctor"] .console-pad-name {
+  width: 33cqw;
+  height: 15cqw;
+  font-size: 0;
+  background: currentColor;
+  clip-path: polygon(0 56%, 22% 56%, 32% 30%, 43% 70%, 55% 0, 67% 63%, 75% 40%, 83% 54%, 100% 54%, 100% 62%, 80% 62%, 76% 56%, 65% 86%, 56% 30%, 44% 100%, 31% 49%, 26% 64%, 0 64%);
+}
