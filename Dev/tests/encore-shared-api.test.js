@@ -110,6 +110,7 @@ test('登録サービスの接続状態だけを短時間共有し、停止中�
 
   const down = await handler(new Request(`${endpoint}?view=status`));
   assert.equal(down.status, 200);
+  assert.equal(down.headers.get('cache-control'), 'no-store');
   assert.equal(down.headers.get('vercel-cdn-cache-control'), 'public, s-maxage=60');
   assert.deepEqual(await down.json(), { available: false });
   const browse = await handler(new Request(`${endpoint}${browseQuery}`));
@@ -119,6 +120,7 @@ test('登録サービスの接続状態だけを短時間共有し、停止中�
 
   online = true;
   const recovered = await handler(new Request(`${endpoint}?view=status`));
+  assert.equal(recovered.headers.get('cache-control'), 'private, max-age=30');
   assert.deepEqual(await recovered.json(), { available: true });
   assert.equal(lookups, 2);
 });
@@ -198,7 +200,7 @@ test('シリーズGETは実分類とプレイ可否を返し、旧一覧では�
   assert.deepEqual([...store.videos.values()], [...publicVideos, hidden]);
 });
 
-test('正規の閲覧用GETだけが成功時にVercel CDNで60秒キャッシュされる', async () => {
+test('正規の閲覧用GETだけが成功時にブラウザーとVercel CDNにキャッシュされる', async () => {
   const { store, handler } = fixture();
   const published = { ...apiVideo, category: 'misc', playable: false };
   store.videos.set(published.id, published);
@@ -206,7 +208,7 @@ test('正規の閲覧用GETだけが成功時にVercel CDNで60秒キャッシ�
   for (const query of [browseQuery, '?includeMisc=1&classification=series', `${browseQuery}&other=1`]) {
     const response = await handler(new Request(`${endpoint}${query}`));
     assert.equal(response.status, 200);
-    assert.equal(response.headers.get('cache-control'), 'no-store');
+    assert.equal(response.headers.get('cache-control'), query === browseQuery ? 'private, max-age=30' : 'no-store');
     assert.equal(response.headers.get('vercel-cdn-cache-control'), query === browseQuery ? 'public, s-maxage=300' : null);
     assert.deepEqual(await response.json(), { videos: [published], withdrawnIds: [] });
   }

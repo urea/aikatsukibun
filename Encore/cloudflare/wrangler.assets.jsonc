@@ -1,0 +1,7 @@
+{
+  "name": "aikatsu-encore-static",
+  "compatibility_date": "2026-11-21",
+  "workers_dev": true,
+  "preview_urls": false,
+  "assets": { "directory": "../../output/encore-static-host" }
+}

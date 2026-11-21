@@ -88,7 +88,11 @@ npm.cmd run dev:encore -- --host 127.0.0.1 --port 18743 --strictPort
 
 通常の選曲一覧は、Vercel Blobに保存した公開用JSONを配信して5分間キャッシュします。同じタブで20秒以内に開き直した場合も取得済みの一覧を使い、公開一覧の更新日時を表示します。「最新に更新」と運用チェックはDBから直接取得します。取得失敗時に画面にエラーと利用中の一覧の日時を表示します。
 
+公開URLを維持して静的アセットをCloudflareから配信するには、Vercelのビルド時に `ENCORE_ASSET_BASE_URL` を指定します。対応するビルドの `Encore/dist/assets` を `node Encore/tools/stage-static-assets.mjs` で準備し、`npx wrangler deploy --config Encore/cloudflare/wrangler.assets.jsonc` で配置します。外部配信に同じハッシュのファイルがないときは、Vercelに含まれるビルドのファイルから読み込みます。
+
 追加・編集・管理ツールによる取り下げや分類変更後に、共有一覧を再作成します。保存が成功すると、そのタブには保存結果をすぐ表示します。公開用JSONの更新が失敗した場合は、画面または管理ツールで知らせます。公開一覧を再生成するには `node Encore/tools/publish-publication.mjs` を実行します。
+
+R2でも公開する場合は、D1 Workerに専用バケットを `ENCORE_PUBLICATION` としてバインドし、Vercelと管理ツールで `ENCORE_D1_PUBLICATION_MIRROR=r2` を設定します。公開には `encore-publication.json` だけを保存するバケットと、Vercelからの取得を許可するCORS設定が必要です。発行と読み出しを確認してから `VITE_ENCORE_PUBLICATION_URL` を設定します。未設定時や外部一覧の取得失敗時は既存の一覧を使います。
 
 ## 共有APIの設定
 

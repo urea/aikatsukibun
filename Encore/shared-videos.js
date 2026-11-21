@@ -2,10 +2,22 @@ import { normalizeCustomVideos, uniqueIds } from './model.js';
 
 const hasPlaybackBounds = video => video && Object.hasOwn(video, 'startSeconds') && Object.hasOwn(video, 'endSeconds');
 
-export function createSharedVideosClient(fetchImpl = fetch) {
-  async function request(options = {}, path = '/api/videos') {
+function readPublication(data, requireSnapshot = false) {
+  const publishedAt = typeof data?.publishedAt === 'string' ? Date.parse(data.publishedAt) : NaN;
+  if (!Array.isArray(data?.videos) || (requireSnapshot && (!Array.isArray(data.withdrawnIds) || !Number.isFinite(publishedAt)))) {
+    throw new Error('共有一覧を読み込めませんでした。もう一度お試しください。');
+  }
+  return {
+    videos: normalizeCustomVideos(data.videos),
+    withdrawnIds: uniqueIds(data.withdrawnIds),
+    ...(Number.isFinite(publishedAt) ? { publishedAt } : {}),
+  };
+}
+
+export function createSharedVideosClient(fetchImpl = fetch, { publicationUrl } = {}) {
+  async function request(options = {}, path = '/api/videos', timeoutMs = 20000) {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 20000);
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
     try {
       const response = await fetchImpl(path, { cache: 'no-store', ...options, signal: controller.signal });
       const data = await response.json();
@@ -34,16 +46,18 @@ export function createSharedVideosClient(fetchImpl = fetch) {
       if (includeMisc === true) params.set('includeMisc', '1');
       if (classification === 'series') params.set('classification', 'series');
       const useBrowse = browse === true && includeMisc === true && classification === 'series';
+      if (useBrowse && publicationUrl) {
+        try {
+          const data = await request({ cache: 'default', credentials: 'omit' }, publicationUrl, 5_000);
+          return readPublication(data, true);
+        } catch {
+          // 外部の公開一覧を取得できない場合も、従来の一覧で選曲できるようにする。
+        }
+      }
       if (useBrowse) params.set('view', 'browse');
       const query = params.toString();
       const data = await request({ cache: useBrowse ? 'default' : 'no-store' }, query ? `/api/videos?${query}` : '/api/videos');
-      if (!Array.isArray(data?.videos)) throw new Error('共有一覧を読み込めませんでした。もう一度お試しください。');
-      const publishedAt = typeof data.publishedAt === 'string' ? Date.parse(data.publishedAt) : NaN;
-      return {
-        videos: normalizeCustomVideos(data.videos),
-        withdrawnIds: uniqueIds(data.withdrawnIds),
-        ...(Number.isFinite(publishedAt) ? { publishedAt } : {}),
-      };
+      return readPublication(data);
     },
     async add(input) {
       const data = await request({ method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input) });

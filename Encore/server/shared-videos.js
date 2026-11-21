@@ -134,7 +134,10 @@ export function createSharedVideosHandler({ store, fetchImpl = globalThis.fetch,
           await store.hasVideo(statusVideoId);
           status = { available: true };
         } catch (error) { status = { available: false, ...databaseStatus(error) }; }
-        return json(200, status, { 'Vercel-CDN-Cache-Control': `public, s-maxage=${SHARED_STATUS_CACHE_SECONDS}` });
+        return json(200, status, {
+          ...(status.available ? { 'Cache-Control': 'private, max-age=30' } : {}),
+          'Vercel-CDN-Cache-Control': `public, s-maxage=${SHARED_STATUS_CACHE_SECONDS}`,
+        });
       }
       const browse = url.search === browseQuery;
       const useSnapshot = browse && snapshot;
@@ -148,7 +151,10 @@ export function createSharedVideosHandler({ store, fetchImpl = globalThis.fetch,
           return category === video.category ? video : { ...video, category };
         });
         const headers = browse
-          ? { 'Vercel-CDN-Cache-Control': `public, s-maxage=${SHARED_BROWSE_CACHE_SECONDS}` }
+          ? {
+              'Cache-Control': 'private, max-age=30',
+              'Vercel-CDN-Cache-Control': `public, s-maxage=${SHARED_BROWSE_CACHE_SECONDS}`,
+            }
           : {};
         return json(200, { ...publication, videos: includeMisc ? videos : videos.filter(video => video.category !== 'misc') }, headers);
       }

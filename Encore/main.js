@@ -70,7 +70,7 @@ let sharedLiveSince = Number.isFinite(cachedPublication.liveSince) ? cachedPubli
 let sharedLiveFailed = false;
 let sharedSyncPending = cachedPublication.syncPending === true;
 let publicationReady = false;
-const sharedClient = createSharedVideosClient();
+const sharedClient = createSharedVideosClient(fetch, { publicationUrl: import.meta.env.VITE_ENCORE_PUBLICATION_URL?.trim() });
 const settings = normalizeSettings(readSaved(storage, SETTINGS_KEY, {}));
 const metadata = createMetadata(storage, save);
 customVideos.forEach(video => metadata.seed(video.id, video));

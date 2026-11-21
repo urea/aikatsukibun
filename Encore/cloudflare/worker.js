@@ -1,6 +1,7 @@
 import { isEntryId, isVideoCategory, isVideoId, normalizeVideoMetadata, videoIdFor } from '../model.js';
 import { createD1Store } from '../server/d1-store.js';
 import { createD1ModerationStore } from '../server/d1-moderation.js';
+import { publishR2Snapshot } from './publication-r2.js';
 
 const MAX_CALL_BYTES = 16 * 1024;
 const encoder = new TextEncoder();
@@ -43,6 +44,7 @@ function accepts(args, ...validators) {
 
 const storeOperations = {
   listPublication: args => accepts(args),
+  publishR2Snapshot: args => accepts(args),
   listVideos: args => accepts(args),
   getVideo: args => accepts(args, isEntryId),
   isWithdrawn: args => accepts(args, isVideoId),
@@ -125,6 +127,10 @@ export default {
 
     try {
       const store = admin ? createD1ModerationStore(env.ENCORE_DB) : createD1Store(env.ENCORE_DB);
+      if (call.method === 'publishR2Snapshot') {
+        if (!env.ENCORE_PUBLICATION) return json(503, { error: 'snapshot_unavailable' });
+        return json(200, { result: await publishR2Snapshot(env.ENCORE_PUBLICATION, store.listPublication) });
+      }
       const args = call.method === 'changeVisibility'
         ? [call.args[0], call.args[1], new Date(call.args[2])]
         : call.args;

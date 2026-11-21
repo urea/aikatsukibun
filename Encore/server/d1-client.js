@@ -47,6 +47,7 @@ export function createD1Client(url, token, { fetchImpl = globalThis.fetch } = {}
   const call = createCaller(url, token, '/store', fetchImpl);
   return {
     listPublication: () => call('listPublication'),
+    publishR2Snapshot: () => call('publishR2Snapshot'),
     listVideos: () => call('listVideos'),
     getVideo: id => call('getVideo', [id]),
     isWithdrawn: id => call('isWithdrawn', [id]),

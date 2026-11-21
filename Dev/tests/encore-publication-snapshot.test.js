@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createPublicationSnapshot } from '../../Encore/server/publication-snapshot.js';
+import { createPublicationSnapshot, publishSnapshots } from '../../Encore/server/publication-snapshot.js';
+import { publishR2Snapshot } from '../../Encore/cloudflare/publication-r2.js';
+import worker from '../../Encore/cloudflare/worker.js';
 
 const date = '2026-11-17T04:00:00.000Z';
 const video = {
@@ -8,6 +10,99 @@ const video = {
   startSeconds: 110, endSeconds: 288, revision: 'a'.repeat(32),
 };
 const makePublication = (videos = [video]) => ({ videos, withdrawnIds: ['lTLqkpcqWs8'] });
+
+function mockR2() {
+  let current = null;
+  let version = 0;
+  return {
+    current: () => current && JSON.parse(current.body),
+    get() {
+      if (!current) return null;
+      const { etag, body } = current;
+      return { etag, text: async () => body };
+    },
+    put(key, body, { onlyIf, httpMetadata }) {
+      assert.equal(key, 'encore-publication.json');
+      assert.equal(httpMetadata.contentType, 'application/json; charset=utf-8');
+      if (current) {
+        if (onlyIf.etagMatches !== current.etag) return null;
+      } else {
+        assert.equal(onlyIf.get('if-none-match'), '*');
+      }
+      current = { body, etag: String(++version) };
+      return current;
+    },
+  };
+}
+
+test('R2の公開一覧には現在の公開項目だけを保存し、同じ内容は再発行しない', async () => {
+  const bucket = mockR2();
+  const data = makePublication([{ ...video, clientHash: 'private value' }]);
+  const first = await publishR2Snapshot(bucket, () => data, () => new Date(date));
+  assert.equal(first.changed, true);
+  assert.deepEqual(bucket.current(), { ...makePublication(), publishedAt: date });
+  assert.deepEqual(await publishR2Snapshot(bucket, () => data), { publication: first.publication, changed: false });
+});
+
+test('R2の初回作成と更新の競合で古い動画データを公開しない', async () => {
+  for (const existing of [false, true]) {
+    const bucket = mockR2();
+    if (existing) await publishR2Snapshot(bucket, () => makePublication());
+    const stale = makePublication([{ ...video, title: '古いタイトル' }]);
+    const fresh = makePublication([{ ...video, title: '取り下げ後の最新版' }]);
+    let loads = 0;
+    const result = await publishR2Snapshot(bucket, async () => {
+      if (++loads !== 1) return fresh;
+      await publishR2Snapshot(bucket, () => fresh);
+      return stale;
+    });
+    assert.equal(loads, 2);
+    assert.equal(result.changed, false);
+    assert.deepEqual(bucket.current().videos, fresh.videos);
+  }
+});
+
+test('ミラー障害時も既存Blobの公開を完了でき、無効化後はBlobだけで更新できる', async () => {
+  let persisted = false;
+  const primary = {
+    async publish(load) {
+      const publication = await load();
+      persisted = true;
+      return { publication, changed: true };
+    },
+  };
+  const load = () => makePublication();
+  const failedMirror = async () => { throw new Error('R2 unavailable'); };
+  await assert.rejects(publishSnapshots(primary, load, failedMirror), /R2 unavailable/);
+  assert.equal(persisted, true);
+  assert.deepEqual(await publishSnapshots(primary, load), { publication: load(), changed: true });
+});
+
+test('R2公開のWorker操作は認証が必要で、バインド後は現行D1から公開する', async () => {
+  const token = 'store-test-token';
+  function request(bearer) {
+    return new Request('https://encore.example/store', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${bearer}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ method: 'publishR2Snapshot', args: [] }),
+    });
+  }
+  const settings = { ENCORE_D1_TOKEN: token };
+  assert.equal((await worker.fetch(request('wrong'), settings)).status, 401);
+  assert.equal((await worker.fetch(request(token), settings)).status, 503);
+
+  const bucket = mockR2();
+  const db = {
+    prepare() {
+      return { all: async () => ({ results: [{ video_id: video.id, data: JSON.stringify(video), revision: video.revision }] }) };
+    },
+  };
+  const response = await worker.fetch(request(token), { ...settings, ENCORE_DB: db, ENCORE_PUBLICATION: bucket });
+  assert.equal(response.status, 200);
+  const { result } = await response.json();
+  assert.deepEqual(result.publication, bucket.current());
+  assert.deepEqual(result.publication.videos, [video]);
+});
 
 class WriteConflict extends Error {}
 
